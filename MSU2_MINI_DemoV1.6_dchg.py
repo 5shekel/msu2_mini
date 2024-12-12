@@ -415,7 +415,7 @@ def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return recv[4] * 256 + recv[5]
     else:
-        print("Read_ADC_CH failed")
+        print("Read_ADC_CH failed, will reconnect")
         Device_State = 0  # 出现异常，串口需要重连
         return 0
 
@@ -1890,8 +1890,10 @@ def get_full_custom_im():
     record_dict_value = {str(i + 1): v for i, (v, _) in enumerate(custom_values)}
     try:
         mini_mark_parser.reset_state()
-        for line in full_custom_template.strip().split('\n'):
-            line = line.rstrip('\r')  # possible
+        for line in full_custom_template.split('\n'):
+            line = line.rstrip('\r').strip()  # possible
+            if line == "":
+                continue
             error_line = line
             mini_mark_parser.parse_line(line, draw, im1, record_dict=record_dict, record_dict_value=record_dict_value)
         full_custom_error = "OK"
@@ -2152,9 +2154,9 @@ def UI_Page():  # 进行图像界面显示
             tk.messagebox.showerror(message="Libre Hardware Monitor 正在加载，请稍候……")
             return
 
-        root.attributes("-disabled", 1)  # 禁用主窗口
         if custom_window is not None:
             custom_window.deiconify()  # 如果已经创建过子窗口直接显示
+            root.attributes("-disabled", 1)  # 禁用主窗口
             return
 
         custom_window = tk.Toplevel(root, takefocus=True)  # 创建一个子窗口
@@ -2208,6 +2210,7 @@ def UI_Page():  # 进行图像界面显示
             sensor_combobox.set(custom_selected_names[row])
             sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value(ii))
             sensor_combobox.grid(row=row + 2, column=1, padx=5, pady=5)
+            # sensor_combobox.configure(state="readonly")
 
         # 添加“科技”标签页
 
@@ -2235,6 +2238,7 @@ def UI_Page():  # 进行图像界面显示
             sensor_combobox.set(custom_selected_names_tech[row])
             sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value_tech(ii))
             sensor_combobox.grid(row=row + 2, column=1, padx=5, pady=5)
+            # sensor_combobox.configure(state="readonly")
 
         row += 3
         desc_label = tk.Label(tech_frame, text="完全自定义模板代码：", anchor="w", justify="left")
@@ -2248,7 +2252,7 @@ def UI_Page():  # 进行图像界面显示
         def update_global_text(event):
             global full_custom_template
             # Get the current content of the text area and update the global variable
-            full_custom_template = text_area.get("1.0", tk.END)
+            full_custom_template = text_area.get("1.0", tk.END).strip()  # tk.END会多一个换行
             im = get_full_custom_im()
             tk_im = ImageTk.PhotoImage(im)
             canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
@@ -2327,6 +2331,7 @@ def UI_Page():  # 进行图像界面显示
         show_instruction_btn.grid(row=0, column=3, padx=5)
 
         center_window(custom_window)
+        root.attributes("-disabled", 1)  # 禁用主窗口
 
     show_custom_btn = ttk.Button(root, text="自定义内容", width=12, command=show_custom)
     show_custom_btn.grid(row=5, column=1, padx=5)
@@ -2790,7 +2795,7 @@ def daemon_task():
                 # 成功连接设备, 设置状态显示
                 if Device_State == 1:
                     setfailed = 0
-                    while setfailed < 20:  # 防止主窗口仍未打开
+                    while setfailed < 10:  # 防止主窗口仍未打开
                         try:
                             Label1.config(text="设备已连接", fg="white", bg="green")
                             break
