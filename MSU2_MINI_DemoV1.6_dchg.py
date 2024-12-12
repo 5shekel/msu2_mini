@@ -1,10 +1,10 @@
 # -*- coding: UTF-8 -*-
 
-import json  # geezmo: 保存配置用
+import json  # 用于保存json格式配置
 import os  # 用于读取文件
 import queue  # geezmo: 流水线同步和交换数据用
 import sys
-import threading  # 引入定时回调库
+import threading  # 引入多线程支持
 import time  # 引入延时库
 import tkinter as tk  # 引入UI库
 import tkinter.filedialog  # 用于获取文件路径
@@ -282,10 +282,10 @@ def LCD_Change():  # 切换显示方向
 
 
 def SER_Write(Data_U0):
-    global Device_State, ser
+    global Device_State
     if not ser.is_open:
         if Device_State == 1:
-            Device_State = 0  # 恢复到未连接状态
+            set_device_state(0)  # 恢复到未连接状态
         print("设备未连接，取消发送")
         return
     # print("发送数据ing")
@@ -303,15 +303,14 @@ def SER_Write(Data_U0):
         # print("发送完成")
     except Exception as e:  # 出现异常
         print("发送异常, %s: %s" % (type(e), e))
-        Device_State = 0  # 出现异常，串口需要重连
-        ser.close()  # 将串口关闭，防止下次无法打开
+        set_device_state(0)  # 出现异常，串口需要重连
 
 
 def SER_Read():
-    global Device_State, ser
+    global Device_State
     if not ser.is_open:
         if Device_State == 1:
-            Device_State = 0  # 恢复到未连接状态
+            set_device_state(0)  # 恢复到未连接状态
         print("设备未连接，取消读取")
         return 0
     # print("接收数据ing")
@@ -322,8 +321,7 @@ def SER_Read():
         return recv
     except Exception as e:  # 出现异常
         print("接收异常, %s: %s" % (type(e), e))
-        Device_State = 0  # 出现异常，串口需要重连
-        ser.close()  # 将串口关闭，防止下次无法打开
+        set_device_state(0)
         return 0
 
 
@@ -343,6 +341,7 @@ def Read_M_u8(add):  # 读取主机u8寄存器（MSC设备编码，Add）
         return recv[5]
     else:
         print("Read_M_u8 failed")
+        set_device_state(0)
         return 0
 
 
@@ -361,6 +360,7 @@ def Read_M_u16(add):  # 读取主机u8寄存器（MSC设备编码，Add）
         return recv[4] * 256 + recv[5]
     else:
         print("Read_M_u16 failed")
+        set_device_state(0)
         return 0
 
 
@@ -379,6 +379,7 @@ def Write_M_u8(add, data_w):  # 读取主机u8寄存器（MSC设备编码，Add�
         return 0
     else:
         print("Write_M_u8 failed")
+        set_device_state(0)
         return 0
 
 
@@ -397,11 +398,11 @@ def Write_M_u16(add, data_w):  # 读取主机u8寄存器（MSC设备编码，Add
         return 0
     else:
         print("Write_M_u16 failed")
+        set_device_state(0)
         return 0
 
 
 def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
-    global Device_State
     hex_use = bytearray()  # 空数组
     hex_use.append(8)  # 读取ADC
     hex_use.append(ch)  # 通道
@@ -416,7 +417,7 @@ def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
         return recv[4] * 256 + recv[5]
     else:
         print("Read_ADC_CH failed, will reconnect")
-        Device_State = 0  # 出现异常，串口需要重连
+        set_device_state(0)
         return 0
 
 
@@ -558,6 +559,7 @@ def Write_Flash_Page(Page_add, data_w, Page_num):  # 往Flash指定页写入256B
         return 0
     else:
         print("Write_Flash_Page failed")
+        set_device_state(0)
         return 0
 
 
@@ -585,6 +587,7 @@ def Write_Flash_Page_fast(Page_add, data_w, Page_num):
         return 0
     else:
         print("Write_Flash_Page_fast failed")
+        set_device_state(0)
         return 0
 
 
@@ -603,6 +606,7 @@ def Erase_Flash_page(add, size):  # 清空指定区域的内存
         return 0
     else:
         print("Erase_Flash_page failed")
+        set_device_state(0)
         return 0
 
 
@@ -621,6 +625,7 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
         return recv[5]
     else:
         print("Read_Flash_byte failed")
+        set_device_state(0)
         return 0
 
 
@@ -732,8 +737,7 @@ def LCD_Set_Color(LCD_D0, LCD_D1):  # 设置颜色（FC,BC）
     SER_Write(hex_use)  # 发出指令
 
 
-def LCD_Photo(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):  #
-    global Device_State
+def LCD_Photo(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
     hex_use = bytearray()
@@ -746,19 +750,15 @@ def LCD_Photo(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):  #
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
-    if recv != 0 and len(recv) > 1:
-        if (recv[0] != hex_use[0]) or (recv[1] != hex_use[1]):
-            print("LCD_Photo failed: %s" % recv.decode("gbk"))
-            Device_State = 0  # 接收出错
+    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 0
     else:
         print("LCD_Photo failed")
-        Device_State = 0  # 接收出错
+        set_device_state(0)
         return 0
 
 
-def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):  #
-    global Device_State
+def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
     hex_use = bytearray()
@@ -771,19 +771,15 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):  #
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
-    if recv != 0 and len(recv) > 1:
-        if (recv[0] != hex_use[0]) or (recv[1] != hex_use[1]):
-            print("LCD_ADD failed: %s" % recv.decode("gbk"))
-            Device_State = 0  # 接收出错
+    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 0
     else:
         print("LCD_ADD filed")
-        Device_State = 0  # 接收出错
+        set_device_state(0)
         return 0
 
 
 def LCD_State(LCD_S):
-    global Device_State
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
@@ -795,11 +791,11 @@ def LCD_State(LCD_S):
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        print("State change to %d" % LCD_S)
+        print("LCD towards change to %d" % LCD_S)
         return 0
     else:
-        print("State change failed" % LCD_S)
-        Device_State = 0  # 接收出错
+        print("LCD towards change failed" % LCD_S)
+        set_device_state(0)
         return 0
 
 
@@ -1021,7 +1017,6 @@ def Write_LCD_Screen_fast1(x_star, y_star, x_size, y_size, Photo_data):
 
 
 def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC):
-    global Device_State
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
     LCD_Set_Color(LCD_FC, LCD_BC)
@@ -1035,19 +1030,15 @@ def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
-    if recv != 0 and len(recv) > 1:  # 对于回传的数据需要进行校验，确保设备状态能够被准确识别到
-        if (recv[0] != hex_use[0]) or (recv[1] != hex_use[1]):
-            print("LCD_Photo_wb failed: %s" % recv.decode("gbk"))
-            Device_State = 0  # 接收出错
+    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 0
     else:
         print("LCD_Photo_wb failed")
-        Device_State = 0  # 接收出错
+        set_device_state(0)  # 接收出错
         return 0
 
 
-def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC, Num_Page):  #
-    global Device_State
+def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC, Num_Page):
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Color(LCD_FC, LCD_BC)
     hex_use = bytearray()
@@ -1060,19 +1051,15 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC, Num_Page):  #
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
-    if recv != 0 and len(recv) > 1:
-        if (recv[0] != hex_use[0]) or (recv[1] != hex_use[1]):
-            print("LCD_ASCII_32X64 failed: %s" % recv.decode("gbk"))
-            Device_State = 0  # 接收出错
+    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 0
     else:
         print("LCD_ASCII_32X64 failed")
-        Device_State = 0  # 接收出错
+        set_device_state(0)  # 接收出错
         return 0
 
 
-def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC):  #
-    global Device_State
+def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC):
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Color(LCD_FC, LCD_BC)
     Txt_Data = Txt.encode("gb2312")
@@ -1086,19 +1073,15 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC):  #
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
-    if recv != 0 and len(recv) > 1:
-        if (recv[0] != hex_use[0]) or (recv[1] != hex_use[1]):
-            print("LCD_GB2312_16X16 failed: %s" % recv.decode("gbk"))
-            Device_State = 0  # 接收出错
+    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 0
     else:
         print("LCD_GB2312_16X16 failed")
-        Device_State = 0  # 接收出错
+        set_device_state(0)  # 接收出错
         return 0
 
 
 def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, BG_Page):
-    global Device_State
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
     LCD_Set_Color(LCD_FC, BG_Page)
@@ -1112,19 +1095,15 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, BG_
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
-    if recv != 0 and len(recv) > 1:
-        if (recv[0] != hex_use[0]) or (recv[1] != hex_use[1]):
-            print("LCD_Photo_wb_MIX failed: %s" % recv.decode("gbk"))
-            Device_State = 0  # 接收出错
+    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 0
     else:
         print("LCD_Photo_wb_MIX failed")
-        Device_State = 0  # 接收出错
+        set_device_state(0)  # 接收出错
         return 0
 
 
-def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):  #
-    global Device_State
+def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Color(LCD_FC, BG_Page)
     hex_use = bytearray()
@@ -1137,19 +1116,15 @@ def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):  #
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
-    if recv != 0 and len(recv) > 1:
-        if (recv[0] != hex_use[0]) or (recv[1] != hex_use[1]):
-            print("LCD_ASCII_32X64_MIX failed: %s" % recv.decode("gbk"))
-            Device_State = 0  # 接收出错
+    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 0
     else:
         print("LCD_ASCII_32X64_MIX failed")
-        Device_State = 0  # 接收出错
+        set_device_state(0)  # 接收出错
         return 0
 
 
-def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page):  #
-    global Device_State
+def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page):
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Color(LCD_FC, BG_Page)
     Txt_Data = Txt.encode("gb2312")
@@ -1163,20 +1138,16 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page):  #
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
-    if recv != 0 and len(recv) > 1:
-        if (recv[0] != hex_use[0]) or (recv[1] != hex_use[1]):
-            print("LCD_GB2312_16X16_MIX failed: %s" % recv.decode("gbk"))
-            Device_State = 0  # 接收出错
+    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 0
     else:
         print("LCD_GB2312_16X16_MIX failed")
-        Device_State = 0  # 接收出错
+        set_device_state(0)  # 接收出错
         return 0
 
 
 # 对指定区域进行颜色填充
 def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
-    global Device_State
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
     hex_use = bytearray()
@@ -1189,14 +1160,11 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
-    if recv != 0 and len(recv) > 1:
-        if (recv[0] != hex_use[0]) or (recv[1] != hex_use[1]):
-            print("LCD_Color_set failed: %s" % recv.decode("gbk"))
-            Device_State = 0  # 接收出错
+    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 0
     else:
         print("LCD_Color_set failed")
-        Device_State = 0  # 接收出错
+        set_device_state(0)  # 接收出错
         return 0
 
 
@@ -2003,10 +1971,17 @@ def UI_Page():  # 进行图像界面显示
         root.destroy()
 
     def show_window(icon, item):
+        global Device_State, Device_State_Labelen
         icon.stop()
         root.after(0, root.deiconify)
+        if Device_State_Labelen == 1:
+            Device_State_Labelen = 0
+        elif Device_State_Labelen == 3:
+            Device_State_Labelen = 2
+            set_device_state(Device_State)
 
     def hide_to_tray():
+        global Device_State_Labelen
         try:
             root.withdraw()
             image = Image.open(MiniMark.get_resource("resource/icon.ico"))
@@ -2015,13 +1990,18 @@ def UI_Page():  # 进行图像界面显示
                 pystray.MenuItem("退出", quit_window)
             )
             icon = pystray.Icon("name", image, "MSU2_mini", menu)
-            icon.run()
+
+            if Device_State_Labelen != 3:
+                Device_State_Labelen = 1
+
+            icon.run()  # 等待恢复窗口
         except Exception as e:
             print("failed to use pystray to hide to tray, %s:%s" % (type(e), e))
             root.after(0, root.deiconify)
 
     hide_btn = ttk.Button(root, text="隐藏", width=12, command=hide_to_tray)
     hide_btn.grid(row=0, column=1, padx=5)
+    hide_btn.focus_set()  # 设置默认焦点
 
     # 选择和烧写按钮
 
@@ -2159,7 +2139,7 @@ def UI_Page():  # 进行图像界面显示
             root.attributes("-disabled", 1)  # 禁用主窗口
             return
 
-        custom_window = tk.Toplevel(root, takefocus=True)  # 创建一个子窗口
+        custom_window = tk.Toplevel(root)  # 创建一个子窗口
         custom_window.title("自定义显示内容")
         custom_window.transient(root)  # 置于主窗口前面
 
@@ -2178,6 +2158,7 @@ def UI_Page():  # 进行图像界面显示
 
         simple_frame = tkinter.Frame(master=custom_window)
         notebook.add(simple_frame, text="  显示两项图表  ")
+        simple_frame.focus_set()  # 设置默认焦点
 
         desc_label = tk.Label(simple_frame, text="名称")
         desc_label.grid(row=1, column=0, padx=5, pady=5)
@@ -2244,7 +2225,7 @@ def UI_Page():  # 进行图像界面显示
         desc_label = tk.Label(tech_frame, text="完全自定义模板代码：", anchor="w", justify="left")
         desc_label.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
-        # 创建自定义内容窗口
+        # 创建自定义内容输入框
         row += 1
         text_frame = ttk.Frame(tech_frame, padding="10")
         text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky="w")
@@ -2266,7 +2247,7 @@ def UI_Page():  # 进行图像界面显示
         view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
         desc_label = tk.Label(view_frame, text="效果预览：", anchor="s", justify="left")
-        desc_label.pack(side=tk.TOP, fill=tk.BOTH)
+        desc_label.pack(side=tk.TOP, fill=tk.NONE, expand=False)
 
         canvas = tk.Canvas(view_frame, width=160, height=80)
         canvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
@@ -2281,6 +2262,13 @@ def UI_Page():  # 进行图像界面显示
         row += 1
         btn_frame = ttk.Frame(tech_frame, padding="10")
         btn_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+
+        def show_error():
+            print(full_custom_error)
+            tk.messagebox.showinfo(message=full_custom_error, parent=custom_window)
+
+        show_error_btn = ttk.Button(btn_frame, text="查看模板错误", width=16, command=show_error)
+        show_error_btn.grid(row=0, column=0, padx=5)
 
         def example(i):
             global full_custom_template
@@ -2300,16 +2288,9 @@ def UI_Page():  # 进行图像界面显示
             update_global_text(None)
 
         example_btn_1 = ttk.Button(btn_frame, text="科技", width=16, command=lambda: example(1))
-        example_btn_1.grid(row=0, column=0, padx=5)
+        example_btn_1.grid(row=0, column=1, padx=5)
         example_btn_2 = ttk.Button(btn_frame, text="简单", width=16, command=lambda: example(2))
-        example_btn_2.grid(row=0, column=1, padx=5)
-
-        def show_error():
-            print(full_custom_error)
-            tk.messagebox.showinfo(message=full_custom_error, parent=custom_window)
-
-        show_error_btn = ttk.Button(btn_frame, text="查看模板错误", width=16, command=show_error)
-        show_error_btn.grid(row=0, column=2, padx=5)
+        example_btn_2.grid(row=0, column=2, padx=5)
 
         def show_instruction():
             instruction = '\n'.join(
@@ -2512,8 +2493,25 @@ class MSN_Data:  # 定义一个结构体
 My_MSN_Data = []  # 创建一个空的结构体数组
 
 
+# Device_State_Labelen: 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
+def set_device_state(state):
+    global Label1, Device_State, Device_State_Labelen
+    if Device_State != state:
+        Device_State = state
+        # print("change device state to %d" % state)
+    if Device_State_Labelen == 2:
+        Device_State_Labelen = 0
+    if Device_State_Labelen == 0:
+        if Device_State == 1:
+            Label1.config(text="设备已连接", fg="white", bg="green")
+        else:
+            Label1.config(text="设备未连接", fg="white", bg="red")
+    elif Device_State_Labelen == 1:
+        Device_State_Labelen = 3
+
+
 def Get_MSN_Device(port_list):  # 尝试获取MSN设备
-    global Device_State, ADC_det, ser, State_change
+    global ADC_det, ser, State_change
     global Screen_Error, LCD_Change_now, LCD_Change_use
     if ser is not None and ser.is_open:
         ser.close()  # 先将异常的串口连接关闭，防止无法打开
@@ -2595,7 +2593,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     Print_MSN_Data()  # 解析字节中的数据格式
     LCD_Change_now = LCD_Change_use
     LCD_State(LCD_Change_now)  # 配置显示方向
-    Device_State = 1  # 可以正常连接
+    set_device_state(1)  # 可以正常连接
     State_change = 1  # 状态发生变化
     Screen_Error = 0
     # 配置按键阈值
@@ -2726,6 +2724,7 @@ Screen_Error = 0
 gif_num = 0
 machine_model = 3901  # 定义初始状态
 Device_State = 0  # 初始为未连接
+Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
 LCD_Change_use = 0  # 初始显示方向
 LCD_Change_now = 0
 color_use = RED
@@ -2767,18 +2766,17 @@ def load_task():
 
 
 def daemon_task():
-    global Label1, ser, current_time
+    global ser, current_time, Device_State, Device_State_Labelen
 
     try:
         while MG_daemon_running:
             current_time = datetime.now()
+            if Device_State_Labelen == 2:
+                set_device_state(Device_State)
+
             if Device_State == 1:  # 已检测到设备
                 MSN_Device_1_State_machine()
             else:
-                # 未检测到设备, 设置状态显示
-                if hasattr(Label1, "config") and Label1["bg"].upper() != "RED":
-                    Label1.config(text="设备未连接", fg="white", bg="RED")
-
                 # 尝试获取MSN设备
                 port_list = list(serial.tools.list_ports.comports())  # 查询所有串口
                 # geezmo: 如果有 VID = 0x1a86 （沁恒）的，优先考虑这些设备，防止访问其他串口出错
@@ -2791,24 +2789,13 @@ def daemon_task():
                     if Device_State == 0:
                         print("没有找到可用的MSN设备")
                         time.sleep(1)  # 防止频繁重试
-
-                # 成功连接设备, 设置状态显示
-                if Device_State == 1:
-                    setfailed = 0
-                    while setfailed < 10:  # 防止主窗口仍未打开
-                        try:
-                            Label1.config(text="设备已连接", fg="white", bg="green")
-                            break
-                        except Exception:
-                            setfailed += 1
-                            time.sleep(0.1)
     except Exception as e:  # 出现非预期异常
         print("Exception in daemon_task, %s: %s" % (type(e), e))
-
-    # stop
-    print("stop daemon")
-    if ser is not None and ser.is_open:
-        ser.close()  # 正常关闭串口
+    finally:
+        # stop
+        print("stop daemon")
+        if ser is not None and ser.is_open:
+            ser.close()  # 正常关闭串口
 
 
 # 设备交互只能串行进行，所有的跟设备交互操作必须全部由daemon_thread完成
