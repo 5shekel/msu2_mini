@@ -1973,6 +1973,7 @@ def UI_Page():  # 进行图像界面显示
     def show_window(icon, item):
         global Device_State, Device_State_Labelen
         icon.stop()
+        root.state()
         root.after(0, root.deiconify)
         if Device_State_Labelen == 1:
             Device_State_Labelen = 0
@@ -1980,7 +1981,7 @@ def UI_Page():  # 进行图像界面显示
             Device_State_Labelen = 2
             set_device_state(Device_State)
 
-    def hide_to_tray():
+    def hide_to_tray(event=None):
         global Device_State_Labelen
         try:
             root.withdraw()
@@ -2149,54 +2150,21 @@ def UI_Page():  # 进行图像界面显示
             custom_window.withdraw()
 
         custom_window.protocol("WM_DELETE_WINDOW", on_closing)
-
-        # 创建一个选项卡
-        notebook = tkinter.ttk.Notebook(custom_window)
-        notebook.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="w")
-
-        # 添加“简单”标签页
-
-        simple_frame = tkinter.Frame(master=custom_window)
-        notebook.add(simple_frame, text="  显示两项图表  ")
-        simple_frame.focus_set()  # 设置默认焦点
-
-        desc_label = tk.Label(simple_frame, text="名称")
-        desc_label.grid(row=1, column=0, padx=5, pady=5)
-        desc_label = tk.Label(simple_frame, text="项目")
-        desc_label.grid(row=1, column=1, padx=5, pady=5)
+        custom_window.resizable(0, 0)  # 锁定窗口大小不能改变
 
         sensor_vars = []
         sensor_displayname_vars = []
         sensor_vars_tech = []
 
-        def update_sensor_value(i):
-            custom_selected_names[i] = sensor_vars[i].get()
+        # 创建一个选项卡
+        notebook = tkinter.ttk.Notebook(custom_window)
+        notebook.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="w")
 
-        def change_sensor_displayname(i):
-            custom_selected_displayname[i] = sensor_displayname_vars[i].get()
-
-        # "简单"模式显示2项
-        for row in range(2):
-            sensor_displayname_var = tk.StringVar(simple_frame, "")
-            sensor_displayname_vars.append(sensor_displayname_var)
-            sensor_displayname_var.set(custom_selected_displayname[row])
-            sensor_entry = ttk.Entry(simple_frame, textvariable=sensor_displayname_var, width=8)
-            sensor_entry.bind("<KeyRelease>", lambda event, ii=row: change_sensor_displayname(ii))
-            sensor_entry.grid(row=row + 2, column=0, padx=5, pady=5)
-
-            sensor_var = tk.StringVar(simple_frame, "")
-            sensor_vars.append(sensor_var)
-            sensor_combobox = ttk.Combobox(simple_frame, textvariable=sensor_var,
-                                           values=[""] + list(hardware_monitor_manager.sensors.keys()), width=60)
-            sensor_combobox.set(custom_selected_names[row])
-            sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value(ii))
-            sensor_combobox.grid(row=row + 2, column=1, padx=5, pady=5)
-            # sensor_combobox.configure(state="readonly")
-
-        # 添加“科技”标签页
+        # 添加“自定义”标签页
 
         tech_frame = tkinter.Frame(master=custom_window)
         notebook.add(tech_frame, text="  显示三项数值  ")
+        tech_frame.focus_set()  # 设置默认焦点
 
         desc_label = tk.Label(tech_frame, text="名称")
         desc_label.grid(row=1, column=0, padx=5, pady=5)
@@ -2310,6 +2278,40 @@ def UI_Page():  # 进行图像界面显示
 
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=16, command=show_instruction)
         show_instruction_btn.grid(row=0, column=3, padx=5)
+
+        # 添加“简单”标签页
+
+        simple_frame = tkinter.Frame(master=custom_window)
+        notebook.add(simple_frame, text="  显示两项图表  ")
+
+        desc_label = tk.Label(simple_frame, text="名称")
+        desc_label.grid(row=1, column=0, padx=5, pady=5)
+        desc_label = tk.Label(simple_frame, text="项目")
+        desc_label.grid(row=1, column=1, padx=5, pady=5)
+
+        def update_sensor_value(i):
+            custom_selected_names[i] = sensor_vars[i].get()
+
+        def change_sensor_displayname(i):
+            custom_selected_displayname[i] = sensor_displayname_vars[i].get()
+
+        # "简单"模式显示2项
+        for row in range(2):
+            sensor_displayname_var = tk.StringVar(simple_frame, "")
+            sensor_displayname_vars.append(sensor_displayname_var)
+            sensor_displayname_var.set(custom_selected_displayname[row])
+            sensor_entry = ttk.Entry(simple_frame, textvariable=sensor_displayname_var, width=8)
+            sensor_entry.bind("<KeyRelease>", lambda event, ii=row: change_sensor_displayname(ii))
+            sensor_entry.grid(row=row + 2, column=0, padx=5, pady=5)
+
+            sensor_var = tk.StringVar(simple_frame, "")
+            sensor_vars.append(sensor_var)
+            sensor_combobox = ttk.Combobox(simple_frame, textvariable=sensor_var,
+                                           values=[""] + list(hardware_monitor_manager.sensors.keys()), width=60)
+            sensor_combobox.set(custom_selected_names[row])
+            sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value(ii))
+            sensor_combobox.grid(row=row + 2, column=1, padx=5, pady=5)
+            # sensor_combobox.configure(state="readonly")
 
         center_window(custom_window)
         root.attributes("-disabled", 1)  # 禁用主窗口
@@ -2461,14 +2463,16 @@ def UI_Page():  # 进行图像界面显示
         save_config(config_obj)
         root.destroy()
 
+    root.bind("<Unmap>", lambda event: hide_to_tray() if root.state() == "iconic" else False)  # 点击最小化按钮时隐藏窗口
     root.protocol("WM_DELETE_WINDOW", on_closing)
+    root.resizable(0, 0)  # 锁定窗口大小不能改变
 
     # 参数全部获取后再启动截图线程
     screen_shot_thread.start()
     screen_process_thread.start()
 
     if len(sys.argv) >= 2 and sys.argv[1] == "hide":
-        hide_to_tray()
+        hide_to_tray()  # 命令行启动时设置隐藏
 
     # 进入消息循环
     root.mainloop()
