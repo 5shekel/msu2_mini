@@ -1,0 +1,34 @@
+0		发送给主机
+	30	SFR指令	ok
+	MSNCN	查询版本
+
+2		设置
+	0	设置起始位置		无响应？
+	1	设置大小			无响应？
+	2	设置颜色			无响应？
+	3		发送指令
+		0	显示彩色图片	ok
+		1	显示单色照片  LCD_Photo_wb
+		2	显示ASCII       LCD_ASCII_32X64
+		3	显示彩色图片  LCD_GB2312_16X16
+		4	显示单色图片  LCD_Photo_wb_MIX
+		5	显示ASCII       LCD_ASCII_32X64_MIX
+		6	显示彩色图片  LCD_GB2312_16X16_MIX
+		7	设置显示区域		ok
+		8	LCD_DATA
+		9	Write_LCD_Photo_fast1
+		10	设置显示方向
+		11	显示彩色图片
+	4	串流			无响应
+
+3		对Flash操作
+	0	读flash		ok
+	1	写flash		ok
+	2	擦除flash		ok
+	3	擦除后写flash	ok
+
+4		多次写入flash
+	i	写入地址		无响应？
+
+8		读取按键
+	9	通道9（目前只有一个按键）	ok
