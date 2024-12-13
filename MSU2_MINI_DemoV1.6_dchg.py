@@ -1269,7 +1269,7 @@ def show_Photo1():  # 显示照片
 
 
 def show_PC_time():
-    global State_change, current_time
+    global State_change, current_time, color_use
     FC = color_use
     photo_add = 3826
     num_add = 3651
@@ -1922,7 +1922,7 @@ except OSError as e:
         # 字体读取失败，使用默认字体
         default_font = ImageFont.load_default(netspeed_font_size)
 try:
-    netspeed_font = ImageFont.truetype(MiniMark.get_resource("resource/Orbitron-Bold.ttf"), netspeed_font_size - 2)
+    netspeed_font = ImageFont.truetype(MiniMark.get_resource("resource/Orbitron-Bold.ttf"), netspeed_font_size - 4)
 except OSError as e:
     print("字体Orbitron-Bold.ttf读取失败，%s: %s" % (type(e), e))
     netspeed_font = default_font
@@ -1942,7 +1942,7 @@ def load_config():
 
 
 def UI_Page():  # 进行图像界面显示
-    global root, text_color_red_scale, text_color_green_scale, text_color_blue_scale, Text1
+    global text_color_red_scale, text_color_green_scale, text_color_blue_scale, Text1
     global machine_model, State_change, LCD_Change_use, Label1, Label2, Label3, Label4, Label5, Label6
     global custom_selected_names, custom_selected_displayname, custom_selected_names_tech, full_custom_template
 
@@ -1951,13 +1951,16 @@ def UI_Page():  # 进行图像界面显示
     LCD_Change_use = config_obj.get("lcd_change", 0)
 
     # 创建主窗口
-    root = tk.Tk()  # 实例化主窗口
-    root.title("MG USB屏幕助手V1.0")  # 设置标题
-    # screen_width = root.winfo_screenwidth()
-    # screen_height = root.winfo_screenheight()
+    window = tk.Tk()  # 实例化主窗口
+    window.title("MG USB屏幕助手V1.0")  # 设置标题
+    # 创建 Frame 容器，并将其填充到整个窗口
+    root = tk.Frame(window, bg="white smoke", padx=10, pady=10)
+    root.pack(fill="both", expand=True)
+    # screen_width = window.winfo_screenwidth()
+    # screen_height = window.winfo_screenheight()
     # Show_X = int(screen_width / 2) - int(Show_W / 2)
     # Show_Y = int(screen_height / 2) - int(Show_H / 2)
-    # root.geometry("%dx%d+%d+%d" % (Show_W, Show_H, Show_X, Show_Y))  # 主窗口的大小以及在显示器上的位置
+    # window.geometry("%dx%d+%d+%d" % (Show_W, Show_H, Show_X, Show_Y))  # 主窗口的大小以及在显示器上的位置
 
     # 设备连接状态标签
 
@@ -1968,13 +1971,13 @@ def UI_Page():  # 进行图像界面显示
 
     def quit_window(icon, item):
         icon.stop()
-        root.destroy()
+        window.destroy()
 
     def show_window(icon, item):
         global Device_State, Device_State_Labelen
         icon.stop()
-        root.state()
-        root.after(0, root.deiconify)
+        window.after(0, window.deiconify)
+
         if Device_State_Labelen == 1:
             Device_State_Labelen = 0
         elif Device_State_Labelen == 3:
@@ -1984,7 +1987,7 @@ def UI_Page():  # 进行图像界面显示
     def hide_to_tray(event=None):
         global Device_State_Labelen
         try:
-            root.withdraw()
+            window.withdraw()
             image = Image.open(MiniMark.get_resource("resource/icon.ico"))
             menu = (
                 pystray.MenuItem("显示", show_window, default=True),
@@ -1998,10 +2001,10 @@ def UI_Page():  # 进行图像界面显示
             icon.run()  # 等待恢复窗口
         except Exception as e:
             print("failed to use pystray to hide to tray, %s:%s" % (type(e), e))
-            root.after(0, root.deiconify)
+            window.after(0, window.deiconify)
 
     hide_btn = ttk.Button(root, text="隐藏", width=12, command=hide_to_tray)
-    hide_btn.grid(row=0, column=1, padx=5)
+    hide_btn.grid(row=0, column=1, padx=5, pady=5)
     hide_btn.focus_set()  # 设置默认焦点
 
     # 选择和烧写按钮
@@ -2009,30 +2012,30 @@ def UI_Page():  # 进行图像界面显示
     Label3 = tk.Label(root, bg="white", width=21)
     Label3.grid(row=1, column=0, sticky="w", padx=5, pady=5)
     btn3 = ttk.Button(root, text="选择背景图像", width=12, command=Get_Photo_Path1)
-    btn3.grid(row=1, column=1, padx=5)
+    btn3.grid(row=1, column=1, padx=5, pady=5)
     btn5 = ttk.Button(root, text="烧写", width=8, command=Writet_Photo_Path1)
-    btn5.grid(row=1, column=2, padx=5)
+    btn5.grid(row=1, column=2, padx=5, pady=5)
 
     Label4 = tk.Label(root, bg="white", width=21)
     Label4.grid(row=2, column=0, sticky="w", padx=5, pady=5)
     btn4 = ttk.Button(root, text="选择闪存固件", width=12, command=Get_Photo_Path2)
-    btn4.grid(row=2, column=1, padx=5)
+    btn4.grid(row=2, column=1, padx=5, pady=5)
     btn6 = ttk.Button(root, text="烧写", width=8, command=Writet_Photo_Path2)
-    btn6.grid(row=2, column=2, padx=5)
+    btn6.grid(row=2, column=2, padx=5, pady=5)
 
     Label5 = tk.Label(root, bg="white", width=21)
     Label5.grid(row=3, column=0, sticky="w", padx=5, pady=5)
     btn10 = ttk.Button(root, text="选择相册图像", width=12, command=Get_Photo_Path3)
-    btn10.grid(row=3, column=1, padx=5)
+    btn10.grid(row=3, column=1, padx=5, pady=5)
     btn8 = ttk.Button(root, text="烧写", width=8, command=Writet_Photo_Path3)
-    btn8.grid(row=3, column=2, padx=5)
+    btn8.grid(row=3, column=2, padx=5, pady=5)
 
     Label6 = tk.Label(root, bg="white", width=21)
     Label6.grid(row=4, column=0, sticky="w", padx=5, pady=5)
     btn11 = ttk.Button(root, text="选择动图文件", width=12, command=Get_Photo_Path4)
-    btn11.grid(row=4, column=1, padx=5)
+    btn11.grid(row=4, column=1, padx=5, pady=5)
     btn9 = ttk.Button(root, text="烧写", width=8, command=Writet_Photo_Path4)
-    btn9.grid(row=4, column=2, padx=5)
+    btn9.grid(row=4, column=2, padx=5, pady=5)
 
     # 创建颜色滑块
 
@@ -2050,37 +2053,55 @@ def UI_Page():  # 进行图像界面显示
             color_La = "#{:02x}{:02x}{:02x}".format(r2, g2, b2)
             Label2.config(bg=color_La)
         State_change = 1
-        time.sleep(0.05)  # 鼠标移动时会频繁刷新，用来降低刷新频率
+
+    def update_label_color_red():
+        global color_use
+        r1 = int(text_color_red_scale.get())
+        if color_use // 2048 != r1:
+            update_label_color()
+
+    def update_label_color_green():
+        global color_use
+        g1 = int(text_color_green_scale.get())
+        if (color_use % 2048) // 32 != g1:
+            update_label_color()
+
+    def update_label_color_blue():
+        global color_use
+        b1 = int(text_color_blue_scale.get())
+        if color_use % 32 != b1:
+            update_label_color()
 
     scale_desc = tk.Label(root, text="文字颜色")
-    scale_desc.grid(row=0, column=3, sticky="w", padx=5, pady=5)
+    scale_desc.grid(row=0, column=3, columnspan=2, sticky="w", padx=5, pady=5)
 
     text_color_red_scale = ttk.Scale(root, from_=0, to=31, orient=tk.HORIZONTAL)
-    text_color_red_scale.grid(row=1, column=3, sticky="w", padx=5)
+    text_color_red_scale.grid(row=1, column=3, sticky="w", padx=5, pady=5)
     text_color_red_scale.set(config_obj.get("text_color_r", 31))
-    text_color_red_scale.config(command=lambda x: update_label_color())
+    text_color_red_scale.config(command=lambda x: update_label_color_red())
 
     scale_ind_r = tk.Label(root, bg="RED", width=2)
     scale_ind_r.grid(row=1, column=4, padx=5, pady=5, sticky="w")
 
     text_color_green_scale = ttk.Scale(root, from_=0, to=63, orient=tk.HORIZONTAL)
-    text_color_green_scale.grid(row=2, column=3, sticky="w", padx=5)
+    text_color_green_scale.grid(row=2, column=3, sticky="w", padx=5, pady=5)
     text_color_green_scale.set(config_obj.get("text_color_g", 32))
-    text_color_green_scale.config(command=lambda x: update_label_color())
+    text_color_green_scale.config(command=lambda x: update_label_color_green())
 
     scale_ind_g = tk.Label(root, bg="green", width=2)
     scale_ind_g.grid(row=2, column=4, padx=5, pady=5, sticky="w")
 
     text_color_blue_scale = ttk.Scale(root, from_=0, to=31, orient=tk.HORIZONTAL)
-    text_color_blue_scale.grid(row=3, column=3, sticky="w", padx=5)
+    text_color_blue_scale.grid(row=3, column=3, sticky="w", padx=5, pady=5)
     text_color_blue_scale.set(config_obj.get("text_color_b", 0))
-    text_color_blue_scale.config(command=lambda x: update_label_color())
+    text_color_blue_scale.config(command=lambda x: update_label_color_blue())
 
     scale_ind_b = tk.Label(root, bg="blue", width=2)
     scale_ind_b.grid(row=3, column=4, padx=5, pady=5, sticky="w")
 
-    Label2 = tk.Label(root, bg="#ff8000", width=2)
+    Label2 = tk.Label(root, width=2)
     Label2.grid(row=4, column=3, padx=5, pady=5)
+    update_label_color()
 
     # 自定义显示内容
 
@@ -2089,21 +2110,21 @@ def UI_Page():  # 进行图像界面显示
     custom_selected_names_tech = config_obj.get("custom_selected_names_tech", custom_selected_names_tech)
     full_custom_template = config_obj.get("full_custom_template", full_custom_template)
 
-    def center_window(window):
+    def center_window(top_window):
         # Get the dimensions of the screen
-        screen_width = window.winfo_screenwidth()
-        screen_height = window.winfo_screenheight()
+        screen_width = top_window.winfo_screenwidth()
+        screen_height = top_window.winfo_screenheight()
 
         # Get the dimensions of the parent window
-        parent_width = root.winfo_width()
-        parent_height = root.winfo_height()
-        parent_x = root.winfo_x()
-        parent_y = root.winfo_y()
+        parent_width = window.winfo_width()
+        parent_height = window.winfo_height()
+        parent_x = window.winfo_x()
+        parent_y = window.winfo_y()
 
         # Get the dimensions of the child window (default size)
-        window.update_idletasks()  # Update the window's size information
-        child_width = window.winfo_width()
-        child_height = window.winfo_height()
+        top_window.update_idletasks()  # Update the window's size information
+        child_width = top_window.winfo_width()
+        child_height = top_window.winfo_height()
 
         # Calculate the position
         x = parent_x + (parent_width - child_width) // 2
@@ -2127,7 +2148,7 @@ def UI_Page():  # 进行图像界面显示
             y = 50
 
         # Set the position of the child window
-        window.geometry("+%d+%d" % (x, y))
+        top_window.geometry("+%d+%d" % (x, y))
 
     def show_custom():
         global full_custom_template, custom_window
@@ -2137,20 +2158,20 @@ def UI_Page():  # 进行图像界面显示
 
         if custom_window is not None:
             custom_window.deiconify()  # 如果已经创建过子窗口直接显示
-            root.attributes("-disabled", 1)  # 禁用主窗口
+            window.attributes("-disabled", True)  # 禁用主窗口
             return
 
-        custom_window = tk.Toplevel(root)  # 创建一个子窗口
+        custom_window = tk.Toplevel(window)  # 创建一个子窗口
         custom_window.title("自定义显示内容")
-        custom_window.transient(root)  # 置于主窗口前面
+        custom_window.transient(window)  # 置于主窗口前面
+        custom_window.resizable(0, 0)  # 锁定窗口大小不能改变
 
         def on_closing():
-            root.attributes("-disabled", 0)  # 启用主窗口
+            window.attributes("-disabled", False)  # 启用主窗口
             # 点击关闭时仅隐藏子窗口，不真正关闭
             custom_window.withdraw()
 
         custom_window.protocol("WM_DELETE_WINDOW", on_closing)
-        custom_window.resizable(0, 0)  # 锁定窗口大小不能改变
 
         sensor_vars = []
         sensor_displayname_vars = []
@@ -2160,7 +2181,7 @@ def UI_Page():  # 进行图像界面显示
         notebook = tkinter.ttk.Notebook(custom_window)
         notebook.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="w")
 
-        # 添加“自定义”标签页
+        # 添加“自定义三项”标签页
 
         tech_frame = tkinter.Frame(master=custom_window)
         notebook.add(tech_frame, text="  显示三项数值  ")
@@ -2172,7 +2193,8 @@ def UI_Page():  # 进行图像界面显示
         desc_label.grid(row=1, column=1, padx=5, pady=5)
 
         def update_sensor_value_tech(i):
-            custom_selected_names_tech[i] = sensor_vars_tech[i].get()
+            if custom_selected_names_tech[i] != sensor_vars_tech[i].get():
+                custom_selected_names_tech[i] = sensor_vars_tech[i].get()
 
         type_list = ["1. CPU", "2. GPU", "3. 内存"]
         row = 0
@@ -2195,7 +2217,7 @@ def UI_Page():  # 进行图像界面显示
 
         # 创建自定义内容输入框
         row += 1
-        text_frame = ttk.Frame(tech_frame, padding="10")
+        text_frame = ttk.Frame(tech_frame, padding="5")
         text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
         def update_global_text(event):
@@ -2207,18 +2229,18 @@ def UI_Page():  # 进行图像界面显示
             canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
             canvas.image = tk_im
 
-        text_area = tk.Text(text_frame, wrap=tk.WORD, width=60, height=10)
+        text_area = tk.Text(text_frame, wrap=tk.WORD, width=60, height=10, padx=5, pady=5)
         text_area.insert(tk.END, full_custom_template)
         text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         view_frame = ttk.Frame(text_frame, padding="10")
-        view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=0, pady=0)
 
-        desc_label = tk.Label(view_frame, text="效果预览：", anchor="s", justify="left")
+        desc_label = tk.Label(view_frame, text="效果预览：", anchor="s", justify="left", padx=5, pady=5)
         desc_label.pack(side=tk.TOP, fill=tk.NONE, expand=False)
 
         canvas = tk.Canvas(view_frame, width=160, height=80)
-        canvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        canvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         text_area.bind("<KeyRelease>", update_global_text)
         update_global_text(None)
@@ -2228,15 +2250,15 @@ def UI_Page():  # 进行图像界面显示
         text_area["yscrollcommand"] = scrollbar.set
 
         row += 1
-        btn_frame = ttk.Frame(tech_frame, padding="10")
-        btn_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+        btn_frame = ttk.Frame(tech_frame, padding="5")
+        btn_frame.grid(row=row, column=0, columnspan=2, padx=0, pady=0, sticky="w")
 
         def show_error():
             print(full_custom_error)
             tk.messagebox.showinfo(message=full_custom_error, parent=custom_window)
 
         show_error_btn = ttk.Button(btn_frame, text="查看模板错误", width=16, command=show_error)
-        show_error_btn.grid(row=0, column=0, padx=5)
+        show_error_btn.grid(row=0, column=0, padx=5, pady=5)
 
         def example(i):
             global full_custom_template
@@ -2256,9 +2278,9 @@ def UI_Page():  # 进行图像界面显示
             update_global_text(None)
 
         example_btn_1 = ttk.Button(btn_frame, text="科技", width=16, command=lambda: example(1))
-        example_btn_1.grid(row=0, column=1, padx=5)
+        example_btn_1.grid(row=0, column=1, padx=5, pady=5)
         example_btn_2 = ttk.Button(btn_frame, text="简单", width=16, command=lambda: example(2))
-        example_btn_2.grid(row=0, column=2, padx=5)
+        example_btn_2.grid(row=0, column=2, padx=5, pady=5)
 
         def show_instruction():
             instruction = '\n'.join(
@@ -2277,9 +2299,9 @@ def UI_Page():  # 进行图像界面显示
             tk.messagebox.showinfo(message=instruction, parent=custom_window)
 
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=16, command=show_instruction)
-        show_instruction_btn.grid(row=0, column=3, padx=5)
+        show_instruction_btn.grid(row=0, column=3, padx=5, pady=5)
 
-        # 添加“简单”标签页
+        # 添加“简单两项图表”标签页
 
         simple_frame = tkinter.Frame(master=custom_window)
         notebook.add(simple_frame, text="  显示两项图表  ")
@@ -2290,10 +2312,22 @@ def UI_Page():  # 进行图像界面显示
         desc_label.grid(row=1, column=1, padx=5, pady=5)
 
         def update_sensor_value(i):
-            custom_selected_names[i] = sensor_vars[i].get()
+            global custom_plot_data
+            if custom_selected_names[i] != sensor_vars[i].get():
+                custom_selected_names[i] = sensor_vars[i].get()
+
+                # 项目变更时清空旧项目数据
+                key = None
+                if i == 0:
+                    key = "sent"
+                elif i == 1:
+                    key = "recv"
+                for index in range(0, len(custom_plot_data)):
+                    custom_plot_data[index][key] = 0
 
         def change_sensor_displayname(i):
-            custom_selected_displayname[i] = sensor_displayname_vars[i].get()
+            if custom_selected_displayname[i] != sensor_displayname_vars[i].get():
+                custom_selected_displayname[i] = sensor_displayname_vars[i].get()
 
         # "简单"模式显示2项
         for row in range(2):
@@ -2314,25 +2348,25 @@ def UI_Page():  # 进行图像界面显示
             # sensor_combobox.configure(state="readonly")
 
         center_window(custom_window)
-        root.attributes("-disabled", 1)  # 禁用主窗口
+        window.attributes("-disabled", True)  # 禁用主窗口
 
     show_custom_btn = ttk.Button(root, text="自定义内容", width=12, command=show_custom)
-    show_custom_btn.grid(row=5, column=1, padx=5)
+    show_custom_btn.grid(row=5, column=1, padx=5, pady=5)
 
     # 方向和翻页按钮
 
     btn7 = ttk.Button(root, text="切换显示方向", width=12, command=LCD_Change)
-    btn7.grid(row=6, column=1, padx=5)
+    btn7.grid(row=6, column=1, padx=5, pady=5)
 
     btn1 = ttk.Button(root, text="上翻页", width=8, command=Page_UP)
-    btn1.grid(row=5, column=2, padx=5)
+    btn1.grid(row=5, column=2, padx=5, pady=5)
 
     btn2 = ttk.Button(root, text="下翻页", width=8, command=Page_Down)
-    btn2.grid(row=6, column=2, padx=5)
+    btn2.grid(row=6, column=2, padx=5, pady=5)
 
     # 创建一个新容器
-    screen_frame = tk.Frame(root)
-    screen_frame.grid(row=5, column=3, rowspan=2, columnspan=2)
+    # screen_frame = tk.Frame(root)
+    # screen_frame.grid(row=5, column=3, rowspan=4, columnspan=2, padx=0, pady=0)
 
     # 屏幕编号
 
@@ -2345,6 +2379,8 @@ def UI_Page():  # 进行图像界面显示
         except ValueError as e:
             if len(number_var.get()) > 0:
                 print("Invalid number entered: %s: %s" % (type(e), e))
+            return
+        if screenshot_monitor_id == screenshot_monitor_id_tmp:
             return
 
         with mss() as sct:
@@ -2366,11 +2402,11 @@ def UI_Page():  # 进行图像界面显示
     number_var.trace_add("write", change_screenshot_monitor)
     number_var.set(config_obj.get("number_var", "1"))
 
-    label_screen_number = ttk.Label(screen_frame, text="屏幕编号")
-    label_screen_number.grid(row=0, column=0, padx=5)
+    label_screen_number = ttk.Label(root, text="屏幕编号")
+    label_screen_number.grid(row=5, column=3, padx=5, pady=5)
 
-    number_entry = ttk.Entry(screen_frame, textvariable=number_var, width=4)
-    number_entry.grid(row=0, column=1, padx=5, pady=5)
+    number_entry = ttk.Entry(root, textvariable=number_var, width=4)
+    number_entry.grid(row=5, column=4, padx=5, pady=5)
 
     # fps
 
@@ -2384,17 +2420,17 @@ def UI_Page():  # 进行图像界面显示
         except ValueError as e:
             if len(fps_var.get()) > 0:
                 print("Invalid number entered: %s: %s" % (type(e), e))
-        if screenshot_limit_fps_tmp > 0:
+        if 0 < screenshot_limit_fps_tmp != screenshot_limit_fps:
             screenshot_limit_fps = screenshot_limit_fps_tmp
 
     fps_var.trace_add("write", change_fps)
     fps_var.set(config_obj.get("fps_var", "100"))
 
-    label = ttk.Label(screen_frame, text="最大 FPS")
-    label.grid(row=1, column=0, padx=5)
+    label = ttk.Label(root, text="最大 FPS")
+    label.grid(row=6, column=3, padx=5, pady=5)
 
-    fps_entry = ttk.Entry(screen_frame, textvariable=fps_var, width=4)
-    fps_entry.grid(row=1, column=1, padx=5, pady=5)
+    fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
+    fps_entry.grid(row=6, column=4, padx=5, pady=5)
 
     # 区域
 
@@ -2410,6 +2446,8 @@ def UI_Page():  # 进行图像界面显示
             return
         if len(t) != 4:
             print("screen_region Invalid, example: 0,0,160,80")
+            return
+        if screenshot_region == t:
             return
 
         screenshot_region = t
@@ -2430,17 +2468,15 @@ def UI_Page():  # 进行图像界面显示
     screen_region_var.trace_add("write", change_screen_region)
     screen_region_var.set(config_obj.get("screen_region_var", "0,0,,"))
 
-    label = ttk.Label(screen_frame, text="区域：左,上,宽,高")
-    label.grid(row=2, column=0, padx=5, columnspan=2)
+    label = ttk.Label(root, text="投屏区域(左,上,宽,高):")
+    label.grid(row=7, column=1, columnspan=2, sticky="E", padx=5, pady=5)
 
-    screen_region_entry = ttk.Entry(screen_frame, textvariable=screen_region_var, width=14)
-    screen_region_entry.grid(row=3, column=0, padx=5, pady=5, columnspan=2)
+    screen_region_entry = ttk.Entry(root, textvariable=screen_region_var, width=11)
+    screen_region_entry.grid(row=7, column=3, columnspan=2, sticky="E", padx=5, pady=5)
 
     # 创建信息显示文本框
-    Text1 = tk.Text(root, width=22, height=4)
-    Text1.grid(row=5, column=0, rowspan=2, padx=5, pady=5)
-
-    update_label_color()
+    Text1 = tk.Text(root, width=22, height=4, padx=5, pady=5)
+    Text1.grid(row=5, column=0, rowspan=3, columnspan=1, sticky="NS", padx=5, pady=5)
 
     def on_closing():
         # 结束以后保存配置
@@ -2461,21 +2497,21 @@ def UI_Page():  # 进行图像界面显示
         }
 
         save_config(config_obj)
-        root.destroy()
+        window.destroy()
 
-    root.bind("<Unmap>", lambda event: hide_to_tray() if root.state() == "iconic" else False)  # 点击最小化按钮时隐藏窗口
-    root.protocol("WM_DELETE_WINDOW", on_closing)
-    root.resizable(0, 0)  # 锁定窗口大小不能改变
+    window.protocol("WM_DELETE_WINDOW", on_closing)
+    window.resizable(0, 0)  # 锁定窗口大小不能改变
+    # 点击最小化按钮时隐藏窗口
+    window.bind("<Unmap>", lambda event: hide_to_tray() if window.state() == "iconic" else False)
+    if len(sys.argv) >= 2 and sys.argv[1] == "hide":
+        hide_to_tray()  # 命令行启动时设置隐藏
 
     # 参数全部获取后再启动截图线程
     screen_shot_thread.start()
     screen_process_thread.start()
 
-    if len(sys.argv) >= 2 and sys.argv[1] == "hide":
-        hide_to_tray()  # 命令行启动时设置隐藏
-
     # 进入消息循环
-    root.mainloop()
+    window.mainloop()
 
 
 class MSN_Device:  # 定义一个结构体
@@ -2610,7 +2646,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     # LCD_State(1)#配置显示方向
     # Text1.insert(tk.END,"设备识别码:")
 
-    # Label1=tk.Label(root,text="设备已连接",bg="GREEN")
+    # Label1=tk.Label(window,text="设备已连接",bg="GREEN")
 
     # for i in range(1,37):
     #   Write_Flash_Photo_fast(100*(i-1),str(i))#160*80分辨率彩色图片，占用100个Page
@@ -2746,7 +2782,6 @@ Label4 = None
 Label5 = None
 Label6 = None
 Text1 = None
-root = None
 text_color_red_scale = None
 text_color_green_scale = None
 text_color_blue_scale = None
@@ -2766,7 +2801,7 @@ def load_task():
         HardwareMonitorManager = None
         hardware_monitor_manager = None
         print("Libre hardware monitor 加载失败, %s:%s" % (type(e), e))
-    print("load finished")
+    print("Libre hardware monitor load finished")
 
 
 def daemon_task():
