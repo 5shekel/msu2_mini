@@ -50,9 +50,17 @@ Img_data_use = bytearray()  # 空数组
 size_USE_X1 = 160
 size_USE_Y1 = 80
 
-
 # SHOW_WIDTH = 160  # 画布宽度
 # SHOW_HEIGHT = 80  # 画布高度
+
+imagefiletypes = [
+    ("Image file", "*.jpg"),
+    ("Image file", "*.jpeg"),
+    ("Image file", "*.png"),
+    ("Image file", "*.bmp"),
+    ("Image file", "*.jfif"),
+    ("Image file", "*.tiff"),
+]
 
 
 def insert_disabled_text(item, text, clean=True):
@@ -63,81 +71,14 @@ def insert_disabled_text(item, text, clean=True):
     item.config(state=tk.DISABLED)
 
 
-# 按键功能定义
-def Get_Photo_Path1():  # 获取文件路径
-    global photo_path1, Label3
-    photo_path = tk.filedialog.askopenfilename(
-        title="选择文件",
-        filetypes=[
-            ("Image file", "*.jpg"),
-            ("Image file", "*.jpeg"),
-            ("Image file", "*.png"),
-            ("Image file", "*.bmp"),
-        ]
-    )
-    if photo_path != "" and photo_path != photo_path1:
-        photo_path1 = photo_path
-        insert_disabled_text(Label3, photo_path1)
+def convertImageFileToRGB(file_path):
+    global Text1
+    img_data = bytearray()
+    if not os.path.exists(file_path):  # 检查文件是否存在
+        insert_disabled_text(Text1, "文件不存在：%s\n" % file_path, False)
+        return img_data  # 如果文件不存在，直接返回，不执行后续代码
 
-
-def Get_Photo_Path2():  # 获取文件路径
-    global photo_path2, Label4
-    photo_path = tk.filedialog.askopenfilename(
-        title="选择文件",
-        filetypes=[
-            ("Bin file", "*.bin")
-        ]
-    )
-    if photo_path != "":
-        photo_path = photo_path[:-4]  # 去掉扩展名".bin"
-        if photo_path != photo_path2:
-            photo_path2 = photo_path
-            insert_disabled_text(Label4, photo_path2)
-
-
-def Get_Photo_Path3():  # 获取文件路径
-    global photo_path3, Label5  # 支持JPG、PNG、BMP图像格式
-    photo_path = tk.filedialog.askopenfilename(
-        title="选择文件",
-        filetypes=[
-            ("Image file", "*.jpg"),
-            ("Image file", "*.jpeg"),
-            ("Image file", "*.png"),
-            ("Image file", "*.bmp"),
-        ]
-    )
-    if photo_path != "" and photo_path != photo_path3:
-        photo_path3 = photo_path
-        insert_disabled_text(Label5, photo_path3)
-
-
-def Get_Photo_Path4():  # 获取文件路径
-    global photo_path4, Label6
-    photo_path = tk.filedialog.askopenfilename(
-        title="选择文件",
-        filetypes=[
-            ("Image file", "*.jpg"),
-            ("Image file", "*.jpeg"),
-            ("Image file", "*.png"),
-            ("Image file", "*.bmp"),
-        ]
-    )
-    if photo_path != "" and photo_path != photo_path4:
-        photo_path4 = photo_path
-        insert_disabled_text(Label6, photo_path4)
-
-
-def Write_Photo_Path1():  # 写入文件
-    global photo_path1, write_path_index, Text1, Img_data_use
-    if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_disabled_text(Text1, "有正在执行的任务%d，写入失败\n" % write_path_index, False)
-        return
-    if photo_path1 == "":
-        insert_disabled_text(Text1, "Path is None\n", False)
-        return
-
-    insert_disabled_text(Text1, "图像格式转换...\n")
-    im1 = Image.open(photo_path1)
+    im1 = Image.open(file_path)
     if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
         im2 = im1.resize((int(80 * im1.width / im1.height), 80))
         Img_m = int(im2.width / 2)
@@ -149,12 +90,58 @@ def Write_Photo_Path1():  # 写入文件
         box = (0, Img_m - 40, 160, Img_m + 40)  # 定义需要裁剪的空间
         im2 = im2.crop(box)
     im2 = im2.convert("RGB")  # 转换为RGB格式
-    Img_data_use = bytearray()  # 空数组
     for y in range(0, 80):  # 逐字解析编码
         for x in range(0, 160):  # 逐字解析编码
             r, g, b = im2.getpixel((x, y))
-            Img_data_use.append(((r >> 3) << 3) | (g >> 5))
-            Img_data_use.append((((g % 32) >> 2) << 5) | (b >> 3))
+            img_data.append(((r >> 3) << 3) | (g >> 5))
+            img_data.append((((g % 32) >> 2) << 5) | (b >> 3))
+    return img_data
+
+
+# 按键功能定义
+def Get_Photo_Path1():  # 获取文件路径
+    global photo_path1, Label3
+    photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
+    if photo_path != "" and photo_path != photo_path1:
+        photo_path1 = photo_path
+        insert_disabled_text(Label3, photo_path1)
+
+
+def Get_Photo_Path2():  # 获取文件路径
+    global photo_path2, Label4
+    photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("Bin file", "*.bin")])
+    if photo_path != "" and photo_path != photo_path2:
+        photo_path2 = photo_path
+        insert_disabled_text(Label4, photo_path2)
+
+
+def Get_Photo_Path3():  # 获取文件路径
+    global photo_path3, Label5  # 支持JPG、PNG、BMP图像格式
+    photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
+    if photo_path != "" and photo_path != photo_path3:
+        photo_path3 = photo_path
+        insert_disabled_text(Label5, photo_path3)
+
+
+def Get_Photo_Path4():  # 获取文件路径
+    global photo_path4, Label6
+    photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
+    if photo_path != "" and photo_path != photo_path4:
+        photo_path4 = photo_path
+        insert_disabled_text(Label6, photo_path4)
+
+
+def Write_Photo_Path1():  # 写入文件
+    global photo_path1, write_path_index, Text1, Img_data_use
+    if write_path_index != 0:  # 确保上次执行写入完毕
+        insert_disabled_text(Text1, "有正在执行的任务%d，写入失败\n" % write_path_index, False)
+        return
+    if photo_path1 == "":
+        insert_disabled_text(Text1, "Path1 is None\n", False)
+        return
+
+    insert_disabled_text(Text1, "图像格式转换...\n")
+    Img_data_use = convertImageFileToRGB(photo_path1)
     write_path_index = 1
 
 
@@ -164,7 +151,7 @@ def Write_Photo_Path2():  # 写入文件
         insert_disabled_text(Text1, "有正在执行的任务%d，写入失败\n" % write_path_index, False)
         return
     if photo_path2 == "":
-        insert_disabled_text(Text1, "Path is None\n", False)
+        insert_disabled_text(Text1, "Path2 is None\n", False)
         return
 
     insert_disabled_text(Text1, "准备烧写Flash固件...\n")
@@ -177,29 +164,11 @@ def Write_Photo_Path3():  # 写入文件
         insert_disabled_text(Text1, "有正在执行的任务%d，转换失败\n" % write_path_index, False)
         return
     if photo_path3 == "":
-        insert_disabled_text(Text1, "Path is None\n", False)
+        insert_disabled_text(Text1, "Path3 is None\n", False)
         return
 
     insert_disabled_text(Text1, "图像格式转换...\n")
-
-    im1 = Image.open(photo_path3)
-    if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
-        im2 = im1.resize((int(80 * im1.width / im1.height), 80))
-        Img_m = int(im2.width / 2)
-        box = (Img_m - 80, 0, Img_m + 80, 80)  # 定义需要裁剪的空间
-        im2 = im2.crop(box)
-    else:
-        im2 = im1.resize((160, int(160 * im1.height / im1.width)))
-        Img_m = int(im2.height / 2)
-        box = (0, Img_m - 40, 160, Img_m + 40)  # 定义需要裁剪的空间
-        im2 = im2.crop(box)
-    im2 = im2.convert("RGB")  # 转换为RGB格式
-    Img_data_use = bytearray()  # 空数组
-    for y in range(0, 80):  # 逐字解析编码
-        for x in range(0, 160):  # 逐字解析编码
-            r, g, b = im2.getpixel((x, y))
-            Img_data_use.append(((r >> 3) << 3) | (g >> 5))
-            Img_data_use.append((((g % 32) >> 2) << 5) | (b >> 3))
+    Img_data_use = convertImageFileToRGB(photo_path3)
     write_path_index = 3
 
 
@@ -209,46 +178,24 @@ def Write_Photo_Path4():  # 写入文件
         insert_disabled_text(Text1, "有正在执行的任务%d，转换失败\n" % write_path_index, False)
         return
     if photo_path4 == "":
-        insert_disabled_text(Text1, "Path is None\n", False)
+        insert_disabled_text(Text1, "Path4 is None\n", False)
         return
 
     insert_disabled_text(Text1, "动图格式转换中...\n")
     Path_use = photo_path4
-    if Path_use[-4] == ".":
-        write_path_use = Path_use[-4:]
-        Path_use = Path_use[:-5]
-    elif Path_use[-5] == ".":
-        write_path_use = Path_use[-5:]
-        Path_use = Path_use[:-6]
-    else:
+    try:
+        index = Path_use.rindex(".")
+    except ValueError:
         insert_disabled_text(Text1, "动图名称不符合要求！\n", False)
         return  # 如果文件名不符合要求，直接返回
+    path_file_type = Path_use[index:]
+    Path_use = Path_use[:index - 1]
 
     Img_data_use = bytearray()
     u_time = time.time()
     for i in range(0, 36):  # 依次转换36张图片
-        file_path = "%s%d%s" % (Path_use, i, write_path_use)
-        if not os.path.exists(file_path):  # 检查文件是否存在
-            insert_disabled_text(Text1, "缺少动图文件：%s\n" % file_path, False)
-            return  # 如果文件不存在，直接返回，不执行后续代码
-
-        im1 = Image.open(file_path)
-        if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
-            im2 = im1.resize((int(80 * im1.width / im1.height), 80))
-            Img_m = int(im2.width / 2)
-            box = (Img_m - 80, 0, Img_m + 80, 80)  # 定义需要裁剪的空间
-            im2 = im2.crop(box)
-        else:
-            im2 = im1.resize((160, int(160 * im1.height / im1.width)))
-            Img_m = int(im2.height / 2)
-            box = (0, Img_m - 40, 160, Img_m + 40)  # 定义需要裁剪的空间
-            im2 = im2.crop(box)
-        im2 = im2.convert("RGB")  # 转换为RGB格式
-        for y in range(0, 80):  # 逐字解析编码
-            for x in range(0, 160):  # 逐字解析编码
-                r, g, b = im2.getpixel((x, y))
-                Img_data_use.append(((r >> 3) << 3) | (g >> 5))
-                Img_data_use.append((((g % 32) >> 2) << 5) | (b >> 3))
+        file_path = "%s%d%s" % (Path_use, i, path_file_type)
+        Img_data_use = Img_data_use + convertImageFileToRGB(file_path)
 
     insert_disabled_text(Text1, "转换完成，耗时%.3f秒\n" % (time.time() - u_time), False)
     write_path_index = 4
@@ -620,9 +567,8 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
         return 0
 
 
-def Write_Flash_Photo_fast(Page_add, Photo_name):  # 往Flash里面写入Bin格式的照片
+def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式的照片
     global Text1
-    filepath = "%s.bin" % Photo_name  # 合成文件名称
     try:  # 尝试打开bin文件
         binfile = open(filepath, "rb")  # 以只读方式打开
     except Exception as e:  # 出现异常
@@ -1947,6 +1893,7 @@ def UI_Page():  # 进行图像界面显示
         try:
             image = Image.open(MiniMark.get_resource("resource/icon.ico"))
         except Exception:
+            # 没找到图标时使用一个灰方块做图标
             image = Image.new("RGB", (16, 16), (128, 128, 128))
         try:
             window.withdraw()  # 隐藏窗口
@@ -2059,7 +2006,7 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_b = tk.Label(root, bg="blue", width=2)
     scale_ind_b.grid(row=3, column=4, padx=5, pady=5, sticky=tk.W)
 
-    Label2 = tk.Label(root, width=2)
+    Label2 = tk.Label(root, width=2)  # 颜色预览框
     Label2.grid(row=4, column=3, columnspan=2, padx=5, pady=5)
     update_label_color()
 
@@ -2576,12 +2523,12 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     # Read_MSN_Data(My_MSN_Data)  # 从设备读取更详细的数据，如序列号等
     LCD_Change_now = LCD_Change_use
     LCD_State(LCD_Change_now)  # 配置显示方向
-    set_device_state(1)  # 可以正常连接
     State_change = 1  # 状态发生变化
     Screen_Error = 0
     # 配置按键阈值
     ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9)) / 2
     ADC_det = ADC_det - 125  # 根据125的阈值判断是否被按下
+    set_device_state(1)  # 可以正常连接
 
     # 闪存芯片P25D80具有1024KB的存储空间，以256B为一页，共4096页，使用0~4095作为页地址
     # 闪存上存储的数据信息如下：
@@ -2702,13 +2649,10 @@ hardware_monitor_manager = None
 
 def load_task():
     global hardware_monitor_manager
-
     try:
         HardwareMonitorManager = load_hardware_monitor()
         hardware_monitor_manager = HardwareMonitorManager()
     except Exception as e:
-        HardwareMonitorManager = None
-        hardware_monitor_manager = None
         print("Libre hardware monitor 加载失败, %s" % traceback.format_exc())
     print("Libre hardware monitor load finished")
 
@@ -2716,8 +2660,8 @@ def load_task():
 def daemon_task():
     global ser, current_time, Device_State, Device_State_Labelen
 
-    try:
-        while MG_daemon_running:
+    while MG_daemon_running:
+        try:
             current_time = datetime.now()
             if Device_State_Labelen == 2:
                 set_device_state(Device_State)
@@ -2737,13 +2681,14 @@ def daemon_task():
                     if Device_State == 0:
                         print("%s 没有找到可用的MSN设备" % get_formatted_time_string(current_time))
                         time.sleep(1)  # 防止频繁重试
-    except Exception as e:  # 出现非预期异常
-        print("Exception in daemon_task, %s" % traceback.format_exc())
-    finally:
-        # stop
-        print("stop daemon")
-        if ser is not None and ser.is_open:
-            ser.close()  # 正常关闭串口
+        except Exception as e:  # 出现非预期异常
+            print("Exception in daemon_task, %s" % traceback.format_exc())
+            time.sleep(1)  # 防止频繁重试
+
+    # stop
+    print("stop daemon")
+    if ser is not None and ser.is_open:
+        ser.close()  # 正常关闭串口
 
 
 # 设备交互只能串行进行，所有的跟设备交互操作必须全部由daemon_thread完成
