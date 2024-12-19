@@ -16,7 +16,7 @@ def get_resource(relative_path):
     #     base_path = sys._MEIPASS  # pyinstaller打包后的路径
     base_path = getattr(sys, "_MEIPASS", None)
     if base_path is None:
-        base_path = os.path.abspath(".")
+        base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.normpath(os.path.join(base_path, relative_path))
 
 

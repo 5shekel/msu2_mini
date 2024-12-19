@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
 import json  # 用于保存json格式配置
@@ -278,7 +279,10 @@ def Page_Down():  # 下一页
 
 
 def LCD_Change():  # 切换显示方向
-    global LCD_Change_use
+    global LCD_Change_use, Device_State
+    if Device_State == 0:
+        print("设备未连接，切换失败")
+        return
     if LCD_Change_use == 0:  # 0
         LCD_Change_use = 1
     else:  # 1
@@ -1686,7 +1690,7 @@ def load_hardware_monitor():
 
 custom_selected_names = [""] * 2
 custom_selected_displayname = [""] * 2
-custom_selected_names_tech = [""] * 3
+custom_selected_names_tech = [""] * 6
 
 custom_last_refresh_time = None
 custom_plot_data = None
@@ -1800,6 +1804,8 @@ def get_full_custom_im():
     custom_values = []
     for name in custom_selected_names_tech:
         if name == "":
+            value, value_formatted = 0, "--"
+            custom_values.append((value, value_formatted))
             continue
         try:
             value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
@@ -1882,7 +1888,7 @@ except OSError as e:
 try:
     netspeed_font = ImageFont.truetype(MiniMark.get_resource("resource/Orbitron-Bold.ttf"), netspeed_font_size - 4)
 except OSError as e:
-    print("字体Orbitron-Bold.ttf读取失败，%s" % traceback.format_exc())
+    print("字体Orbitron-Bold.ttf读取失败，%s" % e)
     netspeed_font = default_font
 
 
@@ -1912,11 +1918,11 @@ def UI_Page():  # 进行图像界面显示
     window = tk.Tk()  # 实例化主窗口
     window.title("MG USB屏幕助手V1.0")  # 设置标题
     # 创建 Frame 容器，并将其填充到整个窗口
-    root = tk.Frame(window, bg="white smoke", padx=10, pady=10)
+    root = tk.Frame(window, bg="white smoke", padx=10, pady=10, highlightthickness=1, highlightcolor="lightgray")
     root.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     # 设备连接状态标签
-    Label1 = tk.Label(root, text="设备未连接", fg="white", bg="RED")
+    Label1 = tk.Label(root, text="设备未连接", fg="white", bg="red")
     Label1.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
 
     # 隐藏按钮
@@ -1939,8 +1945,11 @@ def UI_Page():  # 进行图像界面显示
     def hide_to_tray(event=None):
         global Device_State_Labelen
         try:
-            window.withdraw()
             image = Image.open(MiniMark.get_resource("resource/icon.ico"))
+        except Exception:
+            image = Image.new("RGB", (16, 16), (128, 128, 128))
+        try:
+            window.withdraw()  # 隐藏窗口
             menu = (
                 pystray.MenuItem("显示", show_window, default=True),
                 pystray.MenuItem("退出", quit_window)
@@ -2031,7 +2040,7 @@ def UI_Page():  # 进行图像界面显示
     text_color_red_scale.set(config_obj.get("text_color_r", 31))
     text_color_red_scale.config(command=lambda x: update_label_color_red())
 
-    scale_ind_r = tk.Label(root, bg="RED", width=2)
+    scale_ind_r = tk.Label(root, bg="red", width=2)
     scale_ind_r.grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
 
     text_color_green_scale = ttk.Scale(root, from_=0, to=63, orient=tk.HORIZONTAL)
@@ -2051,7 +2060,7 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_b.grid(row=3, column=4, padx=5, pady=5, sticky=tk.W)
 
     Label2 = tk.Label(root, width=2)
-    Label2.grid(row=4, column=3, padx=5, pady=5)
+    Label2.grid(row=4, column=3, columnspan=2, padx=5, pady=5)
     update_label_color()
 
     # 自定义显示内容
@@ -2102,7 +2111,7 @@ def UI_Page():  # 进行图像界面显示
         top_window.geometry("+%d+%d" % (x, y))
 
     def show_custom():
-        global full_custom_template, sub_window
+        global full_custom_template, sub_window, custom_selected_names_tech
         if hardware_monitor_manager is None:
             tk.messagebox.showerror(message="Libre Hardware Monitor 正在加载，请稍候……")
             return
@@ -2132,10 +2141,10 @@ def UI_Page():  # 进行图像界面显示
         notebook = tkinter.ttk.Notebook(sub_window)
         notebook.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=tk.W)
 
-        # 添加“自定义三项”标签页
+        # 添加“自定义多项”标签页
 
         tech_frame = tkinter.Frame(master=sub_window)
-        notebook.add(tech_frame, text="  显示三项数值  ")
+        notebook.add(tech_frame, text="  显示多项数值  ")
         tech_frame.focus_set()  # 设置默认焦点
 
         desc_label = tk.Label(tech_frame, text="名称")
@@ -2148,28 +2157,35 @@ def UI_Page():  # 进行图像界面显示
                 custom_selected_names_tech[i] = sensor_vars_tech[i].get()
 
         type_list = ["1. CPU", "2. GPU", "3. 内存"]
-        row = 0
-        for row in range(3):
-            sensor_label = tk.Label(tech_frame, text=type_list[row], width=8, anchor=tk.W)
-            sensor_label.grid(row=row + 2, column=0, padx=5, pady=5)
+        row = 6  # 设置自定义项目数
+        for row1 in range(row):
+            if row1 >= len(custom_selected_names_tech):
+                custom_selected_names_tech = custom_selected_names_tech + [""]
+            if row1 < len(type_list):
+                rowtype = type_list[row1]
+            else:
+                rowtype = "%d." % (row1 + 1)
+
+            sensor_label = tk.Label(tech_frame, text=rowtype, width=8, anchor=tk.W)
+            sensor_label.grid(row=row1 + 2, column=0, sticky=tk.EW, padx=5, pady=5)
 
             sensor_var = tk.StringVar(tech_frame, "")
             sensor_vars_tech.append(sensor_var)
             sensor_combobox = ttk.Combobox(tech_frame, textvariable=sensor_var,
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()), width=60)
-            sensor_combobox.set(custom_selected_names_tech[row])
-            sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value_tech(ii))
-            sensor_combobox.grid(row=row + 2, column=1, padx=5, pady=5)
-            # sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑，这样会导致无法查看全部的选择文字
+            sensor_combobox.set(custom_selected_names_tech[row1])
+            sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row1: update_sensor_value_tech(ii))
+            sensor_combobox.grid(row=row1 + 2, column=1, sticky=tk.EW, padx=5, pady=5)
+            sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑，这样会导致无法查看全部的选择文字
 
-        row += 3
+        row += 2
         desc_label = tk.Label(tech_frame, text="完全自定义模板代码：", anchor=tk.W, justify=tk.LEFT)
         desc_label.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
 
         # 创建自定义内容输入框
         row += 1
         text_frame = ttk.Frame(tech_frame, padding="5")
-        text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky=tk.EW)
 
         def update_global_text(event):
             global full_custom_template
@@ -2180,7 +2196,7 @@ def UI_Page():  # 进行图像界面显示
             canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
             canvas.image = tk_im
 
-        text_area = tk.Text(text_frame, wrap=tk.WORD, width=60, height=10, padx=5, pady=5)
+        text_area = tk.Text(text_frame, wrap=tk.WORD, width=40, height=10, padx=5, pady=5)
         text_area.insert(tk.END, full_custom_template)
         text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
@@ -2188,7 +2204,7 @@ def UI_Page():  # 进行图像界面显示
         view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=0, pady=0)
 
         desc_label = tk.Label(view_frame, text="效果预览：", anchor=tk.W, justify=tk.LEFT, padx=5, pady=5)
-        desc_label.pack(side=tk.TOP, fill=tk.NONE, expand=False)
+        desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         canvas = tk.Canvas(view_frame, width=160, height=80)
         canvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -2208,7 +2224,7 @@ def UI_Page():  # 进行图像界面显示
             print(full_custom_error)
             tk.messagebox.showinfo(message=full_custom_error, parent=sub_window)
 
-        show_error_btn = ttk.Button(btn_frame, text="查看模板错误", width=16, command=show_error)
+        show_error_btn = ttk.Button(btn_frame, text="查看模板错误", width=15, command=show_error)
         show_error_btn.grid(row=0, column=0, padx=5, pady=5)
 
         def example(i):
@@ -2228,9 +2244,9 @@ def UI_Page():  # 进行图像界面显示
             text_area.insert(tk.END, full_custom_template)
             update_global_text(None)
 
-        example_btn_1 = ttk.Button(btn_frame, text="科技", width=16, command=lambda: example(1))
+        example_btn_1 = ttk.Button(btn_frame, text="科技", width=15, command=lambda: example(1))
         example_btn_1.grid(row=0, column=1, padx=5, pady=5)
-        example_btn_2 = ttk.Button(btn_frame, text="简单", width=16, command=lambda: example(2))
+        example_btn_2 = ttk.Button(btn_frame, text="简单", width=15, command=lambda: example(2))
         example_btn_2.grid(row=0, column=2, padx=5, pady=5)
 
         def show_instruction():
@@ -2249,7 +2265,7 @@ def UI_Page():  # 进行图像界面显示
 
             tk.messagebox.showinfo(message=instruction, parent=sub_window)
 
-        show_instruction_btn = ttk.Button(btn_frame, text="说明", width=16, command=show_instruction)
+        show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, command=show_instruction)
         show_instruction_btn.grid(row=0, column=3, padx=5, pady=5)
 
         # 添加“简单两项图表”标签页
@@ -2287,7 +2303,7 @@ def UI_Page():  # 进行图像界面显示
             sensor_displayname_var.set(custom_selected_displayname[row])
             sensor_entry = ttk.Entry(simple_frame, textvariable=sensor_displayname_var, width=8)
             sensor_entry.bind("<KeyRelease>", lambda event, ii=row: change_sensor_displayname(ii))
-            sensor_entry.grid(row=row + 2, column=0, padx=5, pady=5)
+            sensor_entry.grid(row=row + 2, column=0, sticky=tk.EW, padx=5, pady=5)
 
             sensor_var = tk.StringVar(simple_frame, "")
             sensor_vars.append(sensor_var)
@@ -2295,8 +2311,8 @@ def UI_Page():  # 进行图像界面显示
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()), width=60)
             sensor_combobox.set(custom_selected_names[row])
             sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value(ii))
-            sensor_combobox.grid(row=row + 2, column=1, padx=5, pady=5)
-            # sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑，这样会导致无法查看全部的选择文字
+            sensor_combobox.grid(row=row + 2, column=1, sticky=tk.EW, padx=5, pady=5)
+            sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑，这样会导致无法查看全部的选择文字
 
         center_window(sub_window)
         window.attributes("-disabled", True)  # 禁用主窗口
@@ -2353,7 +2369,7 @@ def UI_Page():  # 进行图像界面显示
     label_screen_number.grid(row=5, column=3, padx=5, pady=5)
 
     number_entry = ttk.Entry(root, textvariable=number_var, width=4)
-    number_entry.grid(row=5, column=4, padx=5, pady=5)
+    number_entry.grid(row=5, column=4, sticky=tk.EW, padx=5, pady=5)
 
     # fps
 
@@ -2377,7 +2393,7 @@ def UI_Page():  # 进行图像界面显示
     label.grid(row=6, column=3, padx=5, pady=5)
 
     fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
-    fps_entry.grid(row=6, column=4, padx=5, pady=5)
+    fps_entry.grid(row=6, column=4, sticky=tk.EW, padx=5, pady=5)
 
     # 区域
 
@@ -2419,7 +2435,7 @@ def UI_Page():  # 进行图像界面显示
     label.grid(row=7, column=1, columnspan=2, sticky=tk.E, padx=5, pady=5)
 
     screen_region_entry = ttk.Entry(root, textvariable=screen_region_var, width=11)
-    screen_region_entry.grid(row=7, column=3, columnspan=2, sticky=tk.E, padx=5, pady=5)
+    screen_region_entry.grid(row=7, column=3, columnspan=2, sticky=tk.EW, padx=5, pady=5)
 
     # 创建信息显示文本框
     Text1 = tk.Text(root, state=tk.DISABLED, width=22, height=4, padx=5, pady=5)
@@ -2495,7 +2511,7 @@ def set_device_state(state):
 
 
 def Get_MSN_Device(port_list):  # 尝试获取MSN设备
-    global ADC_det, ser, State_change
+    global ADC_det, ser, State_change, current_time
     global Screen_Error, LCD_Change_now, LCD_Change_use
     if ser is not None and ser.is_open:
         ser.close()  # 先将异常的串口连接关闭，防止无法打开
@@ -2539,7 +2555,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                 recv = recv.decode("gbk")  # 获取串口数据
             # 确保为MSN设备
             if len(recv) > 5 and ord(recv[0]) == 0 and recv[1:6] == "MSNCN":
-                print("MSN设备%s连接完成" % port_list[i].name)
+                print("%s MSN设备%s连接完成" % (get_formatted_time_string(current_time), port_list[i].name))
                 # 对MSN设备进行登记
                 My_MSN_Device = MSN_Device(port_list[i].name, msn_version)
                 break  # 退出当前for循环
@@ -2557,7 +2573,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
 
     My_MSN_Data = Read_M_SFR_Data(256)  # 读取u8在0x0100之后的128字节
     Print_MSN_Data(My_MSN_Data)  # 解析字节中的数据格式
-    Read_MSN_Data(My_MSN_Data)
+    # Read_MSN_Data(My_MSN_Data)  # 从设备读取更详细的数据，如序列号等
     LCD_Change_now = LCD_Change_use
     LCD_State(LCD_Change_now)  # 配置显示方向
     set_device_state(1)  # 可以正常连接
@@ -2639,6 +2655,10 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         show_full_custom(text_color=rgb_tuple)
 
 
+def get_formatted_time_string(time):
+    return time.strftime("%Y-%m-%d %H:%M:%S")
+
+
 # print("该设备具有%d个内核和%d个逻辑处理器" % (psutil.cpu_count(logical=False), psutil.cpu_count()))
 # print("该CPU主频为%.1fGHZ" % (psutil.cpu_freq().current / 1000))
 # print("当前CPU占用率为%s%%" % psutil.cpu_percent())
@@ -2648,8 +2668,8 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
 # battery = psutil.sensors_battery()
 # if battery is not None:
 #     print("电池剩余电量%d%%" % battery.percent)
-# print("系统启动时间%s" % datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"))
-print("程序启动时间%s" % current_time.strftime("%Y-%m-%d %H:%M:%S"))
+# print("系统启动时间%s" % get_formatted_time_string(datetime.fromtimestamp(psutil.boot_time())))
+# print("程序启动时间%s" % get_formatted_time_string(current_time))
 
 key_on = 0
 State_change = 1  # 状态发生变化
@@ -2715,7 +2735,7 @@ def daemon_task():
                     not_wch_port_list = [x for x in port_list if x.vid != 0x1a86]
                     Get_MSN_Device(not_wch_port_list)
                     if Device_State == 0:
-                        print("没有找到可用的MSN设备")
+                        print("%s 没有找到可用的MSN设备" % get_formatted_time_string(current_time))
                         time.sleep(1)  # 防止频繁重试
     except Exception as e:  # 出现非预期异常
         print("Exception in daemon_task, %s" % traceback.format_exc())
