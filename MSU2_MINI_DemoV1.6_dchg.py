@@ -323,7 +323,7 @@ def Write_M_u8(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add�
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 0:
-        return 0
+        return 1
     else:
         print("Write_M_u8 failed")
         set_device_state(0)
@@ -342,7 +342,7 @@ def Write_M_u16(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add
     # 等待收回信息
     recv = SER_Read()  # .decode("gbk")#获取串口数据
     if recv != 0 and len(recv) > 0:
-        return 0
+        return 1
     else:
         print("Write_M_u16 failed")
         set_device_state(0)
@@ -465,11 +465,11 @@ def Write_MSN_Data(My_MSN_Data, name_use, data_w):  # 在MSN_data写入数据
         if data_type == 0:  # 数据类型为u8地址(16bit)
             Write_M_u8(int(My_MSN_Data[i].data[0]) * 256 + int(My_MSN_Data[i].data[1]), data_w)
             print("\"%s\"写入%s完成" % (name_use, str(data_w)))
-            return 0
+            return 1
         elif data_type == 1:  # 数据类型为u16地址(8bit)
             Write_M_u16(int(My_MSN_Data[i].data[0]), data_w)
             print("\"%s\"写入%s完成" % (name_use, str(data_w)))
-            return 0
+            return 1
     print("\"%s\"不存在,请检查名称是否正确" % name_use)
     return 0
 
@@ -494,7 +494,7 @@ def Write_Flash_Page(Page_add, data_w, Page_num):  # 往Flash指定页写入256B
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 0:
-        return 0
+        return 1
     else:
         print("Write_Flash_Page failed")
         set_device_state(0)
@@ -522,7 +522,7 @@ def Write_Flash_Page_fast(Page_add, data_w, Page_num):
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 0:
-        return 0
+        return 1
     else:
         print("Write_Flash_Page_fast failed")
         set_device_state(0)
@@ -541,7 +541,7 @@ def Erase_Flash_page(add, size):  # 清空指定区域的内存
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 0:
-        return 0
+        return 1
     else:
         print("Erase_Flash_page failed")
         set_device_state(0)
@@ -596,6 +596,7 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
     u_time = time.time() - u_time
     print("%s 烧写完成，耗时%.3f秒" % (filepath, u_time))
     insert_disabled_text(Text1, "烧写完成，耗时%.3f秒\n" % u_time, False)
+    return 1
 
 
 def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
@@ -618,6 +619,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
             Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
         Write_Flash_Page_fast(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
     insert_disabled_text(Text1, "烧写完成，耗时%.3f秒\n" % (time.time() - u_time), False)
+    return 1
 
 
 def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
@@ -638,6 +640,7 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
             Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
         Write_Flash_Page(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
     print("%s 烧写完成" % filepath)
+    return 1
 
 
 def LCD_Set_XY(LCD_D0, LCD_D1):  # 设置起始位置
@@ -687,7 +690,7 @@ def LCD_Photo(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        return 0
+        return 1
     else:
         print("LCD_Photo failed")
         set_device_state(0)
@@ -708,7 +711,7 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        return 0
+        return 1
     else:
         print("LCD_ADD failed")
         set_device_state(0)
@@ -728,7 +731,7 @@ def LCD_State(LCD_S):
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
         print("LCD towards change to %d" % LCD_S)
-        return 0
+        return 1
     else:
         print("LCD towards change failed %d" % LCD_S)
         set_device_state(0)
@@ -761,7 +764,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
         binfile = open(filepath, "rb")  # 以只读方式打开
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
-        return
+        return 0
     Fsize = os.path.getsize(filepath)
     print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
     u_time = time.time()
@@ -777,6 +780,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
         LCD_DATA(Fdata, Fsize % 256)  # (page,数据，大小)
     u_time = time.time() - u_time
     print("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
+    return 1
 
 
 # 往Flash里面写入Bin格式的照片
@@ -786,7 +790,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
         binfile = open(filepath, "rb")  # 以只读方式打开
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
-        return
+        return 0
     Fsize = os.path.getsize(filepath)
     print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
     u_time = time.time()
@@ -836,6 +840,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
     SER_Write(hex_use)  # 发出指令
     u_time = time.time() - u_time
     print("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
+    return 1
 
 
 # 往Flash里面写入Bin格式的照片
@@ -967,7 +972,7 @@ def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC)
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        return 0
+        return 1
     else:
         print("LCD_Photo_wb failed")
         set_device_state(0)  # 接收出错
@@ -988,7 +993,7 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC, Num_Page):
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        return 0
+        return 1
     else:
         print("LCD_ASCII_32X64 failed")
         set_device_state(0)  # 接收出错
@@ -1010,7 +1015,7 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC):
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        return 0
+        return 1
     else:
         print("LCD_GB2312_16X16 failed")
         set_device_state(0)  # 接收出错
@@ -1032,7 +1037,7 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, BG_
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        return 0
+        return 1
     else:
         print("LCD_Photo_wb_MIX failed")
         set_device_state(0)  # 接收出错
@@ -1053,7 +1058,7 @@ def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        return 0
+        return 1
     else:
         print("LCD_ASCII_32X64_MIX failed")
         set_device_state(0)  # 接收出错
@@ -1075,7 +1080,7 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page):
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        return 0
+        return 1
     else:
         print("LCD_GB2312_16X16_MIX failed")
         set_device_state(0)  # 接收出错
@@ -1097,7 +1102,7 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
     # 等待收回信息
     recv = SER_Read()  # .decode("UTF-8")#获取串口数据
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        return 0
+        return 1
     else:
         print("LCD_Color_set failed")
         set_device_state(0)  # 接收出错
@@ -2127,7 +2132,7 @@ def UI_Page():  # 进行图像界面显示
 
         row += 2
         desc_label = tk.Label(tech_frame, text="完全自定义模板代码：", anchor=tk.W, justify=tk.LEFT)
-        desc_label.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        desc_label.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky=tk.EW)
 
         # 创建自定义内容输入框
         row += 1
@@ -2231,6 +2236,8 @@ def UI_Page():  # 进行图像界面显示
                 custom_selected_names[i] = sensor_vars[i].get()
 
                 # 项目变更时清空旧项目数据
+                if custom_plot_data is None:
+                    return
                 key = None
                 if i == 0:
                     key = "sent"
@@ -2470,7 +2477,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             # 初始化串口连接,初始使用
             ser = serial.Serial(port_list[i].name, 115200, timeout=10)
         except Exception as e:  # 出现异常
-            print("%s 无法打开,请检查是否被其他程序占用: %s" % (port_list[i].name, traceback.format_exc()))
+            print("%s 无法打开,请检查是否被其他程序占用: %s" % (port_list[i].name, e))
             if ser is not None and ser.is_open:
                 ser.close()  # 将串口关闭，防止下次无法打开
             time.sleep(0.1)  # 防止频繁重试
