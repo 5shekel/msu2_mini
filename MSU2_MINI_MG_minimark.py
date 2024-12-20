@@ -53,7 +53,7 @@ class MiniMarkParser:
 
     def reset_state(self):
         self.position = (0, 0)  # Current drawing position
-        self.font = load_font("arial.ttf", 20)  # Default font
+        self.font = load_font("simhei.ttf", 20)  # Default font
         self.color = (0, 0, 0)  # Default color (black)
         self.anchor = "la"
 

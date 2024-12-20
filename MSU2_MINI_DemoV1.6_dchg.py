@@ -21,7 +21,7 @@ import pystray
 import serial  # 引入串口库（需要额外安装）
 import serial.tools.list_ports
 from mss import mss  # geezmo: 快速截图
-from PIL import Image, ImageDraw, ImageFont, ImageTk  # 引入PIL库进行图像处理
+from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
 
 import MSU2_MINI_MG_minimark as MiniMark
 from MSU2_MINI_MG_minimark import MiniMarkParser
@@ -1828,25 +1828,9 @@ def show_full_custom(text_color=(255, 128, 0)):
         time.sleep(wait_time)
 
 
-netspeed_font = None
-default_font = None
 netspeed_font_size = 20
-try:
-    default_font = ImageFont.truetype("simhei.ttf", netspeed_font_size)
-except OSError as e:
-    # 字体读取失败，使用默认字体
-    print("字体simhei.ttf读取失败，%s" % traceback.format_exc())
-    try:
-        # Pillow 可能不能忽略文件大小写，以免读取失败
-        default_font = ImageFont.truetype("SimHei.ttf", netspeed_font_size)
-    except OSError:
-        # 字体读取失败，使用默认字体
-        default_font = ImageFont.load_default(netspeed_font_size)
-try:
-    netspeed_font = ImageFont.truetype(MiniMark.get_resource("resource/Orbitron-Bold.ttf"), netspeed_font_size - 4)
-except OSError as e:
-    print("字体Orbitron-Bold.ttf读取失败，%s" % e)
-    netspeed_font = default_font
+default_font = MiniMark.load_font("simhei.ttf", netspeed_font_size)
+netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 2)
 
 
 def save_config(config_obj):
@@ -2090,6 +2074,7 @@ def UI_Page():  # 进行图像界面显示
             sub_window.withdraw()
 
         sub_window.protocol("WM_DELETE_WINDOW", on_closing)
+        window.attributes("-disabled", True)  # 禁用主窗口
 
         sensor_vars = []
         sensor_displayname_vars = []
@@ -2275,7 +2260,6 @@ def UI_Page():  # 进行图像界面显示
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑，这样会导致无法查看全部的选择文字
 
         center_window(sub_window)
-        window.attributes("-disabled", True)  # 禁用主窗口
 
     show_custom_btn = ttk.Button(root, text="自定义内容", width=12, command=show_custom)
     show_custom_btn.grid(row=5, column=1, padx=5, pady=5)
