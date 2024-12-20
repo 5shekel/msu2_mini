@@ -1629,12 +1629,18 @@ def load_hardware_monitor():
         def get_value(self, sensor_name):
             hardware, sensor = self.sensors[sensor_name]
             hardware.Update()
-            return sensor.Value
+            if sensor.Value is None:
+                return 0
+            else:
+                return sensor.Value
 
         def get_value_formatted(self, sensor_name):
             hardware, sensor = self.sensors[sensor_name]
             hardware.Update()
-            return sensor.Value, SensorValueToString(sensor.Value, sensor.SensorType)
+            if sensor.Value is None:
+                return 0, "--"
+            else:
+                return sensor.Value, SensorValueToString(sensor.Value, sensor.SensorType)
 
     return HardwareMonitorManager
 
