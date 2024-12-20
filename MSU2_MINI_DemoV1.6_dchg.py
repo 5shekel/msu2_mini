@@ -1140,32 +1140,32 @@ def show_PC_state(FC, BC):  # 显示PC状态
     mem = psutil.virtual_memory()
     RAM = int(mem.percent)
 
-    # 电池和磁盘使用率，代码留着备用
     # battery
-    # battery = psutil.sensors_battery()
-    # if battery is not None:
-    #     BAT = int(battery.percent)
-    # else:
-    #     BAT = 100
+    battery = psutil.sensors_battery()
+    if battery is not None:
+        BAT = int(battery.percent)
+    else:
+        BAT = 100
     # 磁盘使用率
-    # FRQ = int(psutil.disk_usage("/").used * 100 / psutil.disk_usage("/").total)
+    disk_info = psutil.disk_usage("/")
+    FRQ = int(disk_info.used * 100 / disk_info.total)
 
-    # 磁盘IO
-    FRQ = 0
-    disk_io_counter_cur = psutil.disk_io_counters()
-    disk_used = (disk_io_counter_cur.read_bytes + disk_io_counter_cur.write_bytes
-                 - disk_io_counter.read_bytes - disk_io_counter.write_bytes)
-    if disk_used > 0:
-        FRQ = disk_used // 1024 // 1024  # MB
-    disk_io_counter = disk_io_counter_cur
-    # 网络IO
-    BAT = 0
-    net_io_counter_cur = psutil.net_io_counters()
-    net_used = (net_io_counter_cur.bytes_sent + net_io_counter_cur.bytes_recv
-                - net_io_counter.bytes_sent - net_io_counter.bytes_recv)
-    if net_used > 0:
-        BAT = net_used * 8 // 1024 // 1024  # Mb
-    net_io_counter = net_io_counter_cur
+    # # 磁盘IO
+    # FRQ = 0
+    # disk_io_counter_cur = psutil.disk_io_counters()
+    # disk_used = (disk_io_counter_cur.read_bytes + disk_io_counter_cur.write_bytes
+    #              - disk_io_counter.read_bytes - disk_io_counter.write_bytes)
+    # if disk_used > 0:
+    #     FRQ = disk_used // 1024 // 1024  # MB
+    # disk_io_counter = disk_io_counter_cur
+    # # 网络IO
+    # BAT = 0
+    # net_io_counter_cur = psutil.net_io_counters()
+    # net_used = (net_io_counter_cur.bytes_sent + net_io_counter_cur.bytes_recv
+    #             - net_io_counter.bytes_sent - net_io_counter.bytes_recv)
+    # if net_used > 0:
+    #     BAT = net_used * 8 // 1024 // 1024  # Mb
+    # net_io_counter = net_io_counter_cur
 
     if CPU >= 100:
         LCD_Photo_wb(24, 0, 8, 33, 10 + num_add, FC, BC)
@@ -1451,7 +1451,7 @@ def screenshot_panic():
 
 
 def show_PC_Screen():  # 显示照片
-    global State_change, Screen_Error, screenshot_test_frame, current_time
+    global State_change, Screen_Error, screenshot_test_frame, current_time, screen_process_queue
     global screenshot_test_time, screenshot_last_limit_time, wait_time, screenshot_limit_fps
     if State_change == 1:
         State_change = 0
@@ -1629,18 +1629,12 @@ def load_hardware_monitor():
         def get_value(self, sensor_name):
             hardware, sensor = self.sensors[sensor_name]
             hardware.Update()
-            if sensor.Value is None:
-                return 0
-            else:
-                return sensor.Value
+            return sensor.Value
 
         def get_value_formatted(self, sensor_name):
             hardware, sensor = self.sensors[sensor_name]
             hardware.Update()
-            if sensor.Value is None:
-                return 0, "--"
-            else:
-                return sensor.Value, SensorValueToString(sensor.Value, sensor.SensorType)
+            return sensor.Value, SensorValueToString(sensor.Value, sensor.SensorType)
 
     return HardwareMonitorManager
 
@@ -1675,14 +1669,23 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
 
     # 获取 libre hardware monitor 数值
+    sent = None
+    sent_text = None
     try:
         sent, sent_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[0])
     except KeyError:
+        pass
+    if sent is None:
         sent = 0
         sent_text = "--"
+
+    recv = None
+    recv_text = None
     try:
         recv, recv_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[1])
     except KeyError:
+        pass
+    if recv is None:
         recv = 0
         recv_text = "--"
 
@@ -1750,24 +1753,26 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
 mini_mark_parser = MiniMarkParser()
 
 full_custom_template = "p Hello world"
-full_custom_error = ""
+full_custom_error = "OK"
 
 
 def get_full_custom_im():
     global full_custom_template, full_custom_error, mini_mark_parser
     global hardware_monitor_manager, custom_selected_names_tech
 
+    full_custom_error_tmp = ""
     # 获取 libre hardware monitor 数值
     custom_values = []
     for name in custom_selected_names_tech:
-        if name == "":
-            value, value_formatted = 0, "--"
-            custom_values.append((value, value_formatted))
-            continue
-        try:
-            value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
-        except KeyError:
-            value, value_formatted = 0, "--"
+        value = None
+        value_formatted = "--"
+        if name != "":
+            try:
+                value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
+                if value is None:
+                    full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序" % name
+            except KeyError:
+                pass
         custom_values.append((value, value_formatted))
 
     # 绘制图片
@@ -1786,7 +1791,11 @@ def get_full_custom_im():
                 continue
             error_line = line
             mini_mark_parser.parse_line(line, draw, im1, record_dict=record_dict, record_dict_value=record_dict_value)
-        full_custom_error = "OK"
+        if full_custom_error_tmp != "":
+            if full_custom_error_tmp != full_custom_error:
+                full_custom_error = full_custom_error_tmp
+        elif full_custom_error != "OK":
+            full_custom_error = "OK"
     except Exception as e:
         full_custom_error = "%s\nerror line: %s" % (traceback.format_exc(), error_line)
         im1.paste((255, 0, 255), (0, 0, im1.size[0], im1.size[1]))
@@ -1830,7 +1839,7 @@ def show_full_custom(text_color=(255, 128, 0)):
 
 netspeed_font_size = 20
 default_font = MiniMark.load_font("simhei.ttf", netspeed_font_size)
-netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 2)
+netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 4)
 
 
 def save_config(config_obj):
@@ -1946,7 +1955,7 @@ def UI_Page():  # 进行图像界面显示
         r1 = int(text_color_red_scale.get())
         g1 = int(text_color_green_scale.get())
         b1 = int(text_color_blue_scale.get())
-        color_use = r1 * 2048 + g1 * 32 + b1  # 彩色图片点阵算法 5R6G5B
+        color_use = (r1 << 11) | (g1 << 5) | b1  # 彩色图片点阵算法 5R6G5B
         r2 = r1 * 255 // 31
         g2 = g1 * 255 // 63
         b2 = b1 * 255 // 31
@@ -1959,19 +1968,19 @@ def UI_Page():  # 进行图像界面显示
     def update_label_color_red():
         global color_use
         r1 = int(text_color_red_scale.get())
-        if color_use // 2048 != r1:
+        if (color_use >> 11) != r1:
             update_label_color()
 
     def update_label_color_green():
         global color_use
         g1 = int(text_color_green_scale.get())
-        if (color_use % 2048) // 32 != g1:
+        if ((color_use & 2047) >> 5) != g1:
             update_label_color()
 
     def update_label_color_blue():
         global color_use
         b1 = int(text_color_blue_scale.get())
-        if color_use % 32 != b1:
+        if (color_use & 31) != b1:
             update_label_color()
 
     scale_desc = tk.Label(root, text="文字颜色")
@@ -2098,6 +2107,7 @@ def UI_Page():  # 进行图像界面显示
         def update_sensor_value_tech(i):
             if custom_selected_names_tech[i] != sensor_vars_tech[i].get():
                 custom_selected_names_tech[i] = sensor_vars_tech[i].get()
+                get_full_custom_im()
 
         type_list = ["1. CPU", "2. GPU", "3. 内存"]
         row = 6  # 设置自定义项目数
@@ -2146,11 +2156,11 @@ def UI_Page():  # 进行图像界面显示
         view_frame = ttk.Frame(text_frame, padding="10")
         view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=0, pady=0)
 
-        desc_label = tk.Label(view_frame, text="效果预览：", anchor=tk.W, justify=tk.LEFT, padx=5, pady=5)
-        desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        desc_label = tk.Label(view_frame, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=5, pady=5)
+        desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
 
         canvas = tk.Canvas(view_frame, width=160, height=80)
-        canvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         text_area.bind("<KeyRelease>", update_global_text)
         update_global_text(None)
@@ -2195,16 +2205,19 @@ def UI_Page():  # 进行图像界面显示
         def show_instruction():
             instruction = '\n'.join(
                 [
-                    "说明：自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
+                    "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
                     "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
-                    "p <文本>  \t绘制文本，会自动移动坐标",
-                    "a <锚点>  \t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
+                    "p <文本>   \t绘制文本，会自动移动坐标",
+                    "a <锚点>   \t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
                     "m <x> <y> \t移动到坐标(x,y)",
                     "t <x> <y> \t相对当前位置移动(x,y)",
                     "f <文件名> <大小> \t更换字体，文件名如 arial.ttf",
-                    "c <hex码> \t更改文字颜色，如 c #ffff00",
-                    "i <文件名> \t绘制图片",
-                    "v <序号> <格式> \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}"])
+                    "c <hex码>  \t更改文字颜色，如 c #ffff00",
+                    "i <文件名>  \t绘制图片",
+                    "v <序号> <格式> \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
+                    "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
+                ]
+            )
 
             tk.messagebox.showinfo(message=instruction, parent=sub_window)
 

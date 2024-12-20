@@ -15,8 +15,11 @@ def get_resource(relative_path):
     # if getattr(sys, "frozen", False):  # 判断sys中是否存在frozen变量
     #     base_path = sys._MEIPASS  # pyinstaller打包后的路径
     base_path = getattr(sys, "_MEIPASS", None)
-    if base_path is None:
-        base_path = os.path.dirname(os.path.abspath(__file__))
+    if base_path is not None:
+        path = os.path.normpath(os.path.join(base_path, relative_path))
+        if os.path.exists(path):
+            return path
+    base_path = os.path.dirname(os.path.realpath(sys.argv[0]))
     return os.path.normpath(os.path.join(base_path, relative_path))
 
 
