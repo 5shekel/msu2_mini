@@ -46,7 +46,7 @@ GRAY0 = 0xEF7D
 GRAY1 = 0x8410
 GRAY2 = 0x4208
 
-Img_data_use = bytearray()  # 空数组
+Img_data_use = bytearray()
 size_USE_X1 = 160
 size_USE_Y1 = 80
 
@@ -284,7 +284,7 @@ def SER_Read():
 
 
 def Read_M_u8(add):  # 读取主机u8寄存器（MSC设备编码，Add）
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     hex_use.append(0)  # 发给主机
     hex_use.append(48)  # 识别为SFR指令
     hex_use.append(0 * 32)  # 识别为8bit SFR读
@@ -294,7 +294,7 @@ def Read_M_u8(add):  # 读取主机u8寄存器（MSC设备编码，Add）
     SER_Write(hex_use)  # 发出指令
 
     # 等待收回信息
-    recv = SER_Read()  # .decode("byte")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 5:
         return recv[5]
     else:
@@ -304,7 +304,7 @@ def Read_M_u8(add):  # 读取主机u8寄存器（MSC设备编码，Add）
 
 
 def Read_M_u16(add):  # 读取主机u8寄存器（MSC设备编码，Add）
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     hex_use.append(0)  # 发给主机
     hex_use.append(48)  # 识别为SFR指令
     hex_use.append(1 * 32)  # 识别为16bit SFR读
@@ -313,7 +313,7 @@ def Read_M_u16(add):  # 读取主机u8寄存器（MSC设备编码，Add）
     hex_use.append(0)  # 低位数值
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("gbk")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 5:
         return recv[4] * 256 + recv[5]
     else:
@@ -323,7 +323,7 @@ def Read_M_u16(add):  # 读取主机u8寄存器（MSC设备编码，Add）
 
 
 def Write_M_u8(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add）
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     hex_use.append(0)  # 发给主机
     hex_use.append(48)  # 识别为SFR指令
     hex_use.append(4 * 32)  # 识别为16bit SFR写
@@ -332,7 +332,7 @@ def Write_M_u8(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add�
     hex_use.append(data_w % 256)  # 数值
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -342,7 +342,7 @@ def Write_M_u8(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add�
 
 
 def Write_M_u16(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add）
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     hex_use.append(0)  # 发给主机
     hex_use.append(48)  # 识别为SFR指令
     hex_use.append(1 * 32)  # 识别为16bit SFR写
@@ -351,7 +351,7 @@ def Write_M_u16(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add
     hex_use.append(data_w % 256)  # 低位数值
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("gbk")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -361,7 +361,7 @@ def Write_M_u16(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add
 
 
 def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     hex_use.append(8)  # 读取ADC
     hex_use.append(ch)  # 通道
     hex_use.append(0)
@@ -370,7 +370,7 @@ def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
     hex_use.append(0)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("gbk")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return recv[4] * 256 + recv[5]
     else:
@@ -381,12 +381,12 @@ def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
 
 # SFR格式：data_name data_unit data_family data_data
 def Read_M_SFR_Data(add):  # 从u8区域获取SFR描述
-    SFR_data = bytearray()  # 空数组
+    SFR_data = bytearray()
     for i in range(0, 256):  # 以128字节为单位进行解析编码
         SFR_data.append(Read_M_u8(add + i))  # 读取编码数据
     data_type = 0  # 根据是否为0进行类型循环统计
     data_len = 0
-    data_use = bytearray()  # 空数组
+    data_use = bytearray()
     data_name = b""
     data_unit = b""
     data_family = b""
@@ -401,15 +401,15 @@ def Read_M_SFR_Data(add):  # 从u8区域获取SFR描述
                 break  # 检测到0后收集的数据为空，判断为结束
             if data_type == 0:
                 data_name = data_use  # 名称
-                data_use = bytearray()  # 空数组
+                data_use = bytearray()
                 data_type = 1
             elif data_type == 1:
                 data_unit = data_use  # 单位
-                data_use = bytearray()  # 空数组
+                data_use = bytearray()
                 data_type = 2
             else:  # data_type == 2
                 data_family = data_use  # 类型
-                data_use = bytearray()  # 空数组
+                data_use = bytearray()
                 data_type = 3
                 data_len = ord(data_family) // 32
                 if data_len == 0:  # u8 data 2B add
@@ -487,7 +487,7 @@ def Write_MSN_Data(My_MSN_Data, name_use, data_w):  # 在MSN_data写入数据
 
 def Write_Flash_Page(Page_add, data_w, Page_num):  # 往Flash指定页写入256B数据
     # 先把数据传输完成
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     for i in range(0, 64):  # 256字节数据分为64个指令
         hex_use.append(4)  # 多次写入Flash
         hex_use.append(i)  # 低位地址
@@ -503,7 +503,7 @@ def Write_Flash_Page(Page_add, data_w, Page_num):  # 往Flash指定页写入256B
     hex_use.append(Page_num % 256)  # Data3
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -531,7 +531,7 @@ def Write_Flash_Page_fast(Page_add, data_w, Page_num):
     hex_use.append(Page_num)  # Data3
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -541,7 +541,7 @@ def Write_Flash_Page_fast(Page_add, data_w, Page_num):
 
 
 def Erase_Flash_page(add, size):  # 清空指定区域的内存
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     hex_use.append(3)  # 对Flash操作
     hex_use.append(2)  # 清空指定区域的内存
     hex_use.append((add % 65536) // 256)  # Data1
@@ -550,7 +550,7 @@ def Erase_Flash_page(add, size):  # 清空指定区域的内存
     hex_use.append((size % 65536) % 256)  # Data2
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -560,7 +560,7 @@ def Erase_Flash_page(add, size):  # 清空指定区域的内存
 
 
 def Read_Flash_byte(add):  # 读取指定地址的数值
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     hex_use.append(3)  # 对Flash操作
     hex_use.append(0)  # 读Flash
     hex_use.append(add // (256 * 256))  # Data0
@@ -569,7 +569,7 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
     hex_use.append(0)  # Data3
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 5:
         return recv[5]
     else:
@@ -702,7 +702,7 @@ def LCD_Photo(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     hex_use.append(0)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -723,7 +723,7 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
     hex_use.append(0)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -742,7 +742,7 @@ def LCD_State(LCD_S):
     hex_use.append(0)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
         print("LCD towards change to %d" % LCD_S)
         return 1
@@ -810,7 +810,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
     u_time = time.time()
     # 进行地址写入
     LCD_ADD(x_star, y_star, x_size, y_size)
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     for j in range(0, Fsize // 256):  # 每次写入一个Page
         data_w = binfile.read(256)
         # 先把数据格式转换好
@@ -861,11 +861,11 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
 def Write_LCD_Screen_fast(x_star, y_star, x_size, y_size, Photo_data):
     LCD_ADD(x_star, y_star, x_size, y_size)
     Photo_data_use = Photo_data
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     for j in range(0, x_size * y_size * 2 // 256):  # 每次写入一个Page
         data_w = Photo_data_use[:256]
         Photo_data_use = Photo_data_use[256:]
-        cmp_use = []  # 空数组,
+        cmp_use = []
         for i in range(0, 64):  # 256字节数据分为64个指令
             cmp_use.append(
                 data_w[i * 4 + 0] * 256 * 256 * 256
@@ -926,7 +926,7 @@ def Write_LCD_Screen_fast(x_star, y_star, x_size, y_size, Photo_data):
 def Write_LCD_Screen_fast1(x_star, y_star, x_size, y_size, Photo_data):
     LCD_ADD(x_star, y_star, x_size, y_size)
     Photo_data_use = Photo_data
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     for j in range(0, x_size * y_size * 2 // 256):  # 每次写入一个Page
         data_w = Photo_data_use[:256]
         Photo_data_use = Photo_data_use[256:]
@@ -984,7 +984,7 @@ def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC)
     hex_use.append(0)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1005,7 +1005,7 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC, Num_Page):
     hex_use.append(Num_Page % 256)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1027,7 +1027,7 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC):
     hex_use.append(0)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1049,7 +1049,7 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, BG_
     hex_use.append(0)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1070,7 +1070,7 @@ def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):
     hex_use.append(Num_Page % 256)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1092,7 +1092,7 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page):
     hex_use.append(0)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1114,7 +1114,7 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
     hex_use.append(0)
     SER_Write(hex_use)  # 发出指令
     # 等待收回信息
-    recv = SER_Read()  # .decode("UTF-8")#获取串口数据
+    recv = SER_Read()
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1250,7 +1250,7 @@ def digit_to_ints(di):
 
 def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
     uint16_data = Photo_data.astype(np.uint32)
-    hex_use = bytearray()  # 空数组
+    hex_use = bytearray()
     total_data_size = size_USE_X1 * size_USE_Y1
     data_per_page = 128
     for j in range(0, total_data_size // data_per_page):  # 每次写入一个Page
@@ -1278,8 +1278,7 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
         data_w = uint16_data[-remaining_data_size:]  # 取最后的没有写的
         data_w += b"\xff\xff" * (128 - remaining_data_size)  # 补全128个 uint16
         cmp_use = data_w[::2] << 16 | data_w[1::2]
-        for i in range(0, 64):
-            cmp_value = cmp_use[i]
+        for i, cmp_value in enumerate(cmp_use):
             hex_use.extend([4, i] + digit_to_ints(cmp_value))
         hex_use.extend([2, 3, 8, 0, remaining_data_size * 2, 0])
     return hex_use
@@ -2121,7 +2120,6 @@ def UI_Page():  # 进行图像界面显示
         def update_sensor_value_tech(i):
             if custom_selected_names_tech[i] != sensor_vars_tech[i].get():
                 custom_selected_names_tech[i] = sensor_vars_tech[i].get()
-                get_full_custom_im()
 
         type_list = ["1. CPU", "2. GPU", "3. 内存"]
         row = 6  # 设置自定义项目数
@@ -2178,8 +2176,9 @@ def UI_Page():  # 进行图像界面显示
         canvas = tk.Canvas(view_frame, width=160, height=80)
         canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        text_area.bind("<KeyRelease>", update_global_text)
-        update_global_text(None)
+        text_area.bind("<KeyRelease>", update_global_text)  # 按键弹起时触发
+        # text_area.bind("<FocusOut>", update_global_text)  # 当组件失去焦点触发
+        update_global_text()
 
         scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text_area.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -2190,6 +2189,7 @@ def UI_Page():  # 进行图像界面显示
         btn_frame.grid(row=row, column=0, columnspan=2, padx=0, pady=0, sticky=tk.W)
 
         def show_error():
+            get_full_custom_im()
             print(full_custom_error)
             tk.messagebox.showinfo(message=full_custom_error, parent=sub_window)
 
@@ -2211,7 +2211,7 @@ def UI_Page():  # 进行图像界面显示
                      "m 8 48", "c #000000", "f resource/Orbitron-Bold.ttf 20", "p RAM", "t 8 0", "c #3366cc", "v 3"])
             text_area.delete("1.0", tk.END)
             text_area.insert(tk.END, full_custom_template)
-            update_global_text(None)
+            update_global_text()
 
         example_btn_1 = ttk.Button(btn_frame, text="科技", width=15, command=lambda: example(1))
         example_btn_1.grid(row=0, column=1, padx=5, pady=5)
