@@ -58,8 +58,13 @@ imagefiletypes = [
     ("Image file", "*.jpeg"),
     ("Image file", "*.png"),
     ("Image file", "*.bmp"),
+    ("Image file", "*.ico"),
+    ("Image file", "*.webp"),
     ("Image file", "*.jfif"),
+    ("Image file", "*.jpe"),
     ("Image file", "*.tiff"),
+    ("Image file", "*.tif"),
+    ("Image file", "*.dib"),
 ]
 
 
@@ -78,7 +83,13 @@ def convertImageFileToRGB(file_path):
         insert_disabled_text(Text1, "文件不存在：%s\n" % file_path, False)
         return img_data  # 如果文件不存在，直接返回，不执行后续代码
 
-    im1 = Image.open(file_path)
+    try:
+        im1 = Image.open(file_path)
+    except Exception as e:
+        errstr = "图片\"%s\"打开失败：%s\n" % (file_path, e)
+        print(errstr)
+        insert_disabled_text(Text1, errstr, False)
+        return img_data
     if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
         im2 = im1.resize((int(80 * im1.width / im1.height), 80))
         Img_m = int(im2.width / 2)
@@ -602,6 +613,9 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
 def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
     global Text1
     Fsize = len(img_use)
+    if Fsize == 0:
+        insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+        return 0
     insert_disabled_text(Text1, "大小%dB,烧录中...\n" % Fsize, False)
     u_time = time.time()
     # 进行擦除
@@ -2140,14 +2154,16 @@ def UI_Page():  # 进行图像界面显示
         text_frame = ttk.Frame(tech_frame, padding="5")
         text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky=tk.EW)
 
-        def update_global_text(event):
+        def update_global_text(event=None):
             global full_custom_template
             # Get the current content of the text area and update the global variable
-            full_custom_template = text_area.get("1.0", tk.END).strip()  # tk.END会多一个换行
-            im = get_full_custom_im()
-            tk_im = ImageTk.PhotoImage(im)
-            canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
-            canvas.image = tk_im
+            full_custom_template_tmp = text_area.get("1.0", tk.END).rstrip('\n')  # tk.END会多一个换行
+            if event is None or full_custom_template != full_custom_template_tmp:
+                full_custom_template = full_custom_template_tmp
+                im = get_full_custom_im()
+                tk_im = ImageTk.PhotoImage(im)
+                canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
+                canvas.image = tk_im
 
         text_area = tk.Text(text_frame, wrap=tk.WORD, width=40, height=10, padx=5, pady=5)
         text_area.insert(tk.END, full_custom_template)
@@ -2209,11 +2225,11 @@ def UI_Page():  # 进行图像界面显示
                     "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
                     "p <文本>   \t绘制文本，会自动移动坐标",
                     "a <锚点>   \t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
-                    "m <x> <y> \t移动到坐标(x,y)",
-                    "t <x> <y> \t相对当前位置移动(x,y)",
-                    "f <文件名> <大小> \t更换字体，文件名如 arial.ttf",
+                    "m <x> <y>  \t移动到坐标(x,y)",
+                    "t <x> <y>  \t相对当前位置移动(x,y)",
+                    "f <文件名> <字号> \t更换字体，文件名如 arial.ttf",
                     "c <hex码>  \t更改文字颜色，如 c #ffff00",
-                    "i <文件名>  \t绘制图片",
+                    "i <文件名> \t绘制图片",
                     "v <序号> <格式> \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
                     "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
                 ]
@@ -2478,7 +2494,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     for i in range(0, len(port_list)):
         try:  # 尝试打开串口
             # 初始化串口连接,初始使用
-            ser = serial.Serial(port_list[i].name, 115200, timeout=10)
+            ser = serial.Serial(port_list[i].name, 115200, timeout=5.0,
+                                write_timeout=5.0, inter_byte_timeout=0.1)
         except Exception as e:  # 出现异常
             print("%s 无法打开,请检查是否被其他程序占用: %s" % (port_list[i].name, e))
             if ser is not None and ser.is_open:
@@ -2722,8 +2739,10 @@ finally:
     MG_screen_thread_running = False
     MG_daemon_running = False
     if screen_shot_thread.is_alive():
-        screen_shot_thread.join()
+        screen_shot_thread.join(timeout=5.0)
     if screen_process_thread.is_alive():
-        screen_process_thread.join()
+        screen_process_thread.join(timeout=5.0)
     if daemon_thread.is_alive():
-        daemon_thread.join()
+        daemon_thread.join(timeout=5.0)
+    if load_thread.is_alive():
+        load_thread.join(timeout=5.0)
