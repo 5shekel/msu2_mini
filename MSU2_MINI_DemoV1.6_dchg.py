@@ -420,6 +420,8 @@ def Read_M_SFR_Data(add):  # 从u8区域获取SFR描述
                     data_len = 2
                 elif data_len == 3:  # u8 Text XB data
                     data_len = data_family[0] % 32  # 计算数据长度
+                else:
+                    print("data_len error: %d" % data_len)
         else:  # data_type == 3
             if data_len > 0:  # 正式的有效数据
                 data_use.append(SFR_data[i])  # 将非0数据合并到一块
@@ -465,6 +467,8 @@ def Read_MSN_Data(My_MSN_Data):  # 读取MSN_data中的数据
             use_data.append(My_MSN_Data[i].data)
         elif data_type == 4:  # 数据类型为u8数组
             use_data.append(My_MSN_Data[i].data)
+        else:
+            print("data_type error in Read_MSN_Data: %d" % data_type)
         print("%-10s = %s" % (My_MSN_Data[i].name.decode("gbk"), use_data))
 
 
@@ -481,6 +485,8 @@ def Write_MSN_Data(My_MSN_Data, name_use, data_w):  # 在MSN_data写入数据
             Write_M_u16(int(My_MSN_Data[i].data[0]), data_w)
             print("\"%s\"写入%s完成" % (name_use, str(data_w)))
             return 1
+        else:
+            print("data_type error in Write_MSN_Data: %d" % data_type)
     print("\"%s\"不存在,请检查名称是否正确" % name_use)
     return 0
 
@@ -581,12 +587,15 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
 def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式的照片
     global Text1
     try:  # 尝试打开bin文件
+        Fsize = os.path.getsize(filepath)
+        if Fsize == 0:
+            insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+            return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         insert_disabled_text(Text1, "文件路径或格式出错!\n", False)
         return 0
-    Fsize = os.path.getsize(filepath)
     print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
     insert_disabled_text(Text1, "大小%dB,烧录中...\n" % Fsize, False)
     u_time = time.time()
@@ -639,11 +648,14 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
 def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
     filepath = "%s.bin" % ZK_name  # 合成文件名称
     try:  # 尝试打开bin文件
+        Fsize = os.path.getsize(filepath) - 6  # 字库文件的最后六个字节不是点阵信息
+        if Fsize <= 0:
+            insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+            return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         return 0
-    Fsize = os.path.getsize(filepath) - 6  # 字库文件的最后六个字节不是点阵信息
     print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
     for i in range(0, Fsize // 256):  # 每次写入一个Pag
         Fdata = binfile.read(256)
@@ -775,11 +787,14 @@ def LCD_DATA(data_w, size):  # 往LCD写入指定大小的数据
 def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
     filepath = "%s.bin" % Photo_name  # 合成文件名称
     try:  # 尝试打开bin文件
+        Fsize = os.path.getsize(filepath)
+        if Fsize == 0:
+            insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+            return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         return 0
-    Fsize = os.path.getsize(filepath)
     print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
     u_time = time.time()
     # 进行地址写入
@@ -801,11 +816,14 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
 def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
     filepath = "%s.bin" % Photo_name  # 合成文件名称
     try:  # 尝试打开bin文件
+        Fsize = os.path.getsize(filepath)
+        if Fsize == 0:
+            insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+            return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         return 0
-    Fsize = os.path.getsize(filepath)
     print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
     u_time = time.time()
     # 进行地址写入
@@ -867,8 +885,7 @@ def Write_LCD_Screen_fast(x_star, y_star, x_size, y_size, Photo_data):
         Photo_data_use = Photo_data_use[256:]
         cmp_use = []
         for i in range(0, 64):  # 256字节数据分为64个指令
-            cmp_use.append(
-                data_w[i * 4 + 0] * 256 * 256 * 256
+            cmp_use.append(data_w[i * 4 + 0] * 256 * 256 * 256
                 + data_w[i * 4 + 1] * 256 * 256
                 + data_w[i * 4 + 2] * 256
                 + data_w[i * 4 + 3]
@@ -889,7 +906,7 @@ def Write_LCD_Screen_fast(x_star, y_star, x_size, y_size, Photo_data):
                 + data_w[i * 4 + 1] * 256 * 256
                 + data_w[i * 4 + 2] * 256
                 + data_w[i * 4 + 3]
-            ) != result:  #
+            ) != result:
                 hex_use.append(4)
                 hex_use.append(i)
                 hex_use.append(data_w[i * 4 + 0])
@@ -1472,7 +1489,7 @@ def show_PC_Screen():  # 显示照片
         LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
 
     try:
-        hexstream = screen_process_queue.get(timeout=1)
+        hexstream = screen_process_queue.get(timeout=3)
     except queue.Empty:
         Screen_Error = Screen_Error + 1
         time.sleep(0.05)  # 防止频繁重试
@@ -1805,7 +1822,7 @@ def get_full_custom_im():
             error_line = line
             mini_mark_parser.parse_line(line, draw, im1, record_dict=record_dict, record_dict_value=record_dict_value)
         if full_custom_error_tmp != "":
-            if full_custom_error_tmp != full_custom_error:
+            if full_custom_error != full_custom_error_tmp:
                 full_custom_error = full_custom_error_tmp
         elif full_custom_error != "OK":
             full_custom_error = "OK"
@@ -2438,7 +2455,7 @@ def UI_Page():  # 进行图像界面显示
     window.resizable(0, 0)  # 锁定窗口大小不能改变
     # 点击最小化按钮时隐藏窗口
     window.bind("<Unmap>", lambda event: hide_to_tray() if window.state() == "iconic" else False)
-    if len(sys.argv) >= 2 and sys.argv[1] == "hide":
+    if len(sys.argv) > 1 and sys.argv[1] == "hide":
         hide_to_tray()  # 命令行启动时设置隐藏
 
     # 参数全部获取后再启动截图线程
