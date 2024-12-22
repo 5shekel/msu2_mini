@@ -1782,10 +1782,10 @@ def get_full_custom_im():
         if name != "":
             try:
                 value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
-                if value is None:
-                    full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序" % name
             except KeyError:
                 pass
+            if value is None:
+                full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序" % name
         custom_values.append((value, value_formatted))
 
     # 绘制图片
