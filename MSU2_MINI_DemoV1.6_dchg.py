@@ -1901,10 +1901,10 @@ def UI_Page():  # 进行图像界面显示
 
     # 修改默认图标
     try:
-        iconimage = Image.open(MiniMark.get_resource("resource/icon.ico"))
+        iconimage = Image.open(MiniMark.get_resource("resource/icon_small.ico"))
     except Exception:
-        # 没找到图标时使用一个灰方块做图标
-        iconimage = Image.new("RGB", (16, 16), (128, 128, 128))
+        # 没找到图标时使用一个方块做图标
+        iconimage = Image.new("RGB", (16, 16), (0, 128, 128))
     defaulticon = ImageTk.PhotoImage(iconimage)
     window.wm_iconphoto(True, defaulticon)
 
