@@ -1683,7 +1683,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     global custom_last_refresh_time, custom_plot_data, State_change, wait_time, current_time
     global hardware_monitor_manager, custom_selected_names, custom_selected_displayname
 
-    if hardware_monitor_manager is None:
+    if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         time.sleep(0.2)
         return
 
@@ -1838,7 +1838,7 @@ def show_full_custom(text_color=(255, 128, 0)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
     global custom_last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_time
 
-    if hardware_monitor_manager is None:
+    if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         time.sleep(0.2)
         return
 
@@ -1898,6 +1898,16 @@ def UI_Page():  # 进行图像界面显示
     # 创建主窗口
     window = tk.Tk()  # 实例化主窗口
     window.title("MG USB屏幕助手V1.0")  # 设置标题
+
+    # 修改默认图标
+    try:
+        iconimage = Image.open(MiniMark.get_resource("resource/icon.ico"))
+    except Exception:
+        # 没找到图标时使用一个灰方块做图标
+        iconimage = Image.new("RGB", (16, 16), (128, 128, 128))
+    defaulticon = ImageTk.PhotoImage(iconimage)
+    window.wm_iconphoto(True, defaulticon)
+
     # 创建 Frame 容器，并将其填充到整个窗口
     root = tk.Frame(window, bg="white smoke", padx=10, pady=10, highlightthickness=1, highlightcolor="lightgray")
     root.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -1926,17 +1936,12 @@ def UI_Page():  # 进行图像界面显示
     def hide_to_tray(event=None):
         global Device_State_Labelen
         try:
-            image = Image.open(MiniMark.get_resource("resource/icon.ico"))
-        except Exception:
-            # 没找到图标时使用一个灰方块做图标
-            image = Image.new("RGB", (16, 16), (128, 128, 128))
-        try:
             window.withdraw()  # 隐藏窗口
             menu = (
                 pystray.MenuItem("显示", show_window, default=True),
                 pystray.MenuItem("退出", quit_window)
             )
-            icon = pystray.Icon("MG", image, "MSU2_mini", menu)
+            icon = pystray.Icon("MG", iconimage, "MSU2_mini", menu)
 
             Device_State_Labelen = 1
 
@@ -2094,8 +2099,11 @@ def UI_Page():  # 进行图像界面显示
 
     def show_custom():
         global full_custom_template, sub_window, custom_selected_names_tech
-        if hardware_monitor_manager is None:
-            tk.messagebox.showerror(message="Libre Hardware Monitor 正在加载，请稍候……")
+        if hardware_monitor_manager == 1:
+            tk.messagebox.showerror(message="Libre Hardware Monitor 加载失败！")
+            return
+        elif hardware_monitor_manager is None:
+            tk.messagebox.showwarning(message="Libre Hardware Monitor 正在加载，请稍候……")
             return
 
         if sub_window is not None:
@@ -2701,6 +2709,7 @@ def load_task():
         hardware_monitor_manager = HardwareMonitorManager()
     except Exception as e:
         print("Libre hardware monitor 加载失败, %s" % traceback.format_exc())
+        hardware_monitor_manager = 1
     print("Libre hardware monitor load finished")
 
 
@@ -2753,6 +2762,8 @@ try:
     load_thread.start()
     # 打开主页面
     UI_Page()
+except Exception as e:
+    print("UI_Page error: %s" % traceback.format_exc())
 finally:
     # reap threads
     print("closing")
