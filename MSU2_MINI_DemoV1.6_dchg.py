@@ -1901,7 +1901,7 @@ def UI_Page():  # 进行图像界面显示
 
     # 修改默认图标
     try:
-        iconimage = Image.open(MiniMark.get_resource("resource/icon_small.ico"))
+        iconimage = Image.open(MiniMark.get_resource("resource/icon.ico"))
     except Exception:
         # 没找到图标时使用一个方块做图标
         iconimage = Image.new("RGB", (16, 16), (0, 128, 128))
@@ -1920,7 +1920,7 @@ def UI_Page():  # 进行图像界面显示
 
     def quit_window(icon, item):
         icon.stop()
-        window.destroy()
+        on_closing()
 
     def show_window(icon, item):
         global Device_State, Device_State_Labelen
