@@ -885,7 +885,8 @@ def Write_LCD_Screen_fast(x_star, y_star, x_size, y_size, Photo_data):
         Photo_data_use = Photo_data_use[256:]
         cmp_use = []
         for i in range(0, 64):  # 256字节数据分为64个指令
-            cmp_use.append(data_w[i * 4 + 0] * 256 * 256 * 256
+            cmp_use.append(
+                data_w[i * 4 + 0] * 256 * 256 * 256
                 + data_w[i * 4 + 1] * 256 * 256
                 + data_w[i * 4 + 2] * 256
                 + data_w[i * 4 + 3]
@@ -2208,7 +2209,10 @@ def UI_Page():  # 进行图像界面显示
         def show_error():
             get_full_custom_im()
             print(full_custom_error)
-            tk.messagebox.showinfo(message=full_custom_error, parent=sub_window)
+            if full_custom_error == "OK":
+                tk.messagebox.showinfo(title="提示", message=full_custom_error, parent=sub_window)
+            else:
+                tk.messagebox.showerror(title="错误", message=full_custom_error, parent=sub_window)
 
         show_error_btn = ttk.Button(btn_frame, text="查看模板错误", width=15, command=show_error)
         show_error_btn.grid(row=0, column=0, padx=5, pady=5)
@@ -2216,16 +2220,18 @@ def UI_Page():  # 进行图像界面显示
         def example(i):
             global full_custom_template
             if i == 1:
-                full_custom_template = '\n'.join(
-                    ["i resource/example_background.png", "c #ff3333", "f resource/Orbitron-Regular.ttf 22",
-                     "m 16 16", "v 1 {:.0f}", "p %",
-                     "m 96 16", "v 2 {:.0f}", "p %",
-                     "m 96 44", "v 3 {:.0f}", "p %"])
+                full_custom_template = '\n'.join([
+                    "i resource/example_background.png", "c #ff3333", "f resource/Orbitron-Regular.ttf 22",
+                    "m 16 16", "v 1 {:.0f}", "p %",
+                    "m 96 16", "v 2 {:.0f}", "p %",
+                    "m 96 44", "v 3 {:.0f}", "p %"
+                ])
             elif i == 2:
-                full_custom_template = '\n'.join(
-                    ["m 8 8", "f resource/Orbitron-Bold.ttf 20", "p CPU", "t 8 0", "c #3366cc", "v 1",
-                     "m 8 28", "c #000000", "f resource/Orbitron-Bold.ttf 20", "p GPU", "t 8 0", "c #3366cc", "v 2",
-                     "m 8 48", "c #000000", "f resource/Orbitron-Bold.ttf 20", "p RAM", "t 8 0", "c #3366cc", "v 3"])
+                full_custom_template = '\n'.join([
+                    "m 8 8", "f resource/Orbitron-Bold.ttf 20", "p CPU", "t 8 0", "c #3366cc", "v 1",
+                    "m 8 28", "c #000000", "f resource/Orbitron-Bold.ttf 20", "p GPU", "t 8 0", "c #3366cc", "v 2",
+                    "m 8 48", "c #000000", "f resource/Orbitron-Bold.ttf 20", "p RAM", "t 8 0", "c #3366cc", "v 3"
+                ])
             text_area.delete("1.0", tk.END)
             text_area.insert(tk.END, full_custom_template)
             update_global_text()
@@ -2236,23 +2242,20 @@ def UI_Page():  # 进行图像界面显示
         example_btn_2.grid(row=0, column=2, padx=5, pady=5)
 
         def show_instruction():
-            instruction = '\n'.join(
-                [
-                    "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
-                    "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
-                    "p <文本>   \t绘制文本，会自动移动坐标",
-                    "a <锚点>   \t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
-                    "m <x> <y>  \t移动到坐标(x,y)",
-                    "t <x> <y>  \t相对当前位置移动(x,y)",
-                    "f <文件名> <字号> \t更换字体，文件名如 arial.ttf",
-                    "c <hex码>  \t更改文字颜色，如 c #ffff00",
-                    "i <文件名> \t绘制图片",
-                    "v <序号> <格式> \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
-                    "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
-                ]
-            )
-
-            tk.messagebox.showinfo(message=instruction, parent=sub_window)
+            instruction = '\n'.join([
+                "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
+                "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
+                "p <文本>   \t绘制文本，会自动移动坐标",
+                "a <锚点>   \t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
+                "m <x> <y>  \t移动到坐标(x,y)",
+                "t <x> <y>  \t相对当前位置移动(x,y)",
+                "f <文件名> <字号> \t更换字体，文件名如 arial.ttf",
+                "c <hex码>  \t更改文字颜色，如 c #ffff00",
+                "i <文件名> \t绘制图片",
+                "v <序号> <格式> \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
+                "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
+            ])
+            tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window)
 
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, command=show_instruction)
         show_instruction_btn.grid(row=0, column=3, padx=5, pady=5)
@@ -2719,12 +2722,13 @@ def daemon_task():
                 # 如果没有这些设备，或者 pyserial 没有提供信息，则不管
                 wch_port_list = [x for x in port_list if x.vid == 0x1a86]
                 Get_MSN_Device(wch_port_list)
+                if Device_State != 0:
+                    continue
+                not_wch_port_list = [x for x in port_list if x.vid != 0x1a86]
+                Get_MSN_Device(not_wch_port_list)
                 if Device_State == 0:
-                    not_wch_port_list = [x for x in port_list if x.vid != 0x1a86]
-                    Get_MSN_Device(not_wch_port_list)
-                    if Device_State == 0:
-                        print("%s 没有找到可用的MSN设备" % get_formatted_time_string(current_time))
-                        time.sleep(1)  # 防止频繁重试
+                    print("%s 没有找到可用的MSN设备" % get_formatted_time_string(current_time))
+                    time.sleep(1)  # 防止频繁重试
         except Exception as e:  # 出现非预期异常
             print("Exception in daemon_task, %s" % traceback.format_exc())
             time.sleep(1)  # 防止频繁重试
