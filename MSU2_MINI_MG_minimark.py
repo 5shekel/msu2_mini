@@ -36,13 +36,18 @@ def load_font(font_name, font_size):
 
 def load_image(image_path):
     if image_path not in image_cache:
+        image = None
         try:
+            image = Image.open(get_resource(image_path))
             # Convert to RGBA
-            image_cache[image_path] = Image.open(get_resource(image_path)).convert("RGBA")
+            image_cache[image_path] = image.convert("RGBA")
         except FileNotFoundError as e:
             print("Warning: image %s load failed: %s" % (image_path, e))
             # 没有图片，弄一个品红色的图片代替
             image_cache[image_path] = Image.new("RGBA", (16, 16), (255, 0, 255))
+        finally:
+            if image is not None:
+                image.close()
     return image_cache[image_path]
 
 

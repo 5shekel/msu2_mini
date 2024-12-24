@@ -83,23 +83,28 @@ def convertImageFileToRGB(file_path):
         insert_disabled_text(Text1, "文件不存在：%s\n" % file_path, False)
         return img_data  # 如果文件不存在，直接返回，不执行后续代码
 
+    im1 = None
     try:
         im1 = Image.open(file_path)
+        if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
+            im2 = im1.resize((int(80 * im1.width / im1.height), 80))
+            Img_m = int(im2.width / 2)
+            box = (Img_m - 80, 0, Img_m + 80, 80)  # 定义需要裁剪的空间
+            im2 = im2.crop(box)
+        else:
+            im2 = im1.resize((160, int(160 * im1.height / im1.width)))
+            Img_m = int(im2.height / 2)
+            box = (0, Img_m - 40, 160, Img_m + 40)  # 定义需要裁剪的空间
+            im2 = im2.crop(box)
     except Exception as e:
         errstr = "图片\"%s\"打开失败：%s\n" % (file_path, e)
         print(errstr)
         insert_disabled_text(Text1, errstr, False)
         return img_data
-    if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
-        im2 = im1.resize((int(80 * im1.width / im1.height), 80))
-        Img_m = int(im2.width / 2)
-        box = (Img_m - 80, 0, Img_m + 80, 80)  # 定义需要裁剪的空间
-        im2 = im2.crop(box)
-    else:
-        im2 = im1.resize((160, int(160 * im1.height / im1.width)))
-        Img_m = int(im2.height / 2)
-        box = (0, Img_m - 40, 160, Img_m + 40)  # 定义需要裁剪的空间
-        im2 = im2.crop(box)
+    finally:
+        if im1 is not None:
+            im1.close()
+
     im2 = im2.convert("RGB")  # 转换为RGB格式
     for y in range(0, 80):  # 逐字解析编码
         for x in range(0, 160):  # 逐字解析编码
@@ -586,37 +591,42 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
 
 def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式的照片
     global Text1
+    binfile = None
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
             insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
+
+        print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
+        insert_disabled_text(Text1, "大小%dB,烧录中...\n" % Fsize, False)
+        u_time = time.time()
+        # 进行擦除
+        if Fsize % 256 != 0:
+            Erase_Flash_page(Page_add, Fsize // 256 + 1)  # 清空指定区域的内存
+        else:
+            Erase_Flash_page(Page_add, Fsize // 256)  # 清空指定区域的内存
+
+        for i in range(0, Fsize // 256):  # 每次写入一个Page
+            Fdata = binfile.read(256)
+            Write_Flash_Page_fast(Page_add + i, Fdata, 1)  # (page,数据，大小)
+        if Fsize % 256 != 0:  # 还存在没写完的数据
+            Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
+            for i in range(Fsize % 256, 256):
+                Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
+            Write_Flash_Page_fast(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
+        u_time = time.time() - u_time
+        print("%s 烧写完成，耗时%.3f秒" % (filepath, u_time))
+        insert_disabled_text(Text1, "烧写完成，耗时%.3f秒\n" % u_time, False)
+        return 1
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         insert_disabled_text(Text1, "文件路径或格式出错!\n", False)
         return 0
-    print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
-    insert_disabled_text(Text1, "大小%dB,烧录中...\n" % Fsize, False)
-    u_time = time.time()
-    # 进行擦除
-    if Fsize % 256 != 0:
-        Erase_Flash_page(Page_add, Fsize // 256 + 1)  # 清空指定区域的内存
-    else:
-        Erase_Flash_page(Page_add, Fsize // 256)  # 清空指定区域的内存
-
-    for i in range(0, Fsize // 256):  # 每次写入一个Page
-        Fdata = binfile.read(256)
-        Write_Flash_Page_fast(Page_add + i, Fdata, 1)  # (page,数据，大小)
-    if Fsize % 256 != 0:  # 还存在没写完的数据
-        Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
-        for i in range(Fsize % 256, 256):
-            Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
-        Write_Flash_Page_fast(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
-    u_time = time.time() - u_time
-    print("%s 烧写完成，耗时%.3f秒" % (filepath, u_time))
-    insert_disabled_text(Text1, "烧写完成，耗时%.3f秒\n" % u_time, False)
-    return 1
+    finally:
+        if binfile is not None:
+            binfile.close()
 
 
 def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
@@ -647,26 +657,31 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
 
 def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
     filepath = "%s.bin" % ZK_name  # 合成文件名称
+    binfile = None
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath) - 6  # 字库文件的最后六个字节不是点阵信息
         if Fsize <= 0:
             insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
+
+        print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
+        for i in range(0, Fsize // 256):  # 每次写入一个Pag
+            Fdata = binfile.read(256)
+            Write_Flash_Page(Page_add + i, Fdata, 1)  # (page,数据，大小)
+        if Fsize % 256 != 0:  # 还存在没写完的数据
+            Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
+            for i in range(Fsize % 256, 256):
+                Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
+            Write_Flash_Page(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
+        print("%s 烧写完成" % filepath)
+        return 1
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         return 0
-    print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
-    for i in range(0, Fsize // 256):  # 每次写入一个Pag
-        Fdata = binfile.read(256)
-        Write_Flash_Page(Page_add + i, Fdata, 1)  # (page,数据，大小)
-    if Fsize % 256 != 0:  # 还存在没写完的数据
-        Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
-        for i in range(Fsize % 256, 256):
-            Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
-        Write_Flash_Page(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
-    print("%s 烧写完成" % filepath)
-    return 1
+    finally:
+        if binfile is not None:
+            binfile.close()
 
 
 def LCD_Set_XY(LCD_D0, LCD_D1):  # 设置起始位置
@@ -786,93 +801,103 @@ def LCD_DATA(data_w, size):  # 往LCD写入指定大小的数据
 # 往Flash里面写入Bin格式的照片
 def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
     filepath = "%s.bin" % Photo_name  # 合成文件名称
+    binfile = None
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
             insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
+
+        print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
+        u_time = time.time()
+        # 进行地址写入
+        LCD_ADD(x_star, y_star, x_size, y_size)
+        for i in range(0, Fsize // 256):  # 每次写入一个Page
+            Fdata = binfile.read(256)
+            LCD_DATA(Fdata, 256)  # (page,数据，大小)
+        if Fsize % 256 != 0:  # 还存在没写完的数据
+            Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
+            for i in range(Fsize % 256, 256):
+                Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
+            LCD_DATA(Fdata, Fsize % 256)  # (page,数据，大小)
+        u_time = time.time() - u_time
+        print("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
+        return 1
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         return 0
-    print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
-    u_time = time.time()
-    # 进行地址写入
-    LCD_ADD(x_star, y_star, x_size, y_size)
-    for i in range(0, Fsize // 256):  # 每次写入一个Page
-        Fdata = binfile.read(256)
-        LCD_DATA(Fdata, 256)  # (page,数据，大小)
-    if Fsize % 256 != 0:  # 还存在没写完的数据
-        Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
-        for i in range(Fsize % 256, 256):
-            Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
-        LCD_DATA(Fdata, Fsize % 256)  # (page,数据，大小)
-    u_time = time.time() - u_time
-    print("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
-    return 1
+    finally:
+        if binfile is not None:
+            binfile.close()
 
 
 # 往Flash里面写入Bin格式的照片
 def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
     filepath = "%s.bin" % Photo_name  # 合成文件名称
+    binfile = None
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
             insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
+
+        print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
+        u_time = time.time()
+        # 进行地址写入
+        LCD_ADD(x_star, y_star, x_size, y_size)
+        hex_use = bytearray()
+        for j in range(0, Fsize // 256):  # 每次写入一个Page
+            data_w = binfile.read(256)
+            # 先把数据格式转换好
+            for i in range(0, 64):  # 256字节数据分为64个指令
+                hex_use.append(4)
+                hex_use.append(i)
+                hex_use.append(data_w[i * 4 + 0])
+                hex_use.append(data_w[i * 4 + 1])
+                hex_use.append(data_w[i * 4 + 2])
+                hex_use.append(data_w[i * 4 + 3])
+            hex_use.append(2)
+            hex_use.append(3)
+            hex_use.append(8)
+            hex_use.append(1)
+            hex_use.append(0)
+            hex_use.append(0)
+        if Fsize % 256 != 0:  # 还存在没写完的数据
+            data_w = binfile.read(Fsize % 256)  # 将剩下的数据读完
+            for i in range(Fsize % 256, 256):
+                # 不足位置补充0xFF
+                data_w = data_w + int(255).to_bytes(1, byteorder="little")
+            for i in range(0, 64):  # 256字节数据分为64个指令
+                hex_use.append(4)
+                hex_use.append(i)
+                hex_use.append(data_w[i * 4 + 0])
+                hex_use.append(data_w[i * 4 + 1])
+                hex_use.append(data_w[i * 4 + 2])
+                hex_use.append(data_w[i * 4 + 3])
+            hex_use.append(2)
+            hex_use.append(3)
+            hex_use.append(8)
+            hex_use.append(0)
+            hex_use.append(Fsize % 256)
+            hex_use.append(0)
+        hex_use.append(2)
+        hex_use.append(3)
+        hex_use.append(9)
+        hex_use.append(0)
+        hex_use.append(0)
+        hex_use.append(0)
+        SER_Write(hex_use)  # 发出指令
+        u_time = time.time() - u_time
+        print("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
+        return 1
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         return 0
-    print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
-    u_time = time.time()
-    # 进行地址写入
-    LCD_ADD(x_star, y_star, x_size, y_size)
-    hex_use = bytearray()
-    for j in range(0, Fsize // 256):  # 每次写入一个Page
-        data_w = binfile.read(256)
-        # 先把数据格式转换好
-        for i in range(0, 64):  # 256字节数据分为64个指令
-            hex_use.append(4)
-            hex_use.append(i)
-            hex_use.append(data_w[i * 4 + 0])
-            hex_use.append(data_w[i * 4 + 1])
-            hex_use.append(data_w[i * 4 + 2])
-            hex_use.append(data_w[i * 4 + 3])
-        hex_use.append(2)
-        hex_use.append(3)
-        hex_use.append(8)
-        hex_use.append(1)
-        hex_use.append(0)
-        hex_use.append(0)
-    if Fsize % 256 != 0:  # 还存在没写完的数据
-        data_w = binfile.read(Fsize % 256)  # 将剩下的数据读完
-        for i in range(Fsize % 256, 256):
-            # 不足位置补充0xFF
-            data_w = data_w + int(255).to_bytes(1, byteorder="little")
-        for i in range(0, 64):  # 256字节数据分为64个指令
-            hex_use.append(4)
-            hex_use.append(i)
-            hex_use.append(data_w[i * 4 + 0])
-            hex_use.append(data_w[i * 4 + 1])
-            hex_use.append(data_w[i * 4 + 2])
-            hex_use.append(data_w[i * 4 + 3])
-        hex_use.append(2)
-        hex_use.append(3)
-        hex_use.append(8)
-        hex_use.append(0)
-        hex_use.append(Fsize % 256)
-        hex_use.append(0)
-    hex_use.append(2)
-    hex_use.append(3)
-    hex_use.append(9)
-    hex_use.append(0)
-    hex_use.append(0)
-    hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    u_time = time.time() - u_time
-    print("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
-    return 1
+    finally:
+        if binfile is not None:
+            binfile.close()
 
 
 # 往Flash里面写入Bin格式的照片
@@ -1871,18 +1896,23 @@ def show_full_custom(text_color=(255, 128, 0)):
 netspeed_font_size = 20
 default_font = MiniMark.load_font("simhei.ttf", netspeed_font_size)
 netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 4)
+config_file = "MSU2_MINI.json"
 
 
 def save_config(config_obj):
-    with open("MSU2_MINI.json", "w", encoding="utf-8") as f:
-        json.dump(config_obj, f)
+    try:
+        with open(config_file, "w", encoding="utf-8") as f:
+            json.dump(config_obj, f)
+    except Exception as e:
+        print("写入配置失败：%s" % e)
 
 
 def load_config():
     try:
-        with open("MSU2_MINI.json", "r", encoding="utf-8") as f:
+        with open(config_file, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError) as e:
+        print("读取配置失败，使用默认配置：%s" % e)
         return {}
 
 
@@ -1900,11 +1930,17 @@ def UI_Page():  # 进行图像界面显示
     window.title("MG USB屏幕助手V1.0")  # 设置标题
 
     # 修改默认图标
+    image = None
     try:
-        iconimage = Image.open(MiniMark.get_resource("resource/icon.ico"))
-    except Exception:
+        image = Image.open(MiniMark.get_resource("resource/icon.ico"))
+        iconimage = image.convert()
+    except Exception as e:
+        print("读取图片失败：%s" % e)
         # 没找到图标时使用一个方块做图标
-        iconimage = Image.new("RGB", (16, 16), (0, 128, 128))
+        iconimage = Image.new("RGBA", (16, 16), (255, 0, 255))
+    finally:
+        if image is not None:
+            image.close()
     defaulticon = ImageTk.PhotoImage(iconimage)
     window.wm_iconphoto(True, defaulticon)
 
