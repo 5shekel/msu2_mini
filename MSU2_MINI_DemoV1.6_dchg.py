@@ -71,7 +71,7 @@ imagefiletypes = [
 def insert_disabled_text(text, clean=True, item=None):
     global Text1, Device_State_Labelen
     if text != "":
-        print(text)
+        print(text.rstrip('\n'))
     if Device_State_Labelen != 0:
         return
     if item is None:
@@ -1939,7 +1939,7 @@ def load_config():
 
 
 def UI_Page():  # 进行图像界面显示
-    global Text1
+    global Text1, Device_State_Labelen
     global machine_model, State_change, LCD_Change_use, Label1, Label3, Label4, Label5, Label6
     global custom_selected_names, custom_selected_displayname, custom_selected_names_tech, full_custom_template
 
@@ -2004,7 +2004,8 @@ def UI_Page():  # 进行图像界面显示
 
             Device_State_Labelen = 1
 
-            icon.run()  # 等待恢复窗口
+            # 使用新线程启用图标，防止阻塞进入事件循环，如显示桌面。不设置daemon会导致从托盘退出时该线程不结束
+            threading.Thread(target=icon.run, daemon=True).start()
         except Exception as e:
             insert_disabled_text("failed to use pystray to hide to tray, %s" % e)
             Device_State_Labelen = 0
