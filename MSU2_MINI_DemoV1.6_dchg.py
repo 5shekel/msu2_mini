@@ -68,7 +68,16 @@ imagefiletypes = [
 ]
 
 
-def insert_disabled_text(item, text, clean=True):
+def insert_disabled_text(text, clean=True, item=None):
+    global Text1, Device_State_Labelen
+    if text != "":
+        print(text)
+    if Device_State_Labelen != 0:
+        return
+    if item is None:
+        item = Text1
+    if not hasattr(item, "config"):
+        return
     item.config(state=tk.NORMAL)
     if clean:
         item.delete("1.0", tk.END)  # 清除文本框
@@ -77,10 +86,9 @@ def insert_disabled_text(item, text, clean=True):
 
 
 def convertImageFileToRGB(file_path):
-    global Text1
     img_data = bytearray()
     if not os.path.exists(file_path):  # 检查文件是否存在
-        insert_disabled_text(Text1, "文件不存在：%s\n" % file_path, False)
+        insert_disabled_text("文件不存在：%s\n" % file_path, False)
         return img_data  # 如果文件不存在，直接返回，不执行后续代码
 
     im1 = None
@@ -98,8 +106,7 @@ def convertImageFileToRGB(file_path):
             im2 = im2.crop(box)
     except Exception as e:
         errstr = "图片\"%s\"打开失败：%s\n" % (file_path, e)
-        print(errstr)
-        insert_disabled_text(Text1, errstr, False)
+        insert_disabled_text(errstr, False)
         return img_data
     finally:
         if im1 is not None:
@@ -120,7 +127,7 @@ def Get_Photo_Path1():  # 获取文件路径
     photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
     if photo_path != "" and photo_path != photo_path1:
         photo_path1 = photo_path
-        insert_disabled_text(Label3, photo_path1)
+        insert_disabled_text(photo_path1, item=Label3)
 
 
 def Get_Photo_Path2():  # 获取文件路径
@@ -128,7 +135,7 @@ def Get_Photo_Path2():  # 获取文件路径
     photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("Bin file", "*.bin")])
     if photo_path != "" and photo_path != photo_path2:
         photo_path2 = photo_path
-        insert_disabled_text(Label4, photo_path2)
+        insert_disabled_text(photo_path2, item=Label4)
 
 
 def Get_Photo_Path3():  # 获取文件路径
@@ -136,7 +143,7 @@ def Get_Photo_Path3():  # 获取文件路径
     photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
     if photo_path != "" and photo_path != photo_path3:
         photo_path3 = photo_path
-        insert_disabled_text(Label5, photo_path3)
+        insert_disabled_text(photo_path3, item=Label5)
 
 
 def Get_Photo_Path4():  # 获取文件路径
@@ -144,19 +151,19 @@ def Get_Photo_Path4():  # 获取文件路径
     photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
     if photo_path != "" and photo_path != photo_path4:
         photo_path4 = photo_path
-        insert_disabled_text(Label6, photo_path4)
+        insert_disabled_text(photo_path4, item=Label6)
 
 
 def Write_Photo_Path1():  # 写入文件
     global photo_path1, write_path_index, Text1, Img_data_use
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_disabled_text(Text1, "有正在执行的任务%d，写入失败\n" % write_path_index, False)
+        insert_disabled_text("有正在执行的任务%d，写入失败\n" % write_path_index, False)
         return
     if photo_path1 == "":
-        insert_disabled_text(Text1, "Path1 is None\n", False)
+        insert_disabled_text("Path1 is None\n", False)
         return
 
-    insert_disabled_text(Text1, "图像格式转换...\n")
+    insert_disabled_text("图像格式转换...\n")
     Img_data_use = convertImageFileToRGB(photo_path1)
     write_path_index = 1
 
@@ -164,26 +171,26 @@ def Write_Photo_Path1():  # 写入文件
 def Write_Photo_Path2():  # 写入文件
     global photo_path2, write_path_index, Text1
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_disabled_text(Text1, "有正在执行的任务%d，写入失败\n" % write_path_index, False)
+        insert_disabled_text("有正在执行的任务%d，写入失败\n" % write_path_index, False)
         return
     if photo_path2 == "":
-        insert_disabled_text(Text1, "Path2 is None\n", False)
+        insert_disabled_text("Path2 is None\n", False)
         return
 
-    insert_disabled_text(Text1, "准备烧写Flash固件...\n")
+    insert_disabled_text("准备烧写Flash固件...\n")
     write_path_index = 2
 
 
 def Write_Photo_Path3():  # 写入文件
     global photo_path3, write_path_index, Text1, Img_data_use
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_disabled_text(Text1, "有正在执行的任务%d，转换失败\n" % write_path_index, False)
+        insert_disabled_text("有正在执行的任务%d，转换失败\n" % write_path_index, False)
         return
     if photo_path3 == "":
-        insert_disabled_text(Text1, "Path3 is None\n", False)
+        insert_disabled_text("Path3 is None\n", False)
         return
 
-    insert_disabled_text(Text1, "图像格式转换...\n")
+    insert_disabled_text("图像格式转换...\n")
     Img_data_use = convertImageFileToRGB(photo_path3)
     write_path_index = 3
 
@@ -191,18 +198,18 @@ def Write_Photo_Path3():  # 写入文件
 def Write_Photo_Path4():  # 写入文件
     global photo_path4, write_path_index, Text1, Img_data_use
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_disabled_text(Text1, "有正在执行的任务%d，转换失败\n" % write_path_index, False)
+        insert_disabled_text("有正在执行的任务%d，转换失败\n" % write_path_index, False)
         return
     if photo_path4 == "":
-        insert_disabled_text(Text1, "Path4 is None\n", False)
+        insert_disabled_text("Path4 is None\n", False)
         return
 
-    insert_disabled_text(Text1, "动图格式转换中...\n")
+    insert_disabled_text("动图格式转换中...\n")
     Path_use = photo_path4
     try:
         index = Path_use.rindex(".")
     except ValueError:
-        insert_disabled_text(Text1, "动图名称不符合要求！\n", False)
+        insert_disabled_text("动图名称不符合要求！\n", False)
         return  # 如果文件名不符合要求，直接返回
     path_file_type = Path_use[index:]
     Path_use = Path_use[:index - 1]
@@ -213,7 +220,7 @@ def Write_Photo_Path4():  # 写入文件
         file_path = "%s%d%s" % (Path_use, i, path_file_type)
         Img_data_use = Img_data_use + convertImageFileToRGB(file_path)
 
-    insert_disabled_text(Text1, "转换完成，耗时%.3f秒\n" % (time.time() - u_time), False)
+    insert_disabled_text("转换完成，耗时%.3f秒\n" % (time.time() - u_time), False)
     write_path_index = 4
 
 
@@ -226,7 +233,7 @@ def Page_UP():  # 上一页
     else:
         machine_model = machine_model + 1
     State_change = 1
-    print("Current model changed to: %s" % machine_model)
+    insert_disabled_text("模式切换为: %s" % machine_model)
 
 
 def Page_Down():  # 下一页
@@ -238,18 +245,20 @@ def Page_Down():  # 下一页
     else:
         machine_model = machine_model - 1
     State_change = 1
-    print("Current model changed to: %s" % machine_model)
+    insert_disabled_text("模式切换为: %s" % machine_model)
 
 
 def LCD_Change():  # 切换显示方向
     global LCD_Change_use, Device_State
     if Device_State == 0:
-        print("设备未连接，切换失败")
+        insert_disabled_text("设备未连接，切换失败")
         return
     if LCD_Change_use == 0:  # 0
         LCD_Change_use = 1
+        insert_disabled_text("反向")
     else:  # 1
         LCD_Change_use = 0
+        insert_disabled_text("正向")
 
 
 def SER_Write(Data_U0):
@@ -262,7 +271,7 @@ def SER_Write(Data_U0):
         ser.write(Data_U0)
         ser.flush()
     except Exception as e:  # 出现异常
-        print("发送异常, %s" % traceback.format_exc())
+        print("发送异常, %s" % e)
         ser.close()  # 先将异常的串口连接关闭，防止无法打开
         set_device_state(0)  # 出现异常，串口需要重连
 
@@ -595,12 +604,12 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
-            insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+            insert_disabled_text("未读到数据，取消烧录。\n", False)
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
         print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
-        insert_disabled_text(Text1, "大小%dB,烧录中...\n" % Fsize, False)
+        insert_disabled_text("大小%dB,烧录中...\n" % Fsize, False)
         u_time = time.time()
         # 进行擦除
         if Fsize % 256 != 0:
@@ -618,11 +627,11 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
             Write_Flash_Page_fast(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
         u_time = time.time() - u_time
         print("%s 烧写完成，耗时%.3f秒" % (filepath, u_time))
-        insert_disabled_text(Text1, "烧写完成，耗时%.3f秒\n" % u_time, False)
+        insert_disabled_text("烧写完成，耗时%.3f秒\n" % u_time, False)
         return 1
     except Exception as e:  # 出现异常
         print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
-        insert_disabled_text(Text1, "文件路径或格式出错!\n", False)
+        insert_disabled_text("文件路径或格式出错!\n", False)
         return 0
     finally:
         if binfile is not None:
@@ -633,9 +642,9 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
     global Text1
     Fsize = len(img_use)
     if Fsize == 0:
-        insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+        insert_disabled_text("未读到数据，取消烧录。\n", False)
         return 0
-    insert_disabled_text(Text1, "大小%dB,烧录中...\n" % Fsize, False)
+    insert_disabled_text("大小%dB,烧录中...\n" % Fsize, False)
     u_time = time.time()
     # 进行擦除
     if Fsize % 256 != 0:
@@ -651,7 +660,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
         for i in range(Fsize % 256, 256):
             Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
         Write_Flash_Page_fast(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
-    insert_disabled_text(Text1, "烧写完成，耗时%.3f秒\n" % (time.time() - u_time), False)
+    insert_disabled_text("烧写完成，耗时%.3f秒\n" % (time.time() - u_time), False)
     return 1
 
 
@@ -661,7 +670,7 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath) - 6  # 字库文件的最后六个字节不是点阵信息
         if Fsize <= 0:
-            insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+            insert_disabled_text("未读到数据，取消烧录。\n", False)
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
@@ -771,7 +780,6 @@ def LCD_State(LCD_S):
     # 等待收回信息
     recv = SER_Read()
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
-        print("LCD towards change to %d" % LCD_S)
         return 1
     else:
         print("LCD towards change failed %d" % LCD_S)
@@ -805,7 +813,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
-            insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+            insert_disabled_text("未读到数据，取消烧录。\n", False)
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
@@ -839,7 +847,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
-            insert_disabled_text(Text1, "未读到数据，取消烧录。\n", False)
+            insert_disabled_text("未读到数据，取消烧录。\n", False)
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
@@ -1166,17 +1174,31 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
         return 0
 
 
+last_show_gif_time = datetime.now()
+photo_interval = 0.1
+
+
 def show_gif():  # 显示GIF动图
-    global State_change, gif_num
+    global photo_interval, current_time, last_show_gif_time, wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
         gif_num = 0
+        wait_time = 0
+        last_show_gif_time = current_time
     if gif_num > 35:
         gif_num = 0
 
     LCD_Photo(0, 0, 160, 80, gif_num * 100)
     gif_num = gif_num + 1
-    time.sleep(0.05)  # 用来调整动图播放速度
+
+    # 精确调整动图播放速度
+    elapse_time = (current_time - last_show_gif_time).total_seconds()
+    last_show_gif_time = current_time
+    wait_time += photo_interval - elapse_time
+    if wait_time > 0:
+        if wait_time > photo_interval:
+            wait_time = photo_interval
+        time.sleep(wait_time)  # 精确调整动图播放速度
 
 
 disk_io_counter = psutil.disk_io_counters()
@@ -1408,8 +1430,8 @@ def shrink_image_block_average(image, shrink_factor):
 screen_shot_queue = queue.Queue(2)
 screen_process_queue = queue.Queue(2)
 screenshot_monitor_id = 1
-cropped_monitor = {}
-screenshot_region = (None, None, None, None)
+screenshot_region = (0, 0, 160, 80)
+cropped_monitor = {"left": 0, "top": 0, "width": 160, "height": 80, "mon": 1}
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
@@ -1984,7 +2006,7 @@ def UI_Page():  # 进行图像界面显示
 
             icon.run()  # 等待恢复窗口
         except Exception as e:
-            print("failed to use pystray to hide to tray, %s" % traceback.format_exc())
+            insert_disabled_text("failed to use pystray to hide to tray, %s" % e)
             Device_State_Labelen = 0
             window.deiconify()  # 恢复窗口
 
@@ -2058,7 +2080,10 @@ def UI_Page():  # 进行图像界面显示
             update_label_color()
 
     scale_desc = tk.Label(root, text="文字颜色")
-    scale_desc.grid(row=0, column=3, columnspan=2, sticky=tk.W, padx=5, pady=5)
+    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=5, pady=5)
+
+    Label2 = tk.Label(root, width=2)  # 颜色预览框
+    Label2.grid(row=0, column=4, columnspan=1, padx=5, pady=5, sticky=tk.W)
 
     text_color_red_scale = ttk.Scale(root, from_=0, to=31, orient=tk.HORIZONTAL)
     text_color_red_scale.grid(row=1, column=3, sticky=tk.W, padx=5, pady=5)
@@ -2084,8 +2109,6 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_b = tk.Label(root, bg="blue", width=2)
     scale_ind_b.grid(row=3, column=4, padx=5, pady=5, sticky=tk.W)
 
-    Label2 = tk.Label(root, width=2)  # 颜色预览框
-    Label2.grid(row=4, column=3, columnspan=2, padx=5, pady=5)
     update_label_color()
 
     # 自定义显示内容
@@ -2371,9 +2394,32 @@ def UI_Page():  # 进行图像界面显示
     btn2 = ttk.Button(root, text="下翻页", width=8, command=Page_Down)
     btn2.grid(row=6, column=2, padx=5, pady=5)
 
-    # 屏幕编号
+    # 动图间隔
 
-    number_var = tk.StringVar(root, "1")
+    def change_photo_interval(*args):
+        global photo_interval
+        try:
+            photo_interval_tmp = float(interval_var.get())
+        except ValueError as e:
+            if len(interval_var.get()) > 0:
+                insert_disabled_text("Invalid number entered: %s" % e)
+            return
+        insert_disabled_text("")
+        if photo_interval != photo_interval_tmp:
+            photo_interval = photo_interval_tmp
+            State_change = 1  # 刷新屏幕
+
+    interval_var = tk.StringVar(root, "0.1")
+    interval_var.trace_add("write", change_photo_interval)
+    interval_var.set(config_obj.get("photo_interval_var", "0.1"))
+
+    label_screen_number = ttk.Label(root, text="动图间隔")
+    label_screen_number.grid(row=4, column=3, padx=5, pady=5)
+
+    number_entry = ttk.Entry(root, textvariable=interval_var, width=4)
+    number_entry.grid(row=4, column=4, sticky=tk.EW, padx=5, pady=5)
+
+    # 屏幕编号
 
     def change_screenshot_monitor(*args):
         global screenshot_monitor_id, screenshot_region, cropped_monitor
@@ -2381,8 +2427,9 @@ def UI_Page():  # 进行图像界面显示
             screenshot_monitor_id_tmp = int(number_var.get())
         except ValueError as e:
             if len(number_var.get()) > 0:
-                print("Invalid number entered: %s" % traceback.format_exc())
+                insert_disabled_text("Invalid number entered: %s" % e)
             return
+        insert_disabled_text("")
         if screenshot_monitor_id == screenshot_monitor_id_tmp:
             return
 
@@ -2394,14 +2441,15 @@ def UI_Page():  # 进行图像界面显示
                 except IndexError:
                     monitor = sct.monitors[1]
                 cropped_monitor = {
-                    "left": (screenshot_region[0] or 0) + monitor["left"],
-                    "top": (screenshot_region[1] or 0) + monitor["top"],
+                    "left": screenshot_region[0] + monitor["left"],
+                    "top": screenshot_region[1] + monitor["top"],
                     "width": screenshot_region[2] or monitor["width"],
                     "height": screenshot_region[3] or monitor["height"],
                     "mon": screenshot_monitor_id,
                 }
                 State_change = 1  # 刷新屏幕
 
+    number_var = tk.StringVar(root, "1")
     number_var.trace_add("write", change_screenshot_monitor)
     number_var.set(config_obj.get("number_var", "1"))
 
@@ -2413,8 +2461,6 @@ def UI_Page():  # 进行图像界面显示
 
     # fps
 
-    fps_var = tk.StringVar(root, "100")
-
     def change_fps(*args):
         global screenshot_limit_fps
         screenshot_limit_fps_tmp = 0
@@ -2422,10 +2468,12 @@ def UI_Page():  # 进行图像界面显示
             screenshot_limit_fps_tmp = int(fps_var.get())
         except ValueError as e:
             if len(fps_var.get()) > 0:
-                print("Invalid number entered: %s" % traceback.format_exc())
+                insert_disabled_text("Invalid number entered: %s" % e)
+        insert_disabled_text("")
         if 0 < screenshot_limit_fps_tmp != screenshot_limit_fps:
             screenshot_limit_fps = screenshot_limit_fps_tmp
 
+    fps_var = tk.StringVar(root, "100")
     fps_var.trace_add("write", change_fps)
     fps_var.set(config_obj.get("fps_var", "100"))
 
@@ -2437,19 +2485,18 @@ def UI_Page():  # 进行图像界面显示
 
     # 区域
 
-    screen_region_var = tk.StringVar(root, "0,0,,")
-
     def change_screen_region(*args):
         global screenshot_region, cropped_monitor, screenshot_monitor_id, State_change
         try:
-            t = tuple((None if x.strip() == "" else int(x)) for x in screen_region_var.get().split(","))
+            t = tuple((0 if x.strip() == "" else int(x)) for x in screen_region_var.get().split(","))
         except ValueError as e:
             if len(screen_region_var.get()) > 0:
-                print("screen_region Invalid: %s" % traceback.format_exc())
+                insert_disabled_text("投屏区域设置无效: %s\n示例: 0,0,160,80" % e)
             return
         if len(t) != 4:
-            print("screen_region Invalid, example: 0,0,160,80")
+            insert_disabled_text("投屏区域设置无效，示例: 0,0,160,80")
             return
+        insert_disabled_text("")
         if screenshot_region == t:
             return
 
@@ -2460,14 +2507,15 @@ def UI_Page():  # 进行图像界面显示
             except IndexError:
                 monitor = sct.monitors[1]
         cropped_monitor = {
-            "left": (screenshot_region[0] or 0) + monitor["left"],
-            "top": (screenshot_region[1] or 0) + monitor["top"],
+            "left": screenshot_region[0] + monitor["left"],
+            "top": screenshot_region[1] + monitor["top"],
             "width": screenshot_region[2] or monitor["width"],
             "height": screenshot_region[3] or monitor["height"],
             "mon": screenshot_monitor_id,
         }
         State_change = 1  # 刷新屏幕
 
+    screen_region_var = tk.StringVar(root)
     screen_region_var.trace_add("write", change_screen_region)
     screen_region_var.set(config_obj.get("screen_region_var", "0,0,,"))
 
@@ -2489,6 +2537,7 @@ def UI_Page():  # 进行图像界面显示
             "text_color_b": int(text_color_blue_scale.get()),
             "state_machine": machine_model,
             "lcd_change": LCD_Change_use,
+            "photo_interval_var": photo_interval,
             "number_var": screenshot_monitor_id,
             "fps_var": screenshot_limit_fps,
             "screen_region_var": screen_region_var.get(),
@@ -2596,7 +2645,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                 recv = recv.decode("gbk")  # 获取串口数据
             # 确保为MSN设备
             if len(recv) > 5 and ord(recv[0]) == 0 and recv[1:6] == "MSNCN":
-                print("%s MSN设备%s连接完成" % (get_formatted_time_string(current_time), port_list[i].name))
+                print(get_formatted_time_string(current_time), end=' ')
+                insert_disabled_text("端口%s连接成功" % port_list[i].name)
                 # 对MSN设备进行登记
                 My_MSN_Device = MSN_Device(port_list[i].name, msn_version)
                 break  # 退出当前for循环
@@ -2775,7 +2825,8 @@ def daemon_task():
                 not_wch_port_list = [x for x in port_list if x.vid != 0x1a86]
                 Get_MSN_Device(not_wch_port_list)
                 if Device_State == 0:
-                    print("%s 没有找到可用的MSN设备" % get_formatted_time_string(current_time))
+                    print(get_formatted_time_string(current_time), end=' ')
+                    insert_disabled_text("没有找到可用的设备，请确认设备是否正确连接")
                     time.sleep(1)  # 防止频繁重试
         except Exception as e:  # 出现非预期异常
             print("Exception in daemon_task, %s" % traceback.format_exc())
