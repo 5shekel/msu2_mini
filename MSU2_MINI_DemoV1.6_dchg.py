@@ -1933,14 +1933,15 @@ def UI_Page():  # 进行图像界面显示
             Device_State_Labelen = 2
             set_device_state(Device_State)
 
+    menu = (
+        pystray.MenuItem("显示", show_window, default=True),
+        pystray.MenuItem("退出", quit_window)
+    )
+
     def hide_to_tray(event=None):
         global Device_State_Labelen
         try:
-            window.withdraw()  # 隐藏窗口
-            menu = (
-                pystray.MenuItem("显示", show_window, default=True),
-                pystray.MenuItem("退出", quit_window)
-            )
+            window.withdraw()  # 隐藏主窗口
             icon = pystray.Icon("MG", iconimage, "MSU2_mini", menu)
 
             Device_State_Labelen = 1
@@ -1948,6 +1949,7 @@ def UI_Page():  # 进行图像界面显示
             icon.run()  # 等待恢复窗口
         except Exception as e:
             print("failed to use pystray to hide to tray, %s" % traceback.format_exc())
+            Device_State_Labelen = 0
             window.deiconify()  # 恢复窗口
 
     hide_btn = ttk.Button(root, text="隐藏", width=12, command=hide_to_tray)
@@ -2116,12 +2118,12 @@ def UI_Page():  # 进行图像界面显示
         sub_window.transient(window)  # 置于主窗口前面
         sub_window.resizable(0, 0)  # 锁定窗口大小不能改变
 
-        def on_closing():
+        def sub_on_closing():
             window.attributes("-disabled", False)  # 启用主窗口
             # 点击关闭时仅隐藏子窗口，不真正关闭
             sub_window.withdraw()
 
-        sub_window.protocol("WM_DELETE_WINDOW", on_closing)
+        sub_window.protocol("WM_DELETE_WINDOW", sub_on_closing)
         window.attributes("-disabled", True)  # 禁用主窗口
 
         sensor_vars = []
@@ -2249,20 +2251,21 @@ def UI_Page():  # 进行图像界面显示
         example_btn_2 = ttk.Button(btn_frame, text="简单", width=15, command=lambda: example(2))
         example_btn_2.grid(row=0, column=2, padx=5, pady=5)
 
+        instruction = '\n'.join([
+            "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
+            "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
+            "p <文本>   \t绘制文本，会自动移动坐标",
+            "a <锚点>   \t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
+            "m <x> <y>  \t移动到坐标(x,y)",
+            "t <x> <y>  \t相对当前位置移动(x,y)",
+            "f <文件名> <字号> \t更换字体，文件名如 arial.ttf",
+            "c <hex码>  \t更改文字颜色，如 c #ffff00",
+            "i <文件名> \t绘制图片",
+            "v <序号> <格式> \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
+            "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
+        ])
+
         def show_instruction():
-            instruction = '\n'.join([
-                "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
-                "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
-                "p <文本>   \t绘制文本，会自动移动坐标",
-                "a <锚点>   \t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
-                "m <x> <y>  \t移动到坐标(x,y)",
-                "t <x> <y>  \t相对当前位置移动(x,y)",
-                "f <文件名> <字号> \t更换字体，文件名如 arial.ttf",
-                "c <hex码>  \t更改文字颜色，如 c #ffff00",
-                "i <文件名> \t绘制图片",
-                "v <序号> <格式> \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
-                "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
-            ])
             tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window)
 
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, command=show_instruction)
