@@ -48,6 +48,7 @@ GRAY2 = 0x4208
 
 Img_data_use = bytearray()
 current_time = datetime.now()
+exit_code = 0
 size_USE_X1 = 160
 size_USE_Y1 = 80
 
@@ -786,6 +787,7 @@ def LCD_State(LCD_S):
     # 等待收回信息
     recv = SER_Read()
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
+        print("LCD towards change to %d" % LCD_S)
         return 1
     else:
         print("LCD towards change failed %d" % LCD_S)
@@ -2556,8 +2558,6 @@ def UI_Page():  # 进行图像界面显示
             "full_custom_template": full_custom_template,
         }
         save_config(config_obj)
-
-        window.quit()
         window.destroy()
 
     window.protocol("WM_DELETE_WINDOW", on_closing)
@@ -2845,7 +2845,8 @@ def daemon_task():
     # stop
     print("stop daemon")
     if ser is not None and ser.is_open:
-        ser.close()  # 正常关闭串口
+        print("%s closing" % ser.name)
+        ser.close()  # 正常关闭串口s
 
 
 # 设备交互只能串行进行，所有的跟设备交互操作必须全部由daemon_thread完成
@@ -2864,6 +2865,7 @@ try:
     UI_Page()
 except Exception as e:
     print("UI_Page error: %s" % traceback.format_exc())
+    exit_code = 1
 finally:
     # reap threads
     print("closing")
@@ -2878,3 +2880,4 @@ finally:
         daemon_thread.join(timeout=5.0)
     if load_thread.is_alive():
         load_thread.join(timeout=5.0)
+sys.exit(exit_code)
