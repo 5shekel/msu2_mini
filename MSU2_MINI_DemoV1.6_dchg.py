@@ -47,6 +47,7 @@ GRAY1 = 0x8410
 GRAY2 = 0x4208
 
 Img_data_use = bytearray()
+current_time = datetime.now()
 size_USE_X1 = 160
 size_USE_Y1 = 80
 
@@ -1174,16 +1175,17 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
         return 0
 
 
-last_show_gif_time = datetime.now()
+last_show_gif_time = current_time
 photo_interval = 0.1
+gif_wait_time = 0.0
 
 
 def show_gif():  # 显示GIF动图
-    global photo_interval, current_time, last_show_gif_time, wait_time, State_change, gif_num
+    global photo_interval, current_time, last_show_gif_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
         gif_num = 0
-        wait_time = 0
+        gif_wait_time = 0
         last_show_gif_time = current_time
     if gif_num > 35:
         gif_num = 0
@@ -1193,12 +1195,13 @@ def show_gif():  # 显示GIF动图
 
     # 精确调整动图播放速度
     elapse_time = (current_time - last_show_gif_time).total_seconds()
+    if elapse_time > photo_interval + 5:
+        gif_wait_time = photo_interval
+    else:
+        gif_wait_time += photo_interval - elapse_time
     last_show_gif_time = current_time
-    wait_time += photo_interval - elapse_time
-    if wait_time > 0:
-        if wait_time > photo_interval:
-            wait_time = photo_interval
-        time.sleep(wait_time)  # 精确调整动图播放速度
+    if gif_wait_time > 0:
+        time.sleep(gif_wait_time)
 
 
 disk_io_counter = psutil.disk_io_counters()
@@ -1506,7 +1509,6 @@ def screen_process_task():
     print("stop screen process")
 
 
-current_time = datetime.now()
 screenshot_test_time = current_time
 screenshot_last_limit_time = screenshot_test_time
 screenshot_test_frame = 0
