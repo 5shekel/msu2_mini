@@ -83,6 +83,7 @@ def insert_disabled_text(text, clean=True, item=None):
     if clean:
         item.delete("1.0", tk.END)  # 清除文本框
     item.insert(tk.END, text)
+    item.see(tk.END)
     item.config(state=tk.DISABLED)
 
 
@@ -219,7 +220,11 @@ def Write_Photo_Path4():  # 写入文件
     u_time = time.time()
     for i in range(0, 36):  # 依次转换36张图片
         file_path = "%s%d%s" % (Path_use, i, path_file_type)
-        Img_data_use = Img_data_use + convertImageFileToRGB(file_path)
+        converted = convertImageFileToRGB(file_path)
+        if len(converted) == 0:
+            insert_disabled_text("转换失败\n", False)
+            return  # 转换失败，取消写入
+        Img_data_use = Img_data_use + converted
 
     insert_disabled_text("转换完成，耗时%.3f秒\n" % (time.time() - u_time), False)
     write_path_index = 4
