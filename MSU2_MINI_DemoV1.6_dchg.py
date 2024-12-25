@@ -1200,11 +1200,11 @@ def show_gif():  # 显示GIF动图
 
     # 精确调整动图播放速度
     elapse_time = (current_time - last_show_gif_time).total_seconds()
+    last_show_gif_time = current_time
     if elapse_time > photo_interval + 5:
         gif_wait_time = photo_interval
     else:
         gif_wait_time += photo_interval - elapse_time
-    last_show_gif_time = current_time
     if gif_wait_time > 0:
         time.sleep(gif_wait_time)
 
@@ -1985,7 +1985,8 @@ def UI_Page():  # 进行图像界面显示
 
     def quit_window(icon, item):
         icon.stop()
-        on_closing()
+        # 使用新线程退出，否则就是在托盘图标中退出，会导致托盘图标不消失
+        threading.Thread(target=on_closing, daemon=True).start()
 
     def show_window(icon, item):
         global Device_State, Device_State_Labelen
@@ -2556,6 +2557,7 @@ def UI_Page():  # 进行图像界面显示
         }
         save_config(config_obj)
 
+        window.quit()
         window.destroy()
 
     window.protocol("WM_DELETE_WINDOW", on_closing)
