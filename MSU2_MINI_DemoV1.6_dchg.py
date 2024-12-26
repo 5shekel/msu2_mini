@@ -46,9 +46,9 @@ GRAY0 = 0xEF7D
 GRAY1 = 0x8410
 GRAY2 = 0x4208
 
-Img_data_use = bytearray()
-current_time = datetime.now()
 exit_code = 0
+current_time = datetime.now()
+Img_data_use = bytearray()
 size_USE_X1 = 160
 size_USE_Y1 = 80
 
@@ -279,8 +279,8 @@ def SER_Write(Data_U0):
         ser.flush()
     except Exception as e:  # 出现异常
         print("发送异常, %s" % e)
-        ser.close()  # 先将异常的串口连接关闭，防止无法打开
         set_device_state(0)  # 出现异常，串口需要重连
+        ser.close()  # 先将异常的串口连接关闭，防止无法打开
 
 
 def SER_Read():
@@ -299,8 +299,8 @@ def SER_Read():
         return recv
     except Exception as e:  # 出现异常
         print("接收异常, %s" % traceback.format_exc())
-        ser.close()  # 先将异常的串口连接关闭，防止无法打开
         set_device_state(0)
+        ser.close()  # 先将异常的串口连接关闭，防止无法打开
         return 0
 
 
@@ -1549,10 +1549,10 @@ def show_PC_Screen():  # 显示照片
         hexstream = screen_process_queue.get(timeout=3)
     except queue.Empty:
         Screen_Error = Screen_Error + 1
-        time.sleep(0.05)  # 防止频繁重试
         if Screen_Error > 100:
             screenshot_panic()
             Screen_Error = 0
+        time.sleep(0.05)  # 防止频繁重试
         return
     SER_Write(hexstream)
 
@@ -2001,25 +2001,21 @@ def UI_Page():  # 进行图像界面显示
             Device_State_Labelen = 2
             set_device_state(Device_State)
 
-    menu = (
-        pystray.MenuItem("显示", show_window, default=True),
-        pystray.MenuItem("退出", quit_window)
-    )
-
     def hide_to_tray(event=None):
         global Device_State_Labelen
         try:
-            window.withdraw()  # 隐藏主窗口
+            menu = (
+                pystray.MenuItem("显示", show_window, default=True),
+                pystray.MenuItem("退出", quit_window)
+            )
             icon = pystray.Icon("MG", iconimage, "MSU2_mini", menu)
-
-            Device_State_Labelen = 1
-
             # 使用新线程启用图标，防止阻塞进入事件循环，如显示桌面。不设置daemon会导致从托盘退出时该线程不结束
             threading.Thread(target=icon.run, daemon=True).start()
+
+            window.withdraw()  # 隐藏主窗口
+            Device_State_Labelen = 1
         except Exception as e:
             insert_disabled_text("failed to use pystray to hide to tray, %s" % e)
-            Device_State_Labelen = 0
-            window.deiconify()  # 恢复窗口
 
     hide_btn = ttk.Button(root, text="隐藏", width=12, command=hide_to_tray)
     hide_btn.grid(row=0, column=1, padx=5, pady=5)
@@ -2480,6 +2476,7 @@ def UI_Page():  # 进行图像界面显示
         except ValueError as e:
             if len(fps_var.get()) > 0:
                 insert_disabled_text("Invalid number entered: %s" % e)
+            return
         insert_disabled_text("")
         if 0 < screenshot_limit_fps_tmp != screenshot_limit_fps:
             screenshot_limit_fps = screenshot_limit_fps_tmp
@@ -2869,7 +2866,6 @@ except Exception as e:
 finally:
     # reap threads
     print("closing")
-
     MG_screen_thread_running = False
     MG_daemon_running = False
     if screen_shot_thread.is_alive():
