@@ -1184,13 +1184,13 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
 
 last_show_gif_time = current_time
 photo_interval = 0.1
-two_second_times = 0  # 设备超过5秒收不到消息就会断开连接，所以每隔2.3秒发送一次消息
+second_times = 0  # 设备超过5秒收不到消息就会断开连接，所以每隔2.3秒发送一次消息
 gif_wait_time = 0.0
-two_second_pass = 0
+second_pass = 0
 
 
 def show_gif():  # 显示GIF动图
-    global photo_interval, two_second_times, two_second_pass
+    global photo_interval, second_times, second_pass
     global current_time, last_show_gif_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
@@ -1202,22 +1202,22 @@ def show_gif():  # 显示GIF动图
 
     LCD_Photo(0, 0, 160, 80, gif_num * 100)
 
-    if two_second_times != 0:
-        if two_second_pass < two_second_times:
-            two_second_pass += 1
-            time.sleep(2.0)
+    if second_times != 0:
+        if second_pass < second_times:
+            second_pass += 1
+            time.sleep(1.0)
             return
         else:
-            two_second_pass = 0
+            second_pass = 0
 
     gif_num = gif_num + 1
     # 精确调整动图播放速度
     elapse_time = (current_time - last_show_gif_time).total_seconds()
     last_show_gif_time = current_time
-    if elapse_time - two_second_times * 2.0 > photo_interval + 5:
+    if elapse_time - second_times > photo_interval + 5:
         gif_wait_time = photo_interval
     else:
-        gif_wait_time += photo_interval - elapse_time + two_second_times * 2.0
+        gif_wait_time += photo_interval - elapse_time + second_times
     if gif_wait_time > 0:
         time.sleep(gif_wait_time)
 
@@ -2415,7 +2415,7 @@ def UI_Page():  # 进行图像界面显示
     # 动图间隔
 
     def change_photo_interval(*args):
-        global photo_interval, two_second_times
+        global photo_interval, second_times
         try:
             photo_interval_tmp = float(interval_var.get())
         except ValueError as e:
@@ -2423,12 +2423,12 @@ def UI_Page():  # 进行图像界面显示
                 insert_disabled_text("Invalid number entered: %s" % e)
             return
         insert_disabled_text("")
-        if photo_interval + two_second_times * 2 != photo_interval_tmp:
-            photo_interval = photo_interval_tmp % 2
-            two_second_times = photo_interval_tmp // 2
-            if two_second_times > 0 and photo_interval < 0.2:
-                photo_interval += 2.0
-                two_second_times -= 1
+        if photo_interval + second_times * 2 != photo_interval_tmp:
+            photo_interval = photo_interval_tmp % 1
+            second_times = photo_interval_tmp // 1
+            if second_times > 0 and photo_interval < 0.2:
+                photo_interval += 1
+                second_times -= 1
             State_change = 1  # 刷新屏幕
 
     interval_var = tk.StringVar(root, "0.1")
@@ -2560,7 +2560,7 @@ def UI_Page():  # 进行图像界面显示
             "text_color_b": int(text_color_blue_scale.get()),
             "state_machine": machine_model,
             "lcd_change": LCD_Change_use,
-            "photo_interval_var": photo_interval + two_second_times * 2,
+            "photo_interval_var": photo_interval + second_times,
             "number_var": screenshot_monitor_id,
             "fps_var": screenshot_limit_fps,
             "screen_region_var": screen_region_var.get(),
