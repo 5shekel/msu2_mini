@@ -274,7 +274,7 @@ def SER_Write(Data_U0):
         print("设备未连接，取消发送")
         return
     try:  # 尝试发出指令,有两种无法正确发送命令的情况：1.设备被移除,发送出错；2.设备处于MSN连接状态，对于电脑发送的指令响应迟缓
-        # ser.reset_input_buffer()
+        ser.reset_input_buffer()  # 清空输出缓存
         ser.write(Data_U0)
         ser.flush()
     except Exception as e:  # 出现异常
@@ -319,7 +319,7 @@ def Read_M_u8(add):  # 读取主机u8寄存器（MSC设备编码，Add）
     if recv != 0 and len(recv) > 5:
         return recv[5]
     else:
-        print("Read_M_u8 failed")
+        print("Read_M_u8 failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -338,7 +338,7 @@ def Read_M_u16(add):  # 读取主机u8寄存器（MSC设备编码，Add）
     if recv != 0 and len(recv) > 5:
         return recv[4] * 256 + recv[5]
     else:
-        print("Read_M_u16 failed")
+        print("Read_M_u16 failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -357,7 +357,7 @@ def Write_M_u8(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add�
     if recv != 0 and len(recv) > 0:
         return 1
     else:
-        print("Write_M_u8 failed")
+        print("Write_M_u8 failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -376,7 +376,7 @@ def Write_M_u16(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add
     if recv != 0 and len(recv) > 0:
         return 1
     else:
-        print("Write_M_u16 failed")
+        print("Write_M_u16 failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -395,7 +395,7 @@ def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return recv[4] * 256 + recv[5]
     else:
-        print("Read_ADC_CH failed, will reconnect")
+        print("Read_ADC_CH failed, will reconnect: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -534,7 +534,7 @@ def Write_Flash_Page(Page_add, data_w, Page_num):  # 往Flash指定页写入256B
     if recv != 0 and len(recv) > 0:
         return 1
     else:
-        print("Write_Flash_Page failed")
+        print("Write_Flash_Page failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -562,7 +562,7 @@ def Write_Flash_Page_fast(Page_add, data_w, Page_num):
     if recv != 0 and len(recv) > 0:
         return 1
     else:
-        print("Write_Flash_Page_fast failed")
+        print("Write_Flash_Page_fast failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -581,7 +581,7 @@ def Erase_Flash_page(add, size):  # 清空指定区域的内存
     if recv != 0 and len(recv) > 0:
         return 1
     else:
-        print("Erase_Flash_page failed")
+        print("Erase_Flash_page failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -600,7 +600,7 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
     if recv != 0 and len(recv) > 5:
         return recv[5]
     else:
-        print("Read_Flash_byte failed")
+        print("Read_Flash_byte failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -749,7 +749,7 @@ def LCD_Photo(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
-        print("LCD_Photo failed")
+        print("LCD_Photo failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -770,7 +770,7 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
-        print("LCD_ADD failed")
+        print("LCD_ADD failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -790,7 +790,7 @@ def LCD_State(LCD_S):
         print("LCD towards change to %d" % LCD_S)
         return 1
     else:
-        print("LCD towards change failed %d" % LCD_S)
+        print("LCD towards change failed: %s" % recv)
         set_device_state(0)
         return 0
 
@@ -1047,7 +1047,7 @@ def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC)
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
-        print("LCD_Photo_wb failed")
+        print("LCD_Photo_wb failed: %s" % recv)
         set_device_state(0)  # 接收出错
         return 0
 
@@ -1068,7 +1068,7 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC, Num_Page):
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
-        print("LCD_ASCII_32X64 failed")
+        print("LCD_ASCII_32X64 failed: %s" % recv)
         set_device_state(0)  # 接收出错
         return 0
 
@@ -1090,7 +1090,7 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC):
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
-        print("LCD_GB2312_16X16 failed")
+        print("LCD_GB2312_16X16 failed: %s" % recv)
         set_device_state(0)  # 接收出错
         return 0
 
@@ -1112,7 +1112,7 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, BG_
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
-        print("LCD_Photo_wb_MIX failed")
+        print("LCD_Photo_wb_MIX failed: %s" % recv)
         set_device_state(0)  # 接收出错
         return 0
 
@@ -1133,7 +1133,7 @@ def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
-        print("LCD_ASCII_32X64_MIX failed")
+        print("LCD_ASCII_32X64_MIX failed: %s" % recv)
         set_device_state(0)  # 接收出错
         return 0
 
@@ -1155,7 +1155,7 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page):
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
-        print("LCD_GB2312_16X16_MIX failed")
+        print("LCD_GB2312_16X16_MIX failed: %s" % recv)
         set_device_state(0)  # 接收出错
         return 0
 
@@ -1177,18 +1177,21 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
-        print("LCD_Color_set failed")
+        print("LCD_Color_set failed: %s" % recv)
         set_device_state(0)  # 接收出错
         return 0
 
 
 last_show_gif_time = current_time
 photo_interval = 0.1
+two_second_times = 0  # 设备超过5秒收不到消息就会断开连接，所以每隔2.3秒发送一次消息
 gif_wait_time = 0.0
+two_second_pass = 0
 
 
 def show_gif():  # 显示GIF动图
-    global photo_interval, current_time, last_show_gif_time, gif_wait_time, State_change, gif_num
+    global photo_interval, two_second_times, two_second_pass
+    global current_time, last_show_gif_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
         gif_num = 0
@@ -1198,15 +1201,23 @@ def show_gif():  # 显示GIF动图
         gif_num = 0
 
     LCD_Photo(0, 0, 160, 80, gif_num * 100)
-    gif_num = gif_num + 1
 
+    if two_second_times != 0:
+        if two_second_pass < two_second_times:
+            two_second_pass += 1
+            time.sleep(2.0)
+            return
+        else:
+            two_second_pass = 0
+
+    gif_num = gif_num + 1
     # 精确调整动图播放速度
     elapse_time = (current_time - last_show_gif_time).total_seconds()
     last_show_gif_time = current_time
-    if elapse_time > photo_interval + 5:
+    if elapse_time - two_second_times * 2.0 > photo_interval + 5:
         gif_wait_time = photo_interval
     else:
-        gif_wait_time += photo_interval - elapse_time
+        gif_wait_time += photo_interval - elapse_time + two_second_times * 2.0
     if gif_wait_time > 0:
         time.sleep(gif_wait_time)
 
@@ -2404,7 +2415,7 @@ def UI_Page():  # 进行图像界面显示
     # 动图间隔
 
     def change_photo_interval(*args):
-        global photo_interval
+        global photo_interval, two_second_times
         try:
             photo_interval_tmp = float(interval_var.get())
         except ValueError as e:
@@ -2412,8 +2423,12 @@ def UI_Page():  # 进行图像界面显示
                 insert_disabled_text("Invalid number entered: %s" % e)
             return
         insert_disabled_text("")
-        if photo_interval != photo_interval_tmp:
-            photo_interval = photo_interval_tmp
+        if photo_interval + two_second_times * 2 != photo_interval_tmp:
+            photo_interval = photo_interval_tmp % 2
+            two_second_times = photo_interval_tmp // 2
+            if two_second_times > 0 and photo_interval < 0.2:
+                photo_interval += 2.0
+                two_second_times -= 1
             State_change = 1  # 刷新屏幕
 
     interval_var = tk.StringVar(root, "0.1")
@@ -2545,7 +2560,7 @@ def UI_Page():  # 进行图像界面显示
             "text_color_b": int(text_color_blue_scale.get()),
             "state_machine": machine_model,
             "lcd_change": LCD_Change_use,
-            "photo_interval_var": photo_interval,
+            "photo_interval_var": photo_interval + two_second_times * 2,
             "number_var": screenshot_monitor_id,
             "fps_var": screenshot_limit_fps,
             "screen_region_var": screen_region_var.get(),
