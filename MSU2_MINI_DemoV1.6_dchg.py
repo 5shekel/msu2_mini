@@ -26,14 +26,16 @@ from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
 import MSU2_MINI_MG_minimark as MiniMark
 from MSU2_MINI_MG_minimark import MiniMarkParser
 
-# import pyautogui  # 用于截图(需要额外安装pillow) geezmo: 已去除依赖
-
-
 # 使用高dpi缩放适配高分屏
 try:  # >= win 8.1
-    windll.shcore.SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE)
+    windll.shcore.SetProcessDpiAwareness(2)
 except:  # win 8.0 or less
     windll.user32.SetProcessDPIAware()
+try:
+    # 取消命令行窗口快速编辑模式，防止鼠标误触导致阻塞
+    windll.kernel32.SetConsoleMode(windll.kernel32.GetStdHandle(-10), 128)
+except:
+    pass
 
 # 颜色对应的RGB565编码
 RED = 0xF800
@@ -1194,7 +1196,7 @@ def show_gif():  # 显示GIF动图
     global current_time, last_show_gif_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
-        gif_num = 0
+        # gif_num = 0
         gif_wait_time = 0
         last_show_gif_time = current_time
     if gif_num > 35:
@@ -1578,13 +1580,13 @@ def show_PC_Screen():  # 显示照片
         # real_fps = screenshot_limit_fps / ((current_time - screenshot_test_time).total_seconds())
         # print("串流FPS: %s" % real_fps)
         screenshot_test_time = current_time
-    wait_time += 1.0 / screenshot_limit_fps - elapse_time
-    if wait_time > 0:
-        time.sleep(wait_time)  # 精确控制FPS
     screenshot_last_limit_time = current_time
     screenshot_test_frame += 1
     if Screen_Error != 0:
         Screen_Error = 0
+    wait_time += 1.0 / screenshot_limit_fps - elapse_time
+    if wait_time > 0:
+        time.sleep(wait_time)  # 精确控制FPS
 
 
 netspeed_last_refresh_time = None
