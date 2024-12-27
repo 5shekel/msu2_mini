@@ -2757,16 +2757,16 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         write_path_index = 0
         State_change = 1
 
-    # 加上or key_on == 1 用于增加释放按键的响应速度
-    if current_time - last_read_adc_time > read_adc_timedelta or key_on == 1:
-        last_read_adc_time = current_time
+    if current_time - last_read_adc_time > read_adc_timedelta:
         # 检测按键是否被按下，兼具心跳功能
         if 0 < Read_ADC_CH(9) < ADC_det:
             if key_on == 0:
                 key_on = 1
                 Page_UP()
-        elif key_on == 1:  # 按键不再按下
-            key_on = 0
+        else:
+            last_read_adc_time = current_time  # 没有按键时减缓读取频率
+            if key_on == 1:  # 按键不再按下
+                key_on = 0
 
     if machine_model == 0:
         show_gif()
