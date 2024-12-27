@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+import glob
 import json  # 用于保存json格式配置
 import os  # 用于读取文件
 import queue  # geezmo: 流水线同步和交换数据用
@@ -210,24 +211,36 @@ def Write_Photo_Path4():  # 写入文件
         return
 
     insert_disabled_text("动图格式转换中...\n")
-    Path_use = photo_path4
+    Path_use1 = photo_path4
     try:
-        index = Path_use.rindex(".")
+        index = Path_use1.rindex(".")
     except ValueError:
         insert_disabled_text("动图名称不符合要求！\n", False)
         return  # 如果文件名不符合要求，直接返回
-    path_file_type = Path_use[index:]
-    Path_use = Path_use[:index - 1]
+    path_file_type = Path_use1[index:]
+    Path_use = Path_use1[:index - 1]
 
-    Img_data_use = bytearray()
     u_time = time.time()
-    for i in range(0, 36):  # 依次转换36张图片
-        file_path = "%s%d%s" % (Path_use, i, path_file_type)
-        converted = convertImageFileToRGB(file_path)
-        if len(converted) == 0:
-            insert_disabled_text("转换失败\n", False)
-            return  # 转换失败，取消写入
-        Img_data_use = Img_data_use + converted
+    Img_data_use = bytearray()
+    file_path = "%s1%s" % (Path_use, path_file_type)
+    if os.path.exists(file_path):  # 文件名是 A0、A1、…… A35 排列
+        Img_data_use = bytearray()
+        for i in range(0, 36):  # 依次转换36张图片
+            file_path = "%s%d%s" % (Path_use, i, path_file_type)
+            converted = convertImageFileToRGB(file_path)
+            if len(converted) == 0:
+                insert_disabled_text("转换失败\n", False)
+                return  # 转换失败，取消写入
+            Img_data_use = Img_data_use + converted
+    else:  # 不是规则命名，只按文件类型查找文件
+        file_path = os.path.join(os.path.dirname(Path_use1), "*%s" % path_file_type)
+        files = glob.glob(file_path)  # 按类型列出所有文件
+        for i in range(0, 36):  # 依次转换36张图片
+            converted = convertImageFileToRGB(files[i])
+            if len(converted) == 0:
+                insert_disabled_text("转换失败\n", False)
+                return  # 转换失败，取消写入
+            Img_data_use = Img_data_use + converted
 
     insert_disabled_text("转换完成，耗时%.3f秒\n" % (time.time() - u_time), False)
     write_path_index = 4
