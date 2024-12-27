@@ -234,7 +234,15 @@ def Write_Photo_Path4():  # 写入文件
             Img_data_use = Img_data_use + converted
     else:  # 不是规则命名，只按文件类型查找文件
         file_path = os.path.join(os.path.dirname(Path_use1), "*%s" % path_file_type)
-        files = glob.glob(file_path)  # 按类型列出所有文件
+        files = None
+        try:
+            files = glob.glob(file_path)  # 按类型列出所有文件
+        except Exception as e:
+            insert_disabled_text("转换失败: %s\n" % e, False)
+            return  # 转换失败，取消写入
+        if files is None or len(files) < 36:
+            insert_disabled_text("转换失败, 图片不够36张\n", False)
+            return  # 转换失败，取消写入
         for i in range(0, 36):  # 依次转换36张图片
             converted = convertImageFileToRGB(files[i])
             if len(converted) == 0:
