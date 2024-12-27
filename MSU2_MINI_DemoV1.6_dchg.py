@@ -638,8 +638,7 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
-        insert_disabled_text("大小%dB,烧录中...\n" % Fsize, False)
+        insert_disabled_text("找到\"%s\"文件,大小%dB,烧录中...\n" % (filepath, Fsize), False)
         u_time = time.time()
         # 进行擦除
         if Fsize % 256 != 0:
@@ -656,12 +655,10 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
                 Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
             Write_Flash_Page_fast(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
         u_time = time.time() - u_time
-        print("%s 烧写完成，耗时%.3f秒" % (filepath, u_time))
         insert_disabled_text("烧写完成，耗时%.3f秒\n" % u_time, False)
         return 1
     except Exception as e:  # 出现异常
-        print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
-        insert_disabled_text("文件路径或格式出错!\n", False)
+        insert_disabled_text("文件路径或格式出错\"%s\", %s\n" % (filepath, e), False)
         return 0
     finally:
         if binfile is not None:
@@ -810,7 +807,6 @@ def LCD_State(LCD_S):
     # 等待收回信息
     recv = SER_Read()
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
-        print("LCD towards change to %d" % LCD_S)
         return 1
     else:
         print("LCD towards change failed: %s" % recv)
@@ -848,7 +844,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
+        insert_disabled_text("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), False)
         u_time = time.time()
         # 进行地址写入
         LCD_ADD(x_star, y_star, x_size, y_size)
@@ -861,10 +857,10 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
                 Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
             LCD_DATA(Fdata, Fsize % 256)  # (page,数据，大小)
         u_time = time.time() - u_time
-        print("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
+        insert_disabled_text("%s 显示完成，耗时%.3f秒" % (filepath, u_time), False)
         return 1
     except Exception as e:  # 出现异常
-        print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
+        insert_disabled_text("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()), False)
         return 0
     finally:
         if binfile is not None:
@@ -882,7 +878,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
+        insert_disabled_text("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), False)
         u_time = time.time()
         # 进行地址写入
         LCD_ADD(x_star, y_star, x_size, y_size)
@@ -929,10 +925,10 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
         hex_use.append(0)
         SER_Write(hex_use)  # 发出指令
         u_time = time.time() - u_time
-        print("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
+        insert_disabled_text("%s 显示完成，耗时%.3f秒" % (filepath, u_time), False)
         return 1
     except Exception as e:  # 出现异常
-        print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
+        insert_disabled_text("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()), False)
         return 0
     finally:
         if binfile is not None:
