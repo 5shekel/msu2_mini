@@ -2674,8 +2674,9 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
         # 逐字解析编码，收到6个字符以上数据时才进行解析
         for n in range(0, len(recv) - 5):
             # 当前字节为0时进行解析，确保为MSN设备，确保版本号为数字ASC码
-            if not (ord(recv[n]) == 0 and recv[n + 1: n + 4] == "MSN"
-                    and "0" <= recv[n + 4] <= "9" and "0" <= recv[n + 5] <= "9"):
+            if (ord(recv[n]) != 0 or recv[n + 1: n + 4] != "MSN" or recv[n + 4] < "0"
+                    or recv[n + 4] > "9" or recv[n + 5] < "0" or recv[n + 5] > "9"):
+                print("连接失败，设备版本号校验失败：%s" % recv)
                 continue
             msn_version = (ord(recv[n + 4]) - 48) * 10 + (ord(recv[n + 5]) - 48)
             # 可以逐个加入数组
@@ -2696,7 +2697,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                 My_MSN_Device = MSN_Device(port_list[i].name, msn_version)
                 break  # 退出当前for循环
             else:
-                print("MSN设备%s无法连接，请检查连接是否正常" % port_list[i].name)
+                print("设备无法连接，请检查连接是否正常：%s" % recv)
 
         if My_MSN_Device is None:
             print("设备校验失败：%s" % port_list[i].name)
