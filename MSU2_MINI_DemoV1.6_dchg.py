@@ -135,13 +135,13 @@ def convertImageFileToRGB(file_path):
     try:
         im1 = Image.open(file_path)
         if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
-            im2 = im1.resize((int(80 * im1.width / im1.height), 80))
-            Img_m = int(im2.width / 2)
+            im2 = im1.resize((80 * im1.width // im1.height, 80))
+            Img_m = im2.width // 2
             box = (Img_m - 80, 0, Img_m + 80, 80)  # 定义需要裁剪的空间
             im2 = im2.crop(box)
         else:
-            im2 = im1.resize((160, int(160 * im1.height / im1.width)))
-            Img_m = int(im2.height / 2)
+            im2 = im1.resize((160, 160 * im1.height // im1.width))
+            Img_m = im2.height // 2
             box = (0, Img_m - 40, 160, Img_m + 40)  # 定义需要裁剪的空间
             im2 = im2.crop(box)
     except Exception as e:
@@ -1290,7 +1290,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
         BAT = 100
     # 磁盘使用率
     disk_info = psutil.disk_usage("/")
-    FRQ = int(disk_info.used * 100 / disk_info.total)
+    FRQ = disk_info.used * 100 // disk_info.total
 
     # # 磁盘IO
     # FRQ = 0
@@ -1682,14 +1682,14 @@ def show_netspeed(text_color=(255, 128, 0)):
     text = "上传%10s" % sizeof_fmt(sent_per_second)
     draw.text((0, 0), text, fill=text_color, font=default_font)
     text = "下载%10s" % sizeof_fmt(recv_per_second)
-    draw.text((0, size_USE_Y1 / 2), text, fill=text_color, font=default_font)
+    draw.text((0, size_USE_Y1 // 2), text, fill=text_color, font=default_font)
 
     # 绘图
     for start_y, key, color in zip([19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)]):
         sent_values = [data[key] for data in netspeed_plot_data]
         max_value = max(1024 * 100, max(sent_values))  # 最小范围 100KB/s
 
-        for i, sent in enumerate(sent_values[-int(size_USE_X1 / bar_width):]):
+        for i, sent in enumerate(sent_values[-(size_USE_X1 // bar_width):]):
             # Scale the sent value to the image height
             bar_height = int(sent * image_height / max_value) if max_value else 0
             x0 = i * bar_width
@@ -2734,7 +2734,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     State_change = 1  # 状态发生变化
     Screen_Error = 0
     # 配置按键阈值
-    ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) / 3
+    ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) // 3
     ADC_det = ADC_det - 125  # 根据125的阈值判断是否被按下
     set_device_state(1)  # 可以正常连接
 
@@ -2910,7 +2910,9 @@ def manage_task():
 
         now = datetime.now()
         ADC_ch = Read_ADC_CH(9)
-        if 0 < ADC_ch < ADC_det:  # 按键按下
+        if ADC_ch == 0:
+            continue
+        if ADC_ch < ADC_det:  # 按键按下
             if key_on == 0:  # 第一次检测到按下
                 ADC_det += 50  # 增加后续检测的灵敏度
                 key_on = 1
@@ -2936,8 +2938,8 @@ def manage_task():
                 if first_press_time == 1:
                     first_press_time = 0
             elif now - last_check_time > check_limit:
-                # if abs(ADC_ch - ADC_det - 125) > 40:  # 校正检测阈值
-                #     ADC_det = (ADC_det + ADC_ch) / 2 - 62
+                if abs(ADC_ch - ADC_det) > 40 + 125:  # 校正检测阈值
+                    ADC_det = (ADC_det + ADC_ch) // 2 - 125 // 2
                 time.sleep(0.1)  # 没有按键时减缓读取频率
             else:
                 if first_press_time != 0:
