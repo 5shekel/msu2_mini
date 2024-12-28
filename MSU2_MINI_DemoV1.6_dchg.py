@@ -72,6 +72,35 @@ imagefiletypes = [
     ("Image file", "*.dib"),
 ]
 
+default_lock = threading.Lock()
+lock_list = {}
+lock_obj = []
+
+
+def synchronized(obj=None):
+    if obj is not None:
+        cur_id = id(obj)
+        current_lock = lock_list.get(cur_id, None)
+        if current_lock is None:
+            current_lock = threading.Lock()
+            default_lock.acquire()
+            try:
+                lock_list[cur_id] = current_lock
+            finally:
+                default_lock.release()
+
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                current_lock.acquire()
+                try:
+                    return func(*args, **kwargs)
+                finally:
+                    current_lock.release()
+
+            return wrapper
+
+        return decorator
+
 
 def insert_disabled_text(text, clean=True, item=None):
     global Text1, Device_State_Labelen
@@ -332,6 +361,15 @@ def SER_Read():
         return 0
 
 
+@synchronized(obj=lock_obj)
+def SER_rw(data, read=True):
+    SER_Write(data)  # 发出指令
+    if read:
+        return SER_Read()  # 等待收回信息
+    else:
+        return 1
+
+
 def Read_M_u8(add):  # 读取主机u8寄存器（MSC设备编码，Add）
     hex_use = bytearray()
     hex_use.append(0)  # 发给主机
@@ -340,10 +378,8 @@ def Read_M_u8(add):  # 读取主机u8寄存器（MSC设备编码，Add）
     hex_use.append(add // 256)  # 高地址
     hex_use.append(add % 256)  # 低地址
     hex_use.append(0)  # 数值
-    SER_Write(hex_use)  # 发出指令
 
-    # 等待收回信息
-    recv = SER_Read()
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 5:
         return recv[5]
     else:
@@ -360,9 +396,8 @@ def Read_M_u16(add):  # 读取主机u8寄存器（MSC设备编码，Add）
     hex_use.append(add % 256)  # 地址
     hex_use.append(0)  # 高位数值
     hex_use.append(0)  # 低位数值
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 5:
         return recv[4] * 256 + recv[5]
     else:
@@ -379,9 +414,8 @@ def Write_M_u8(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add�
     hex_use.append(add // 256)  # 高地址
     hex_use.append(add % 256)  # 低地址
     hex_use.append(data_w % 256)  # 数值
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -398,9 +432,8 @@ def Write_M_u16(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add
     hex_use.append(add % 256)  # 地址
     hex_use.append(data_w // 256)  # 高位数值
     hex_use.append(data_w % 256)  # 低位数值
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -417,9 +450,8 @@ def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
     hex_use.append(0)
     hex_use.append(0)
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return recv[4] * 256 + recv[5]
     else:
@@ -556,9 +588,8 @@ def Write_Flash_Page(Page_add, data_w, Page_num):  # 往Flash指定页写入256B
     hex_use.append((Page_add % 65536) // 256)  # Data1
     hex_use.append((Page_add % 65536) % 256)  # Data2
     hex_use.append(Page_num % 256)  # Data3
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -584,9 +615,8 @@ def Write_Flash_Page_fast(Page_add, data_w, Page_num):
     hex_use.append((Page_add % 65536) // 256)  # Data1
     hex_use.append((Page_add % 65536) % 256)  # Data2
     hex_use.append(Page_num)  # Data3
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -603,9 +633,8 @@ def Erase_Flash_page(add, size):  # 清空指定区域的内存
     hex_use.append((add % 65536) % 256)  # Data2
     hex_use.append((size % 65536) // 256)  # Data1
     hex_use.append((size % 65536) % 256)  # Data2
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 0:
         return 1
     else:
@@ -622,9 +651,8 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
     hex_use.append((add % 65536) // 256)  # Data1
     hex_use.append((add % 65536) % 256)  # Data2
     hex_use.append(0)  # Data3
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 5:
         return recv[5]
     else:
@@ -733,7 +761,7 @@ def LCD_Set_XY(LCD_D0, LCD_D1):  # 设置起始位置
     hex_use.append(LCD_D0 % 256)  # Data1
     hex_use.append(LCD_D1 // 256)  # Data2
     hex_use.append(LCD_D1 % 256)  # Data3
-    SER_Write(hex_use)  # 发出指令
+    SER_rw(hex_use, read=False)  # 发出指令
 
 
 def LCD_Set_Size(LCD_D0, LCD_D1):  # 设置大小
@@ -744,7 +772,7 @@ def LCD_Set_Size(LCD_D0, LCD_D1):  # 设置大小
     hex_use.append(LCD_D0 % 256)  # Data1
     hex_use.append(LCD_D1 // 256)  # Data2
     hex_use.append(LCD_D1 % 256)  # Data3
-    SER_Write(hex_use)  # 发出指令
+    SER_rw(hex_use, read=False)  # 发出指令
 
 
 def LCD_Set_Color(LCD_D0, LCD_D1):  # 设置颜色（FC,BC）
@@ -755,7 +783,7 @@ def LCD_Set_Color(LCD_D0, LCD_D1):  # 设置颜色（FC,BC）
     hex_use.append(LCD_D0 % 256)  # Data1
     hex_use.append(LCD_D1 // 256)  # Data2
     hex_use.append(LCD_D1 % 256)  # Data3
-    SER_Write(hex_use)  # 发出指令
+    SER_rw(hex_use, read=False)  # 发出指令
 
 
 def LCD_Photo(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
@@ -768,9 +796,8 @@ def LCD_Photo(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     hex_use.append(Page_Add // 256)
     hex_use.append(Page_Add % 256)
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -789,9 +816,8 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
     hex_use.append(0)
     hex_use.append(0)
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -808,9 +834,8 @@ def LCD_State(LCD_S):
     hex_use.append(LCD_S)
     hex_use.append(0)
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
         return 1
     else:
@@ -835,7 +860,7 @@ def LCD_DATA(data_w, size):  # 往LCD写入指定大小的数据
     hex_use.append(size // 256)  # Data1
     hex_use.append(size % 256)  # Data2
     hex_use.append(0)  # Data3
-    SER_Write(hex_use)  # 发出指令
+    SER_rw(hex_use, read=False)  # 发出指令
 
 
 # 往Flash里面写入Bin格式的照片
@@ -928,7 +953,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
         hex_use.append(0)
         hex_use.append(0)
         hex_use.append(0)
-        SER_Write(hex_use)  # 发出指令
+        SER_rw(hex_use, read=False)  # 发出指令
         u_time = time.time() - u_time
         insert_disabled_text("%s 显示完成，耗时%.3f秒" % (filepath, u_time), False)
         return 1
@@ -1002,7 +1027,7 @@ def Write_LCD_Screen_fast(x_star, y_star, x_size, y_size, Photo_data):
         hex_use.append(0)
         hex_use.append(x_size * y_size * 2 % 256)
         hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
+    SER_rw(hex_use, read=False)  # 发出指令
 
 
 # 往Flash里面写入Bin格式的照片，对发送的数据进行编码分析,缩短数据指令
@@ -1051,7 +1076,7 @@ def Write_LCD_Screen_fast1(x_star, y_star, x_size, y_size, Photo_data):
     hex_use.append(0)
     hex_use.append(0)
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
+    SER_rw(hex_use, read=False)  # 发出指令
 
 
 def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC):
@@ -1065,9 +1090,8 @@ def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC)
     hex_use.append(Page_Add // 256)
     hex_use.append(Page_Add % 256)
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1086,9 +1110,8 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC, Num_Page):
     hex_use.append(ord(Txt))
     hex_use.append(Num_Page // 256)
     hex_use.append(Num_Page % 256)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1108,9 +1131,8 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC):
     hex_use.append(Txt_Data[0])
     hex_use.append(Txt_Data[1])
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1130,9 +1152,8 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, BG_
     hex_use.append(Page_Add // 256)
     hex_use.append(Page_Add % 256)
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1151,9 +1172,8 @@ def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):
     hex_use.append(ord(Txt))
     hex_use.append(Num_Page // 256)
     hex_use.append(Num_Page % 256)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1173,9 +1193,8 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page):
     hex_use.append(Txt_Data[0])
     hex_use.append(Txt_Data[1])
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1195,9 +1214,8 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
     hex_use.append(F_Color // 256)
     hex_use.append(F_Color % 256)
     hex_use.append(0)
-    SER_Write(hex_use)  # 发出指令
-    # 等待收回信息
-    recv = SER_Read()
+
+    recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
@@ -1581,7 +1599,7 @@ def show_PC_Screen():  # 显示照片
         LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
 
     try:
-        hexstream = screen_process_queue.get(timeout=3)
+        hex_use = screen_process_queue.get(timeout=3)
     except queue.Empty:
         Screen_Error = Screen_Error + 1
         if Screen_Error > 100:
@@ -1589,7 +1607,7 @@ def show_PC_Screen():  # 显示照片
             Screen_Error = 0
         time.sleep(0.05)  # 防止频繁重试
         return
-    SER_Write(hexstream)
+    SER_rw(hex_use, read=False)  # 发出指令
 
     elapse_time = (current_time - screenshot_last_limit_time).total_seconds()
     if elapse_time > 5:  # 有切换，重置参数
@@ -1685,8 +1703,8 @@ def show_netspeed(text_color=(255, 128, 0)):
     rgb888 = np.asarray(im1)
     rgb565 = rgb888_to_rgb565(rgb888)
     # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
-    hexstream = Screen_Date_Process(rgb565.flatten())
-    SER_Write(hexstream)
+    hex_use = Screen_Date_Process(rgb565.flatten())
+    SER_rw(hex_use, read=False)  # 发出指令
 
     # 大约每1秒刷新一次
     wait_time += 1 - seconds_elapsed
@@ -1861,8 +1879,8 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
 
     rgb565 = rgb888_to_rgb565(rgb888)
     # arr = np.frombuffer(rgb565.flatten().tobytes(), dtype=np.uint16).astype(np.uint32)
-    hexstream = Screen_Date_Process(rgb565.flatten())
-    SER_Write(hexstream)
+    hex_use = Screen_Date_Process(rgb565.flatten())
+    SER_rw(hex_use, read=False)  # 发出指令
 
     # 大约每1秒刷新一次
     wait_time += 1 - seconds_elapsed
@@ -1950,8 +1968,8 @@ def show_full_custom(text_color=(255, 128, 0)):
 
     rgb565 = rgb888_to_rgb565(rgb888)
     # arr = np.frombuffer(rgb565.flatten().tobytes(), dtype=np.uint16).astype(np.uint32)
-    hexstream = Screen_Date_Process(rgb565.flatten())
-    SER_Write(hexstream)
+    hex_use = Screen_Date_Process(rgb565.flatten())
+    SER_rw(hex_use, read=False)  # 发出指令
 
     # 大约每1秒刷新一次
     wait_time += 1 - seconds_elapsed
@@ -2682,9 +2700,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             msn_version = (ord(recv[n + 4]) - 48) * 10 + (ord(recv[n + 5]) - 48)
             # 可以逐个加入数组
             hex_code = int(0).to_bytes(1, byteorder="little")
-            hex_code = hex_code + b"MSNCN"
-            SER_Write(hex_code)  # 返回消息
-            recv = SER_Read()
+            hex_use = hex_code + b"MSNCN"
+            recv = SER_rw(hex_use)  # 发出指令
             if recv == 0:
                 print("连接失败，设备发送消息失败：%s" % port_list[i].name)
                 break  # 未接收到响应，串口异常，直接退出
@@ -2717,7 +2734,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     State_change = 1  # 状态发生变化
     Screen_Error = 0
     # 配置按键阈值
-    ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9)) / 2
+    ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) / 3
     ADC_det = ADC_det - 125  # 根据125的阈值判断是否被按下
     set_device_state(1)  # 可以正常连接
 
@@ -2737,13 +2754,9 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     # Write_Flash_Photo_fast(4038, "MP1")  # 状态显示页面背景，160*80单色图片，占用7个Page
 
 
-last_read_adc_time = current_time
-read_adc_timedelta = timedelta(milliseconds=300)
-
-
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
-    global machine_model, key_on, State_change, LCD_Change_now, LCD_Change_use, photo_path2
-    global write_path_index, Img_data_use, color_use, rgb_tuple, last_read_adc_time, current_time
+    global machine_model, State_change, LCD_Change_now, LCD_Change_use, photo_path2
+    global write_path_index, Img_data_use, color_use, rgb_tuple
 
     if LCD_Change_now != LCD_Change_use:  # 显示方向与设置不符合
         LCD_Change_now = LCD_Change_use
@@ -2761,17 +2774,6 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
             Write_Flash_hex_fast(0, Img_data_use)
         write_path_index = 0
         State_change = 1
-
-    if current_time - last_read_adc_time > read_adc_timedelta:
-        # 检测按键是否被按下，兼具心跳功能
-        if 0 < Read_ADC_CH(9) < ADC_det:
-            if key_on == 0:
-                key_on = 1
-                Page_UP()
-        else:
-            last_read_adc_time = current_time  # 没有按键时减缓读取频率
-            if key_on == 1:  # 按键不再按下
-                key_on = 0
 
     if machine_model == 0:
         show_gif()
@@ -2809,7 +2811,6 @@ def get_formatted_time_string(time):
 # print("系统启动时间%s" % get_formatted_time_string(datetime.fromtimestamp(psutil.boot_time())))
 # print("程序启动时间%s" % get_formatted_time_string(current_time))
 
-key_on = 0
 State_change = 1  # 状态发生变化
 Screen_Error = 0
 gif_num = 0
@@ -2886,10 +2887,71 @@ def daemon_task():
         ser.close()  # 正常关闭串口s
 
 
+# 检测按键是否被按下，兼具心跳功能
+# 单击：下一页
+# 双击：上一页
+# 长按：切换方向
+def manage_task():
+    global ser, ADC_det
+    while ser is None:
+        time.sleep(0.2)
+
+    now = datetime.now()
+    key_on = 0  # 按键是否按下
+    check_limit = timedelta(milliseconds=2000)  # 持续检测阈值
+    key_on_limit = timedelta(milliseconds=500)  # 长按阈值
+    double_key_limit = timedelta(milliseconds=500)  # 双击间隔时长
+    last_check_time = now - check_limit
+    first_press_time = 0  # 按下起始时间，未按下0，按下且已触发事件1
+    while MG_daemon_running:
+        if Device_State == 0:
+            time.sleep(0.3)
+            continue
+
+        now = datetime.now()
+        ADC_ch = Read_ADC_CH(9)
+        if 0 < ADC_ch < ADC_det:  # 按键按下
+            if key_on == 0:  # 第一次检测到按下
+                ADC_det += 50  # 增加后续检测的灵敏度
+                key_on = 1
+                if first_press_time != 0:
+                    if now - first_press_time < double_key_limit:
+                        Page_Down()  # 双击上一页
+                        first_press_time = 1  # 已触发事件
+                else:  # 第一次按下
+                    first_press_time = now
+            else:
+                if first_press_time != 1:
+                    if first_press_time != 0:
+                        if now - first_press_time > key_on_limit:
+                            LCD_Change()  # 长按切换方向
+                            first_press_time = 1  # 已触发事件
+                    else:
+                        first_press_time = now
+        else:  # 按键放开
+            if key_on != 0:  # 第一次检测到放开
+                ADC_det -= 50  # 恢复检测的灵敏度
+                key_on = 0
+                last_check_time = now  # 从第一次检测到放开1秒后再减缓频率
+                if first_press_time == 1:
+                    first_press_time = 0
+            elif now - last_check_time > check_limit:
+                # if abs(ADC_ch - ADC_det - 125) > 40:  # 校正检测阈值
+                #     ADC_det = (ADC_det + ADC_ch) / 2 - 62
+                time.sleep(0.1)  # 没有按键时减缓读取频率
+            else:
+                if first_press_time != 0:
+                    if now - first_press_time > double_key_limit:  # 没有双击，就是单击
+                        Page_UP()  # 单击下一页
+                        first_press_time = 0
+    print("stop manager")
+
+
 # 设备交互只能串行进行，所有的跟设备交互操作必须全部由daemon_thread完成
 MG_daemon_running = True
 MG_screen_thread_running = True
 daemon_thread = threading.Thread(target=daemon_task)
+manager_thread = threading.Thread(target=manage_task)
 screen_shot_thread = threading.Thread(target=screen_shot_task)
 screen_process_thread = threading.Thread(target=screen_process_task)
 load_thread = threading.Thread(target=load_task)
@@ -2898,6 +2960,7 @@ load_thread = threading.Thread(target=load_task)
 try:
     daemon_thread.start()  # 尽早启动daemon_thread
     load_thread.start()
+    manager_thread.start()
     # 打开主页面
     UI_Page()
 except Exception as e:
