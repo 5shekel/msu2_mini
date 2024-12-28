@@ -81,14 +81,19 @@ def insert_disabled_text(text, clean=True, item=None):
         return
     if item is None:
         item = Text1
-    if not hasattr(item, "config"):
+    if not hasattr(item, "winfo_viewable") or item.winfo_viewable() == False:
         return
-    item.config(state=tk.NORMAL)
-    if clean:
-        item.delete("1.0", tk.END)  # 清除文本框
-    item.insert(tk.END, text)
-    item.see(tk.END)
-    item.config(state=tk.DISABLED)
+
+    try:
+        item.config(state=tk.NORMAL)
+        if clean:
+            item.delete("1.0", tk.END)  # 清除文本框
+        item.insert(tk.END, text)
+        item.see(tk.END)
+        item.config(state=tk.DISABLED)
+    except Exception as e:
+        print(e)
+        pass
 
 
 def convertImageFileToRGB(file_path):
@@ -2811,8 +2816,8 @@ gif_num = 0
 machine_model = 3901  # 定义初始状态
 Device_State = 0  # 初始为未连接
 Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
-LCD_Change_use = 0  # 初始显示方向
-LCD_Change_now = 0
+LCD_Change_use = 0  # 设置显示方向
+LCD_Change_now = 0  # 实际显示方向
 color_use = RED  # 彩色图片点阵算法 5R6G5B
 rgb_tuple = (0, 0, 0)  # RGB颜色
 write_path_index = 0
