@@ -246,8 +246,8 @@ def Write_Photo_Path4():  # 写入文件
     Path_use1 = photo_path4
     try:
         index = Path_use1.rindex(".")
-    except ValueError:
-        insert_disabled_text("动图名称不符合要求！\n", False)
+    except ValueError as e:
+        insert_disabled_text("动图名称不符合要求！%s\n" % e, False)
         return  # 如果文件名不符合要求，直接返回
     path_file_type = Path_use1[index:]
     Path_use = Path_use1[:index - 1]
@@ -353,7 +353,7 @@ def SER_Read():
             print("SER_Read timeout")
         return recv
     except Exception as e:  # 出现异常
-        print("接收异常, %s" % traceback.format_exc())
+        print("接收异常, %s" % e)
         set_device_state(0)
         ser.close()  # 先将异常的串口连接关闭，防止无法打开
         return 0
@@ -584,7 +584,7 @@ def Write_Flash_Page(Page_add, data_w, Page_num):  # 往Flash指定页写入256B
     hex_use.append(1)  # 写Flash
     hex_use.append(Page_add // 65536)  # Data0
     hex_use.append((Page_add % 65536) // 256)  # Data1
-    hex_use.append((Page_add % 65536) % 256)  # Data2
+    hex_use.append(Page_add % 256)  # Data2
     hex_use.append(Page_num % 256)  # Data3
 
     recv = SER_rw(hex_use)  # 发出指令
@@ -609,9 +609,9 @@ def Write_Flash_Page_fast(Page_add, data_w, Page_num):
         hex_use.append(data_w[i * 4 + 3])  # Data3
     hex_use.append(3)  # 对Flash操作
     hex_use.append(3)  # 经过擦除，写Flash
-    hex_use.append(Page_add // (256 * 256))  # Data0
+    hex_use.append(Page_add // 65536)  # Data0
     hex_use.append((Page_add % 65536) // 256)  # Data1
-    hex_use.append((Page_add % 65536) % 256)  # Data2
+    hex_use.append(Page_add % 256)  # Data2
     hex_use.append(Page_num)  # Data3
 
     recv = SER_rw(hex_use)  # 发出指令
@@ -628,9 +628,9 @@ def Erase_Flash_page(add, size):  # 清空指定区域的内存
     hex_use.append(3)  # 对Flash操作
     hex_use.append(2)  # 清空指定区域的内存
     hex_use.append((add % 65536) // 256)  # Data1
-    hex_use.append((add % 65536) % 256)  # Data2
+    hex_use.append(add % 256)  # Data2
     hex_use.append((size % 65536) // 256)  # Data1
-    hex_use.append((size % 65536) % 256)  # Data2
+    hex_use.append(size % 256)  # Data2
 
     recv = SER_rw(hex_use)  # 发出指令
     if recv != 0 and len(recv) > 0:
@@ -645,9 +645,9 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
     hex_use = bytearray()
     hex_use.append(3)  # 对Flash操作
     hex_use.append(0)  # 读Flash
-    hex_use.append(add // (256 * 256))  # Data0
+    hex_use.append(add // 65536)  # Data0
     hex_use.append((add % 65536) // 256)  # Data1
-    hex_use.append((add % 65536) % 256)  # Data2
+    hex_use.append(add % 256)  # Data2
     hex_use.append(0)  # Data3
 
     recv = SER_rw(hex_use)  # 发出指令
@@ -671,20 +671,22 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
 
         insert_disabled_text("找到\"%s\"文件,大小%dB,烧录中...\n" % (filepath, Fsize), False)
         u_time = time.time()
+        Page_Count = Fsize // 256
+        Data_Remain = Fsize % 256
         # 进行擦除
-        if Fsize % 256 != 0:
-            Erase_Flash_page(Page_add, Fsize // 256 + 1)  # 清空指定区域的内存
+        if Data_Remain != 0:
+            Erase_Flash_page(Page_add, Page_Count + 1)  # 清空指定区域的内存
         else:
-            Erase_Flash_page(Page_add, Fsize // 256)  # 清空指定区域的内存
+            Erase_Flash_page(Page_add, Page_Count)  # 清空指定区域的内存
 
-        for i in range(0, Fsize // 256):  # 每次写入一个Page
+        for i in range(0, Page_Count):  # 每次写入一个Page
             Fdata = binfile.read(256)
             Write_Flash_Page_fast(Page_add + i, Fdata, 1)  # (page,数据，大小)
-        if Fsize % 256 != 0:  # 还存在没写完的数据
-            Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
-            for i in range(Fsize % 256, 256):
+        if Data_Remain != 0:  # 还存在没写完的数据
+            Fdata = binfile.read(Data_Remain)  # 将剩下的数据读完
+            for i in range(Data_Remain, 256):
                 Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
-            Write_Flash_Page_fast(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
+            Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
         u_time = time.time() - u_time
         insert_disabled_text("烧写完成，耗时%.3f秒\n" % u_time, False)
         return 1
@@ -704,20 +706,22 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
         return 0
     insert_disabled_text("大小%dB,烧录中...\n" % Fsize, False)
     u_time = time.time()
+    Page_Count = Fsize // 256
+    Data_Remain = Fsize % 256
     # 进行擦除
-    if Fsize % 256 != 0:
-        Erase_Flash_page(Page_add, Fsize // 256 + 1)  # 清空指定区域的内存
+    if Data_Remain != 0:
+        Erase_Flash_page(Page_add, Page_Count + 1)  # 清空指定区域的内存
     else:
-        Erase_Flash_page(Page_add, Fsize // 256)  # 清空指定区域的内存
-    for i in range(0, Fsize // 256):  # 每次写入一个Page
-        Fdata = img_use[:256]  # 取前256字节
-        img_use = img_use[256:]  # 取剩余字节
+        Erase_Flash_page(Page_add, Page_Count)  # 清空指定区域的内存
+
+    for i in range(0, Page_Count):  # 每次写入一个Page
+        Fdata = img_use[i * 256:(i + 1) * 256]  # 取256字节
         Write_Flash_Page_fast(Page_add + i, Fdata, 1)  # (page,数据，大小)
-    if Fsize % 256 != 0:  # 还存在没写完的数据
-        Fdata = img_use  # 将剩下的数据读完
-        for i in range(Fsize % 256, 256):
+    if Data_Remain != 0:  # 还存在没写完的数据
+        Fdata = img_use[Page_Count * 256:]  # 将剩下的数据读完
+        for i in range(Data_Remain, 256):
             Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
-        Write_Flash_Page_fast(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
+        Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
     insert_disabled_text("烧写完成，耗时%.3f秒\n" % (time.time() - u_time), False)
     return 1
 
@@ -731,16 +735,24 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
             insert_disabled_text("未读到数据，取消烧录。\n", False)
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
-
         print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
-        for i in range(0, Fsize // 256):  # 每次写入一个Pag
+
+        Page_Count = Fsize // 256
+        Data_Remain = Fsize % 256
+        # 进行擦除
+        # if Data_Remain != 0:
+        #     Erase_Flash_page(Page_add, Page_Count + 1)  # 清空指定区域的内存
+        # else:
+        #     Erase_Flash_page(Page_add, Page_Count)  # 清空指定区域的内存
+
+        for i in range(0, Page_Count):  # 每次写入一个Page
             Fdata = binfile.read(256)
             Write_Flash_Page(Page_add + i, Fdata, 1)  # (page,数据，大小)
-        if Fsize % 256 != 0:  # 还存在没写完的数据
-            Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
-            for i in range(Fsize % 256, 256):
+        if Data_Remain != 0:  # 还存在没写完的数据
+            Fdata = binfile.read(Data_Remain)  # 将剩下的数据读完
+            for i in range(Data_Remain, 256):
                 Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
-            Write_Flash_Page(Page_add + Fsize // 256, Fdata, 1)  # (page,数据，大小)
+            Write_Flash_Page(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
         print("%s 烧写完成" % filepath)
         return 1
     except Exception as e:  # 出现异常
@@ -2464,8 +2476,8 @@ def UI_Page():  # 进行图像界面显示
             return
         insert_disabled_text("")
         if photo_interval + second_times * 2 != photo_interval_tmp:
-            photo_interval = photo_interval_tmp % 1
-            second_times = photo_interval_tmp // 1
+            second_times = int(photo_interval_tmp)
+            photo_interval = photo_interval_tmp - second_times
             if second_times > 0 and photo_interval < 0.2:
                 photo_interval += 1
                 second_times -= 1
@@ -2593,6 +2605,8 @@ def UI_Page():  # 进行图像界面显示
     Text1.grid(row=5, column=0, rowspan=3, columnspan=1, sticky=tk.NS, padx=5, pady=5)
 
     def on_closing():
+        global Device_State_Labelen
+        Device_State_Labelen = 1
         # 结束时保存配置
         config_obj = {
             "text_color_r": int(text_color_red_scale.get()),
@@ -2622,6 +2636,7 @@ def UI_Page():  # 进行图像界面显示
     # 参数全部获取后再启动截图线程
     screen_shot_thread.start()
     screen_process_thread.start()
+    Device_State_Labelen = 0
 
     # 进入消息循环
     window.mainloop()
@@ -2653,10 +2668,13 @@ def set_device_state(state):
     if Device_State_Labelen == 0:
         while not hasattr(Label1, "config"):  # 页面未加载完
             time.sleep(0.1)
-        if Device_State == 1:
-            Label1.config(text="设备已连接", fg="white", bg="green")
-        else:
-            Label1.config(text="设备未连接", fg="white", bg="red")
+        try:
+            if Device_State == 1:
+                Label1.config(text="设备已连接", fg="white", bg="green")
+            else:
+                Label1.config(text="设备未连接", fg="white", bg="red")
+        except Exception as e:
+            print(e)
     elif Device_State_Labelen == 1:
         Device_State_Labelen = 3
 
@@ -2814,7 +2832,7 @@ Screen_Error = 0
 gif_num = 0
 machine_model = 3901  # 定义初始状态
 Device_State = 0  # 初始为未连接
-Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
+Device_State_Labelen = 1  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
 LCD_Change_use = 0  # 设置显示方向
 LCD_Change_now = 0  # 实际显示方向
 color_use = RED  # 彩色图片点阵算法 5R6G5B
@@ -2936,7 +2954,7 @@ def manage_task():
                 if abs(ADC_ch - ADC_det) > 40 + 125:  # 校正检测阈值
                     ADC_det = (ADC_det + ADC_ch) // 2 - 125 // 2
                     print("校正按键检测阈值为：%d" % ADC_det)
-                time.sleep(0.2)  # 没有按键时减缓读取频率
+                time.sleep(0.1)  # 没有按键时减缓读取频率
             else:
                 if first_press_time != 0:
                     if now - first_press_time > double_key_limit:  # 没有双击，就是单击
