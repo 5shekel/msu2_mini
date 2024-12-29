@@ -659,6 +659,20 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
         return 0
 
 
+# 闪存芯片P25D80具有1024KB的存储空间，以256B为一页，共4096页，使用0~4095作为页地址
+# 闪存上存储的数据信息如下：
+# for i in range(1, 37):  # 36张动图数据，160*80分辨率彩色图片，每张占用100个Page，共3600页
+#     Write_Flash_Photo_fast(100 * (i - 1), str(i))
+# Write_Flash_Photo_fast(3600, "Demo1")  # 240*240单色图片，占用29个Page
+# Write_Flash_Photo_fast(3629, "N48X66P")  # 48*66分辨率数码管图像，占用22个Page
+# Write_Flash_ZK(3651, "ASC64")  # 时钟字体，32*64分辨率ASCII表格，占用128个Page
+# Write_Flash_Photo_fast(3779, "logo")  # 240*102单色LOGO,占用12个Page
+# Write_Flash_Photo_fast(3791, "J1")  # 240*240单色图片，占用29个Page
+# Write_Flash_Photo_fast(3820, "MLOGO")  # 160*68单色图片，占用6个Page
+# Write_Flash_Photo_fast(3826, "CLK_BG")  # 时钟背景图像，160*80彩色图片，占用100个Page
+# Write_Flash_Photo_fast(3926, "PH1")  # 相册图像，160*80彩色图片，占用100个Page
+# Write_Flash_Photo_fast(4026, "N24X33P")  # 状态显示页面字体，24*33分辨率数码管图像，占用12个Page
+# Write_Flash_Photo_fast(4038, "MP1")  # 状态显示页面背景，160*80单色图片，占用7个Page
 def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式的照片
     global Text1
     binfile = None
@@ -2753,21 +2767,6 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) // 3
     ADC_det = ADC_det - 125  # 根据125的阈值判断是否被按下
     set_device_state(1)  # 可以正常连接
-
-    # 闪存芯片P25D80具有1024KB的存储空间，以256B为一页，共4096页，使用0~4095作为页地址
-    # 闪存上存储的数据信息如下：
-    # for i in range(1, 37):  # 36张动图数据，160*80分辨率彩色图片，每张占用100个Page，共3600页
-    #     Write_Flash_Photo_fast(100 * (i - 1), str(i))
-    # Write_Flash_Photo_fast(3600, "Demo1")  # 240*240单色图片，占用29个Page
-    # Write_Flash_Photo_fast(3629, "N48X66P")  # 48*66分辨率数码管图像，占用22个Page
-    # Write_Flash_ZK(3651, "ASC64")  # 时钟字体，32*64分辨率ASCII表格，占用128个Page
-    # Write_Flash_Photo_fast(3779, "logo")  # 240*102单色LOGO,占用12个Page
-    # Write_Flash_Photo_fast(3791, "J1")  # 240*240单色图片，占用29个Page
-    # Write_Flash_Photo_fast(3820, "MLOGO")  # 160*68单色图片，占用6个Page
-    # Write_Flash_Photo_fast(3826, "CLK_BG")  # 时钟背景图像，160*80彩色图片，占用100个Page
-    # Write_Flash_Photo_fast(3926, "PH1")  # 相册图像，160*80彩色图片，占用100个Page
-    # Write_Flash_Photo_fast(4026, "N24X33P")  # 状态显示页面字体，24*33分辨率数码管图像，占用12个Page
-    # Write_Flash_Photo_fast(4038, "MP1")  # 状态显示页面背景，160*80单色图片，占用7个Page
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
