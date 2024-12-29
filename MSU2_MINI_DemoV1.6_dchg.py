@@ -1669,7 +1669,7 @@ def sizeof_fmt(num, suffix="B", base=1024.0):
 
 def show_netspeed(text_color=(255, 128, 0)):
     global netspeed_last_refresh_time, netspeed_last_refresh_snetio, netspeed_plot_data
-    global default_font, netspeed_font, State_change, wait_time, current_time
+    global default_font, State_change, wait_time, current_time
 
     bar_width = 2  # 每个点宽度
     image_height = 20  # 高度
@@ -1814,7 +1814,7 @@ custom_plot_data = None
 def show_custom_two_rows(text_color=(255, 128, 0)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
     global custom_last_refresh_time, custom_plot_data, State_change, wait_time, current_time
-    global hardware_monitor_manager, custom_selected_names, custom_selected_displayname
+    global hardware_monitor_manager, custom_selected_names, custom_selected_displayname, netspeed_font
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         time.sleep(0.2)
@@ -1867,10 +1867,10 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     # 绘制文字
 
     # default_font字体支持中文
-    draw.text((0, 0), custom_selected_displayname[0][0:5], fill=text_color, font=netspeed_font)
+    draw.text((0, 0), custom_selected_displayname[0][:8], fill=text_color, font=netspeed_font)
     text = "%s" % sent_text
     draw.text((80, 0), text, fill=text_color, font=netspeed_font)
-    draw.text((0, 40), custom_selected_displayname[1][0:5], fill=text_color, font=netspeed_font)
+    draw.text((0, 40), custom_selected_displayname[1][:8], fill=text_color, font=netspeed_font)
     text = "%s" % recv_text
     draw.text((80, 40), text, fill=text_color, font=netspeed_font)
 
@@ -2202,6 +2202,19 @@ def UI_Page():  # 进行图像界面显示
     custom_selected_names_tech = config_obj.get("custom_selected_names_tech", custom_selected_names_tech)
     full_custom_template = config_obj.get("full_custom_template", full_custom_template)
 
+    def change_netspeed_font():
+        global netspeed_font, netspeed_font_size
+        longer = 0
+        if (netspeed_font.getlength(custom_selected_displayname[0][:8]) <
+                netspeed_font.getlength(custom_selected_displayname[1][:8])):
+            longer = 1
+        for index in range(4, 14, 2):
+            netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - index)
+            if netspeed_font.getlength(custom_selected_displayname[longer][:8]) < 80:
+                break
+
+    change_netspeed_font()
+
     def center_window(top_window):
         # Get the dimensions of the screen
         screen_width = top_window.winfo_screenwidth()
@@ -2443,6 +2456,7 @@ def UI_Page():  # 进行图像界面显示
         def change_sensor_displayname(i):
             if custom_selected_displayname[i] != sensor_displayname_vars[i].get():
                 custom_selected_displayname[i] = sensor_displayname_vars[i].get()
+                change_netspeed_font()
 
         # "简单"模式显示2项
         for row in range(2):
@@ -2650,7 +2664,6 @@ def UI_Page():  # 进行图像界面显示
     # 参数全部获取后再启动截图线程
     screen_shot_thread.start()
     screen_process_thread.start()
-    Device_State_Labelen = 0
 
     # 进入消息循环
     window.mainloop()
@@ -2831,7 +2844,7 @@ Screen_Error = 0
 gif_num = 0
 machine_model = 3901  # 定义初始状态
 Device_State = 0  # 初始为未连接
-Device_State_Labelen = 1  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
+Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
 LCD_Change_use = 0  # 设置显示方向
 LCD_Change_now = 0  # 实际显示方向
 color_use = RED  # 彩色图片点阵算法 5R6G5B
