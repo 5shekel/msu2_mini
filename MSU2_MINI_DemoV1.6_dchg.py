@@ -110,10 +110,9 @@ def insert_disabled_text(text, clean=True, item=None):
         return
     if item is None:
         item = Text1
-    if not hasattr(item, "winfo_viewable") or item.winfo_viewable() == False:
-        return
-
     try:
+        if not hasattr(item, "winfo_viewable") or item.winfo_viewable() == False:
+            return
         item.config(state=tk.NORMAL)
         if clean:
             item.delete("1.0", tk.END)  # 清除文本框
@@ -122,7 +121,6 @@ def insert_disabled_text(text, clean=True, item=None):
         item.config(state=tk.DISABLED)
     except Exception as e:
         print(e)
-        pass
 
 
 def convertImageFileToRGB(file_path):
@@ -2851,7 +2849,7 @@ def load_task():
 
 
 def daemon_task():
-    global ser, current_time, Device_State, Device_State_Labelen
+    global current_time, Device_State, Device_State_Labelen
 
     while MG_daemon_running:
         try:
@@ -2882,9 +2880,6 @@ def daemon_task():
 
     # stop
     print("stop daemon")
-    if ser is not None and ser.is_open:
-        print("%s closing" % ser.name)
-        ser.close()  # 正常关闭串口s
 
 
 # 检测按键是否被按下，兼具心跳功能
@@ -2893,8 +2888,8 @@ def daemon_task():
 # 长按：切换方向
 def manage_task():
     global ser, ADC_det
-    while ser is None:
-        time.sleep(0.2)
+    while ser is None and MG_daemon_running:
+        time.sleep(0.3)
 
     now = datetime.now()
     key_on = 0  # 按键是否按下
@@ -2940,7 +2935,8 @@ def manage_task():
             elif now - last_check_time > check_limit:
                 if abs(ADC_ch - ADC_det) > 40 + 125:  # 校正检测阈值
                     ADC_det = (ADC_det + ADC_ch) // 2 - 125 // 2
-                time.sleep(0.1)  # 没有按键时减缓读取频率
+                    print("校正按键检测阈值为：%d" % ADC_det)
+                time.sleep(0.2)  # 没有按键时减缓读取频率
             else:
                 if first_press_time != 0:
                     if now - first_press_time > double_key_limit:  # 没有双击，就是单击
@@ -2973,12 +2969,17 @@ finally:
     print("closing")
     MG_screen_thread_running = False
     MG_daemon_running = False
-    if screen_shot_thread.is_alive():
-        screen_shot_thread.join(timeout=5.0)
-    if screen_process_thread.is_alive():
-        screen_process_thread.join(timeout=5.0)
-    if daemon_thread.is_alive():
-        daemon_thread.join(timeout=5.0)
     if load_thread.is_alive():
         load_thread.join(timeout=5.0)
+    if manager_thread.is_alive():
+        manager_thread.join(timeout=5.0)
+    if screen_process_thread.is_alive():
+        screen_process_thread.join(timeout=5.0)
+    if screen_shot_thread.is_alive():
+        screen_shot_thread.join(timeout=5.0)
+    if daemon_thread.is_alive():
+        daemon_thread.join(timeout=5.0)
+    if ser is not None and ser.is_open:
+        print("%s closing" % ser.name)
+        ser.close()  # 正常关闭串口
 sys.exit(exit_code)
