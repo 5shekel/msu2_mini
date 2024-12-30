@@ -351,6 +351,8 @@ def SER_Read():
             trytimes -= 1
         if trytimes == 0:
             print("SER_Read timeout")
+            set_device_state(0)
+            ser.close()  # 先将异常的串口连接关闭，防止无法打开
         return recv
     except Exception as e:  # 出现异常
         print("接收异常, %s" % e)
@@ -1314,7 +1316,10 @@ def show_PC_state(FC, BC):  # 显示PC状态
         BAT = 100
     # 磁盘使用率
     disk_info = psutil.disk_usage("/")
-    FRQ = disk_info.used * 100 // disk_info.total
+    if disk_info.total == 0:
+        FRQ = 100
+    else:
+        FRQ = disk_info.used * 100 // disk_info.total
 
     # # 磁盘IO
     # FRQ = 0
@@ -1928,15 +1933,15 @@ def get_full_custom_im():
     # 获取 libre hardware monitor 数值
     custom_values = []
     for name in custom_selected_names_tech:
-        value = None
-        value_formatted = "--"
-        if name != "":
-            try:
-                value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
-            except KeyError:
-                pass
-            if value is None:
-                full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序" % name
+        if name == "":
+            continue
+        try:
+            value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
+        except KeyError:
+            continue
+        if value is None:
+            full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序" % name
+            continue
         custom_values.append((value, value_formatted))
 
     # 绘制图片
@@ -2963,8 +2968,8 @@ def manage_task():
                 if first_press_time == 1:
                     first_press_time = 0
             elif now - last_check_time > check_limit:
-                if abs(ADC_ch - ADC_det) > 40 + 125:  # 校正检测阈值
-                    ADC_det = (ADC_det + ADC_ch) // 2 - 125 // 2
+                if ADC_ch - ADC_det > 40 + 125:  # 校正检测阈值
+                    ADC_det = (ADC_det + ADC_ch - 125) // 2
                     print("校正按键检测阈值为：%d" % ADC_det)
                 time.sleep(0.1)  # 没有按键时减缓读取频率
             else:
