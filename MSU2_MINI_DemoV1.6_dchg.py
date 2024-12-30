@@ -2058,8 +2058,8 @@ def UI_Page():  # 进行图像界面显示
     window.wm_iconphoto(True, defaulticon)
 
     # 创建 Frame 容器，并将其填充到整个窗口
-    root = tk.Frame(window, bg="white smoke", padx=10, pady=10, highlightthickness=1, highlightcolor="lightgray")
-    root.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+    root = tk.Frame(window, padx=5, pady=5, highlightthickness=1, highlightcolor="lightgray")
+    root.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # 设备连接状态标签
     Label1 = tk.Label(root, text="设备未连接", fg="white", bg="red")
