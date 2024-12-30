@@ -2080,6 +2080,7 @@ def UI_Page():  # 进行图像界面显示
         global Device_State, Device_State_Labelen
         icon.stop()
         window.deiconify()  # 恢复窗口
+        hide_btn.focus_set()  # 恢复后设置默认焦点
 
         if Device_State_Labelen == 1:
             Device_State_Labelen = 0
