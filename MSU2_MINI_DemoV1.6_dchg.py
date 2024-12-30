@@ -1792,8 +1792,8 @@ def load_hardware_monitor():
             self.visitor = UpdateVisitor()
             self.computer.Accept(self.visitor)
 
-            self.sensors = {format_sensor_name(hardware, sensor): (hardware, sensor) for hardware, sensor in
-                            self.visitor.sensors}
+            self.sensors = {format_sensor_name(hardware, sensor): (hardware, sensor)
+                            for hardware, sensor in self.visitor.sensors}
 
         def get_value(self, sensor_name):
             hardware, sensor = self.sensors[sensor_name]
@@ -1888,7 +1888,8 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     if recv_text[-1] in ("%", "C"):
         min_max[1] = 100
 
-    for start_y, key, color, minmax_it in zip([19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)], min_max):
+    for start_y, key, color, minmax_it in zip(
+            [19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)], min_max):
         sent_values = [data[key] for data in custom_plot_data]
 
         max_value = max(minmax_it, max(sent_values))
@@ -1959,7 +1960,8 @@ def get_full_custom_im():
             if line == "":
                 continue
             error_line = line
-            mini_mark_parser.parse_line(line, draw, im1, record_dict=record_dict, record_dict_value=record_dict_value)
+            mini_mark_parser.parse_line(
+                line, draw, im1, record_dict=record_dict, record_dict_value=record_dict_value)
         if full_custom_error_tmp != "":
             if full_custom_error != full_custom_error_tmp:
                 full_custom_error = full_custom_error_tmp
@@ -2030,9 +2032,9 @@ def load_config():
 
 
 def UI_Page():  # 进行图像界面显示
-    global Text1, Device_State_Labelen
+    global Text1, Device_State_Labelen, full_custom_template
     global machine_model, State_change, LCD_Change_use, Label1, Label3, Label4, Label5, Label6
-    global custom_selected_names, custom_selected_displayname, custom_selected_names_tech, full_custom_template
+    global custom_selected_names, custom_selected_displayname, custom_selected_names_tech
 
     config_obj = load_config()
     machine_model = config_obj.get("state_machine", 3901)
@@ -2325,12 +2327,12 @@ def UI_Page():  # 进行图像界面显示
 
             sensor_var = tk.StringVar(tech_frame, "")
             sensor_vars_tech.append(sensor_var)
-            sensor_combobox = ttk.Combobox(tech_frame, textvariable=sensor_var,
-                                           values=[""] + list(hardware_monitor_manager.sensors.keys()), width=60)
+            sensor_combobox = ttk.Combobox(tech_frame, textvariable=sensor_var, width=60,
+                                           values=[""] + list(hardware_monitor_manager.sensors.keys()))
             sensor_combobox.set(custom_selected_names_tech[row1])
             sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row1: update_sensor_value_tech(ii))
             sensor_combobox.grid(row=row1 + 2, column=1, sticky=tk.EW, padx=5, pady=5)
-            sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑，这样会导致无法查看全部的选择文字
+            sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
         row += 2
         desc_label = tk.Label(tech_frame, text="完全自定义模板代码：", anchor=tk.W, justify=tk.LEFT)
@@ -2474,12 +2476,12 @@ def UI_Page():  # 进行图像界面显示
 
             sensor_var = tk.StringVar(simple_frame, "")
             sensor_vars.append(sensor_var)
-            sensor_combobox = ttk.Combobox(simple_frame, textvariable=sensor_var,
-                                           values=[""] + list(hardware_monitor_manager.sensors.keys()), width=60)
+            sensor_combobox = ttk.Combobox(simple_frame, textvariable=sensor_var, width=60,
+                                           values=[""] + list(hardware_monitor_manager.sensors.keys()))
             sensor_combobox.set(custom_selected_names[row])
             sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value(ii))
             sensor_combobox.grid(row=row + 2, column=1, sticky=tk.EW, padx=5, pady=5)
-            sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑，这样会导致无法查看全部的选择文字
+            sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
         center_window(sub_window)
 
