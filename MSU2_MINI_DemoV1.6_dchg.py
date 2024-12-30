@@ -323,6 +323,7 @@ def LCD_Change():  # 切换显示方向
         insert_disabled_text("正向")
 
 
+# 由于设备不支持多线程访问，请不要直接使用SER_Write，应使用SER_rw方法
 def SER_Write(Data_U0):
     global ser
     if not ser.is_open:
@@ -338,6 +339,7 @@ def SER_Write(Data_U0):
         ser.close()  # 先将异常的串口连接关闭，防止无法打开
 
 
+# 由于设备不支持多线程访问，请不要直接使用SER_Read，应使用SER_rw方法
 def SER_Read():
     global ser
     if not ser.is_open:
