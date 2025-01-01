@@ -2036,6 +2036,10 @@ def UI_Page():  # 进行图像界面显示
     global machine_model, State_change, LCD_Change_use, Label1, Label3, Label4, Label5, Label6
     global custom_selected_names, custom_selected_displayname, custom_selected_names_tech
 
+    # 这两个线程尽早启动
+    daemon_thread.start()
+    load_thread.start()
+
     config_obj = load_config()
     machine_model = config_obj.get("state_machine", 3901)
     LCD_Change_use = config_obj.get("lcd_change", 0)
@@ -2177,9 +2181,9 @@ def UI_Page():  # 进行图像界面显示
     Label2 = tk.Label(root, width=2)  # 颜色预览框
     Label2.grid(row=0, column=4, columnspan=1, padx=5, pady=5, sticky=tk.W)
 
-    # style.configure('my.Horizontal.TScale', foreground="red", background="red")
+    # style.configure("red.Horizontal.TScale", background="red")  # 设置滑块背景色
     text_color_red_scale = ttk.Scale(root, from_=0, to=31, orient=tk.HORIZONTAL)
-    text_color_red_scale.grid(row=1, column=3, sticky=tk.W, padx=5, pady=5)
+    text_color_red_scale.grid(row=1, column=3, sticky=tk.EW, padx=5, pady=5)
     text_color_red_scale.set(config_obj.get("text_color_r", 31))
     text_color_red_scale.config(command=lambda x: update_label_color_red())
 
@@ -2187,7 +2191,7 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_r.grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
 
     text_color_green_scale = ttk.Scale(root, from_=0, to=63, orient=tk.HORIZONTAL)
-    text_color_green_scale.grid(row=2, column=3, sticky=tk.W, padx=5, pady=5)
+    text_color_green_scale.grid(row=2, column=3, sticky=tk.EW, padx=5, pady=5)
     text_color_green_scale.set(config_obj.get("text_color_g", 32))
     text_color_green_scale.config(command=lambda x: update_label_color_green())
 
@@ -2195,7 +2199,7 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_g.grid(row=2, column=4, padx=5, pady=5, sticky=tk.W)
 
     text_color_blue_scale = ttk.Scale(root, from_=0, to=31, orient=tk.HORIZONTAL)
-    text_color_blue_scale.grid(row=3, column=3, sticky=tk.W, padx=5, pady=5)
+    text_color_blue_scale.grid(row=3, column=3, sticky=tk.EW, padx=5, pady=5)
     text_color_blue_scale.set(config_obj.get("text_color_b", 0))
     text_color_blue_scale.config(command=lambda x: update_label_color_blue())
 
@@ -2642,8 +2646,6 @@ def UI_Page():  # 进行图像界面显示
     Text1.grid(row=5, column=0, rowspan=3, columnspan=1, sticky=tk.NS, padx=5, pady=5)
 
     def on_closing():
-        global Device_State_Labelen
-        Device_State_Labelen = 1
         # 结束时保存配置
         config_obj = {
             "text_color_r": int(text_color_red_scale.get()),
@@ -2671,7 +2673,6 @@ def UI_Page():  # 进行图像界面显示
         hide_to_tray()  # 命令行启动时设置隐藏
 
     # 参数全部获取后再启动截图线程
-    daemon_thread.start()
     screen_shot_thread.start()
     screen_process_thread.start()
     manager_thread.start()
@@ -2986,18 +2987,16 @@ def manage_task():
     print("stop manager")
 
 
-# 设备交互只能串行进行，所有的跟设备交互操作必须全部由daemon_thread完成
 MG_daemon_running = True
 MG_screen_thread_running = True
 daemon_thread = threading.Thread(target=daemon_task)
+load_thread = threading.Thread(target=load_task)
 manager_thread = threading.Thread(target=manage_task)
 screen_shot_thread = threading.Thread(target=screen_shot_task)
 screen_process_thread = threading.Thread(target=screen_process_task)
-load_thread = threading.Thread(target=load_task)
 
 # tkinter requires the main thread
 try:
-    load_thread.start()
     # 打开主页面
     UI_Page()
 except Exception as e:
@@ -3019,6 +3018,6 @@ finally:
     if daemon_thread.is_alive():
         daemon_thread.join(timeout=5.0)
     if ser is not None and ser.is_open:
-        print("%s closing" % ser.name)
+        print("%s close" % ser.name)
         ser.close()  # 正常关闭串口
 sys.exit(exit_code)
