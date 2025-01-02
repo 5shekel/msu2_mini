@@ -2350,7 +2350,7 @@ def UI_Page():  # 进行图像界面显示
         # 创建自定义内容输入框
         row += 1
         text_frame = ttk.Frame(tech_frame, padding="5")
-        text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky=tk.EW)
+        text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=0, sticky=tk.EW)
 
         def update_global_text(event=None):
             global full_custom_template
@@ -2363,18 +2363,18 @@ def UI_Page():  # 进行图像界面显示
                 canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
                 canvas.image = tk_im
 
-        text_area = tk.Text(text_frame, wrap=tk.WORD, width=40, height=10, padx=5, pady=5)
+        text_area = tk.Text(text_frame, wrap=tk.WORD, width=10, height=10, padx=5, pady=0)
         text_area.insert(tk.END, full_custom_template)
         text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        view_frame = ttk.Frame(text_frame, padding="10")
-        view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=0, pady=0)
+        view_frame = ttk.Frame(text_frame, padding="0")
+        view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
-        desc_label = tk.Label(view_frame, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=5, pady=5)
+        desc_label = tk.Label(view_frame, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=5, pady=0)
         desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
 
         canvas = tk.Canvas(view_frame, width=160, height=80)
-        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
+        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=5, pady=0)
 
         text_area.bind("<KeyRelease>", update_global_text)  # 按键弹起时触发
         # text_area.bind("<FocusOut>", update_global_text)  # 当组件失去焦点触发
