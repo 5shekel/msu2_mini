@@ -1378,8 +1378,8 @@ def show_Photo1():  # 显示照片
     time.sleep(1)  # 1秒刷新一次
 
 
-def show_PC_time():
-    global State_change, current_time, color_use
+def show_PC_time(color_use):
+    global State_change, current_time
     FC = color_use
     photo_add = 3826
     num_add = 3651
@@ -1974,7 +1974,7 @@ def get_full_custom_im():
     return im1
 
 
-def show_full_custom(text_color=(255, 128, 0)):
+def show_full_custom():
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
     global custom_last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_time
 
@@ -2032,7 +2032,7 @@ def load_config():
 
 
 def UI_Page():  # 进行图像界面显示
-    global Text1, Device_State_Labelen, full_custom_template
+    global Text1, rgb_tuple, Device_State_Labelen, full_custom_template
     global machine_model, State_change, LCD_Change_use, Label1, Label3, Label4, Label5, Label6
     global custom_selected_names, custom_selected_displayname, custom_selected_names_tech
 
@@ -2147,64 +2147,68 @@ def UI_Page():  # 进行图像界面显示
         r1 = int(text_color_red_scale.get())
         g1 = int(text_color_green_scale.get())
         b1 = int(text_color_blue_scale.get())
-        color_use = (r1 << 11) | (g1 << 5) | b1  # 彩色图片点阵算法 5R6G5B
-        r2 = r1 * 255 // 31
-        g2 = g1 * 255 // 63
-        b2 = b1 * 255 // 31
-        rgb_tuple = (r2, g2, b2)  # rgb
+        color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),)))[0][0]
+        rgb_tuple = (r1, g1, b1)  # rgb
         if Label2:
-            color_La = "#{:02x}{:02x}{:02x}".format(r2, g2, b2)
+            color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
             Label2.config(bg=color_La)
         State_change = 1
 
     def update_label_color_red():
-        global color_use
+        global rgb_tuple
         r1 = int(text_color_red_scale.get())
-        if (color_use >> 11) != r1:
+        if rgb_tuple[0] != r1:
             update_label_color()
 
     def update_label_color_green():
-        global color_use
+        global rgb_tuple
         g1 = int(text_color_green_scale.get())
-        if ((color_use & 2047) >> 5) != g1:
+        if rgb_tuple[1] != g1:
             update_label_color()
 
     def update_label_color_blue():
-        global color_use
+        global rgb_tuple
         b1 = int(text_color_blue_scale.get())
-        if (color_use & 31) != b1:
+        if rgb_tuple[2] != b1:
             update_label_color()
 
     scale_desc = tk.Label(root, text="文字颜色")
-    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=5, pady=5)
+    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
     Label2 = tk.Label(root, width=2)  # 颜色预览框
     Label2.grid(row=0, column=4, columnspan=1, padx=5, pady=5, sticky=tk.W)
 
-    # style.configure("red.Horizontal.TScale", background="red")  # 设置滑块背景色
-    text_color_red_scale = ttk.Scale(root, from_=0, to=31, orient=tk.HORIZONTAL)
-    text_color_red_scale.grid(row=1, column=3, sticky=tk.EW, padx=5, pady=5)
-    text_color_red_scale.set(config_obj.get("text_color_r", 31))
+    color_frame = ttk.Frame(root, padding="0")
+    color_frame.grid(row=1, column=3, rowspan=3, columnspan=2, padx=5, pady=5, sticky=tk.NSEW)
+    color_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
+    color_frame.grid_propagate(0)  # 禁止被内部控件撑大
+
+    scale_ind_r = tk.Label(color_frame, text="R")
+    scale_ind_r.grid(row=0, column=0, padx=0, pady=0, sticky=tk.SW)
+
+    text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, showvalue=True,
+                                    width=11, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
+    text_color_red_scale.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
+    text_color_red_scale.set(config_obj.get("text_color_r", 255))
     text_color_red_scale.config(command=lambda x: update_label_color_red())
 
-    scale_ind_r = tk.Label(root, bg="red", width=2)
-    scale_ind_r.grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
+    scale_ind_g = tk.Label(color_frame, text="G")
+    scale_ind_g.grid(row=1, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_green_scale = ttk.Scale(root, from_=0, to=63, orient=tk.HORIZONTAL)
-    text_color_green_scale.grid(row=2, column=3, sticky=tk.EW, padx=5, pady=5)
-    text_color_green_scale.set(config_obj.get("text_color_g", 32))
+    text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL,
+                                      width=11, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
+    text_color_green_scale.grid(row=1, column=1, sticky=tk.EW, padx=0, pady=0)
+    text_color_green_scale.set(config_obj.get("text_color_g", 0))
     text_color_green_scale.config(command=lambda x: update_label_color_green())
 
-    scale_ind_g = tk.Label(root, bg="green", width=2)
-    scale_ind_g.grid(row=2, column=4, padx=5, pady=5, sticky=tk.W)
+    scale_ind_b = tk.Label(color_frame, text="B")
+    scale_ind_b.grid(row=2, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_blue_scale = ttk.Scale(root, from_=0, to=31, orient=tk.HORIZONTAL)
-    text_color_blue_scale.grid(row=3, column=3, sticky=tk.EW, padx=5, pady=5)
-    text_color_blue_scale.set(config_obj.get("text_color_b", 0))
+    text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL,
+                                     width=11, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
+    text_color_blue_scale.grid(row=2, column=1, sticky=tk.EW, padx=0, pady=0)
+    text_color_blue_scale.set(config_obj.get("text_color_b", 255))
     text_color_blue_scale.config(command=lambda x: update_label_color_blue())
-
-    scale_ind_b = tk.Label(root, bg="blue", width=2)
-    scale_ind_b.grid(row=3, column=4, padx=5, pady=5, sticky=tk.W)
 
     update_label_color()
 
@@ -2300,12 +2304,12 @@ def UI_Page():  # 进行图像界面显示
         sensor_vars_tech = []
 
         # 创建一个选项卡
-        notebook = tkinter.ttk.Notebook(sub_window)
+        notebook = ttk.Notebook(sub_window)
         notebook.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=tk.W)
 
         # 添加“自定义多项”标签页
 
-        tech_frame = tkinter.Frame(master=sub_window)
+        tech_frame = tk.Frame(master=sub_window)
         notebook.add(tech_frame, text="  显示多项数值  ")
         tech_frame.focus_set()  # 设置默认焦点
 
@@ -2442,7 +2446,7 @@ def UI_Page():  # 进行图像界面显示
 
         # 添加“简单两项图表”标签页
 
-        simple_frame = tkinter.Frame(master=sub_window)
+        simple_frame = tk.Frame(master=sub_window)
         notebook.add(simple_frame, text="  显示两项图表  ")
 
         desc_label = tk.Label(simple_frame, text="名称")
@@ -2529,7 +2533,7 @@ def UI_Page():  # 进行图像界面显示
     interval_var.set(config_obj.get("photo_interval_var", "0.1"))
 
     label_screen_number = ttk.Label(root, text="动图间隔")
-    label_screen_number.grid(row=4, column=3, padx=5, pady=5)
+    label_screen_number.grid(row=4, column=3, sticky=tk.E, padx=5, pady=5)
 
     number_entry = ttk.Entry(root, textvariable=interval_var, width=4)
     number_entry.grid(row=4, column=4, sticky=tk.EW, padx=5, pady=5)
@@ -2569,7 +2573,7 @@ def UI_Page():  # 进行图像界面显示
     number_var.set(config_obj.get("number_var", "1"))
 
     label_screen_number = ttk.Label(root, text="屏幕编号")
-    label_screen_number.grid(row=5, column=3, padx=5, pady=5)
+    label_screen_number.grid(row=5, column=3, sticky=tk.E, padx=5, pady=5)
 
     number_entry = ttk.Entry(root, textvariable=number_var, width=4)
     number_entry.grid(row=5, column=4, sticky=tk.EW, padx=5, pady=5)
@@ -2594,7 +2598,7 @@ def UI_Page():  # 进行图像界面显示
     fps_var.set(config_obj.get("fps_var", "100"))
 
     label = ttk.Label(root, text="最大 FPS")
-    label.grid(row=6, column=3, padx=5, pady=5)
+    label.grid(row=6, column=3, sticky=tk.E, padx=5, pady=5)
 
     fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
     fps_entry.grid(row=6, column=4, sticky=tk.EW, padx=5, pady=5)
@@ -2638,7 +2642,7 @@ def UI_Page():  # 进行图像界面显示
     label = ttk.Label(root, text="投屏区域(左,上,宽,高):")
     label.grid(row=7, column=1, columnspan=2, sticky=tk.E, padx=5, pady=5)
 
-    screen_region_entry = ttk.Entry(root, textvariable=screen_region_var, width=11)
+    screen_region_entry = ttk.Entry(root, textvariable=screen_region_var, width=8)
     screen_region_entry.grid(row=7, column=3, columnspan=2, sticky=tk.EW, padx=5, pady=5)
 
     # 创建信息显示文本框
@@ -2824,7 +2828,7 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     elif machine_model == 3:
         show_Photo1()
     elif machine_model == 4:
-        show_PC_time()
+        show_PC_time(color_use)
     elif machine_model == 5:
         show_PC_Screen()
     elif machine_model == 3901:
@@ -2832,7 +2836,7 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     elif machine_model == 3902:
         show_custom_two_rows(text_color=rgb_tuple)
     elif machine_model == 3903:
-        show_full_custom(text_color=rgb_tuple)
+        show_full_custom()
 
 
 def get_formatted_time_string(time):
