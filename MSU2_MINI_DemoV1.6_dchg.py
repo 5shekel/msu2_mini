@@ -2363,18 +2363,18 @@ def UI_Page():  # 进行图像界面显示
                 canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
                 canvas.image = tk_im
 
-        text_area = tk.Text(text_frame, wrap=tk.WORD, width=10, height=10, padx=5, pady=0)
+        text_area = tk.Text(text_frame, wrap=tk.WORD, width=10, height=10, padx=0, pady=0)
         text_area.insert(tk.END, full_custom_template)
         text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         view_frame = ttk.Frame(text_frame, padding="0")
         view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
-        desc_label = tk.Label(view_frame, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=5, pady=0)
+        desc_label = tk.Label(view_frame, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=0, pady=0)
         desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
 
         canvas = tk.Canvas(view_frame, width=160, height=80)
-        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=5, pady=0)
+        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
         text_area.bind("<KeyRelease>", update_global_text)  # 按键弹起时触发
         # text_area.bind("<FocusOut>", update_global_text)  # 当组件失去焦点触发
@@ -2386,7 +2386,11 @@ def UI_Page():  # 进行图像界面显示
 
         row += 1
         btn_frame = ttk.Frame(tech_frame, padding="5")
-        btn_frame.grid(row=row, column=0, columnspan=2, padx=0, pady=0, sticky=tk.W)
+        btn_frame.grid(row=row, column=0, columnspan=2, padx=0, pady=0, sticky=tk.EW)
+        btn_frame.grid_columnconfigure(0, weight=1)  # 设置第1列自动调整宽度
+        btn_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
+        btn_frame.grid_columnconfigure(2, weight=1)  # 设置第3列自动调整宽度
+        btn_frame.grid_columnconfigure(3, weight=1)  # 设置第4列自动调整宽度
 
         def show_error():
             get_full_custom_im()
@@ -2397,7 +2401,7 @@ def UI_Page():  # 进行图像界面显示
                 tk.messagebox.showerror(title="错误", message=full_custom_error, parent=sub_window)
 
         show_error_btn = ttk.Button(btn_frame, text="查看模板错误", width=15, command=show_error)
-        show_error_btn.grid(row=0, column=0, padx=5, pady=5)
+        show_error_btn.grid(row=0, column=0, padx=5, pady=5, sticky=tk.EW)
 
         def example(i):
             global full_custom_template
@@ -2419,9 +2423,9 @@ def UI_Page():  # 进行图像界面显示
             update_global_text()
 
         example_btn_1 = ttk.Button(btn_frame, text="科技", width=15, command=lambda: example(1))
-        example_btn_1.grid(row=0, column=1, padx=5, pady=5)
+        example_btn_1.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
         example_btn_2 = ttk.Button(btn_frame, text="简单", width=15, command=lambda: example(2))
-        example_btn_2.grid(row=0, column=2, padx=5, pady=5)
+        example_btn_2.grid(row=0, column=2, padx=5, pady=5, sticky=tk.EW)
 
         instruction = '\n'.join([
             "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
@@ -2441,7 +2445,7 @@ def UI_Page():  # 进行图像界面显示
             tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window)
 
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, command=show_instruction)
-        show_instruction_btn.grid(row=0, column=3, padx=5, pady=5)
+        show_instruction_btn.grid(row=0, column=3, padx=5, pady=5, sticky=tk.EW)
 
         # 添加“简单两项图表”标签页
 
