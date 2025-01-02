@@ -1378,9 +1378,8 @@ def show_Photo1():  # 显示照片
     time.sleep(1)  # 1秒刷新一次
 
 
-def show_PC_time(color_use):
+def show_PC_time(FC):
     global State_change, current_time
-    FC = color_use
     photo_add = 3826
     num_add = 3651
     if State_change == 1:
