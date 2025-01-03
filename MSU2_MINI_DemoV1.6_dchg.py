@@ -72,35 +72,6 @@ imagefiletypes = [
     ("Image file", "*.dib"),
 ]
 
-default_lock = threading.Lock()
-lock_list = {}
-lock_obj = []
-
-
-def synchronized(obj=None):
-    if obj is not None:
-        cur_id = id(obj)
-        current_lock = lock_list.get(cur_id, None)
-        if current_lock is None:
-            current_lock = threading.Lock()
-            default_lock.acquire()
-            try:
-                lock_list[cur_id] = current_lock
-            finally:
-                default_lock.release()
-
-        def decorator(func):
-            def wrapper(*args, **kwargs):
-                current_lock.acquire()
-                try:
-                    return func(*args, **kwargs)
-                finally:
-                    current_lock.release()
-
-            return wrapper
-
-        return decorator
-
 
 def insert_text_message(text, clean=True, item=None):
     global Text1
@@ -361,13 +332,19 @@ def SER_Read():
         return 0
 
 
-@synchronized(obj=lock_obj)
+SER_lock = threading.Lock()
+
+
 def SER_rw(data, read=True):
-    SER_Write(data)  # 发出指令
-    if read:
-        return SER_Read()  # 等待收回信息
-    else:
-        return 1
+    SER_lock.acquire()
+    try:
+        SER_Write(data)  # 发出指令
+        if read:
+            return SER_Read()  # 等待收回信息
+        else:
+            return 1
+    finally:
+        SER_lock.release()
 
 
 def Read_M_u8(add):  # 读取主机u8寄存器（MSC设备编码，Add）
@@ -1252,7 +1229,7 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
 
 last_show_gif_time = current_time
 photo_interval = 0.1
-second_times = 0  # 设备超过5秒收不到消息就会断开连接，所以每隔2.3秒发送一次消息
+second_times = 0  # 设备超过5秒收不到消息就会断开连接，所以每隔1秒发送一次消息
 gif_wait_time = 0.0
 second_pass = 0
 
