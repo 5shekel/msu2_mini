@@ -2141,13 +2141,10 @@ def UI_Page():  # 进行图像界面显示
 
     # 创建颜色滑块
 
-    def update_label_color():
+    def update_label_color(r1, g1, b1):
         global color_use, rgb_tuple, State_change
-        r1 = int(text_color_red_scale.get())
-        g1 = int(text_color_green_scale.get())
-        b1 = int(text_color_blue_scale.get())
-        color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),)))[0][0]
         rgb_tuple = (r1, g1, b1)  # rgb
+        color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),)))[0][0]
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
             Label2.config(bg=color_La)
@@ -2156,26 +2153,28 @@ def UI_Page():  # 进行图像界面显示
     def update_label_color_red():
         global rgb_tuple
         r1 = int(text_color_red_scale.get())
-        if rgb_tuple[0] != r1:
-            update_label_color()
+        update_label_color(r1, rgb_tuple[1], rgb_tuple[2])
 
     def update_label_color_green():
         global rgb_tuple
         g1 = int(text_color_green_scale.get())
-        if rgb_tuple[1] != g1:
-            update_label_color()
+        update_label_color(rgb_tuple[0], g1, rgb_tuple[2])
 
     def update_label_color_blue():
         global rgb_tuple
         b1 = int(text_color_blue_scale.get())
-        if rgb_tuple[2] != b1:
-            update_label_color()
+        update_label_color(rgb_tuple[0], rgb_tuple[1], b1)
 
     scale_desc = tk.Label(root, text="文字颜色")
     scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
     Label2 = tk.Label(root, width=2)  # 颜色预览框
     Label2.grid(row=0, column=4, columnspan=1, padx=5, pady=5, sticky=tk.W)
+
+    config_red = config_obj.get("text_color_r", 255)
+    config_green = config_obj.get("text_color_g", 0)
+    config_blue = config_obj.get("text_color_b", 255)
+    update_label_color(config_red, config_green, config_blue)
 
     color_frame = ttk.Frame(root, padding="0")
     color_frame.grid(row=1, column=3, rowspan=3, columnspan=2, padx=5, pady=5, sticky=tk.NSEW)
@@ -2188,7 +2187,7 @@ def UI_Page():  # 进行图像界面显示
     text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, showvalue=True,
                                     width=11, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
     text_color_red_scale.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
-    text_color_red_scale.set(config_obj.get("text_color_r", 255))
+    text_color_red_scale.set(config_red)
     text_color_red_scale.config(command=lambda x: update_label_color_red())
 
     scale_ind_g = tk.Label(color_frame, text="G")
@@ -2197,7 +2196,7 @@ def UI_Page():  # 进行图像界面显示
     text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL,
                                       width=11, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
     text_color_green_scale.grid(row=1, column=1, sticky=tk.EW, padx=0, pady=0)
-    text_color_green_scale.set(config_obj.get("text_color_g", 0))
+    text_color_green_scale.set(config_green)
     text_color_green_scale.config(command=lambda x: update_label_color_green())
 
     scale_ind_b = tk.Label(color_frame, text="B")
@@ -2206,10 +2205,8 @@ def UI_Page():  # 进行图像界面显示
     text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL,
                                      width=11, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
     text_color_blue_scale.grid(row=2, column=1, sticky=tk.EW, padx=0, pady=0)
-    text_color_blue_scale.set(config_obj.get("text_color_b", 255))
+    text_color_blue_scale.set(config_blue)
     text_color_blue_scale.config(command=lambda x: update_label_color_blue())
-
-    update_label_color()
 
     # 自定义显示内容
 
