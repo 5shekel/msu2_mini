@@ -2184,7 +2184,7 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_r = tk.Label(color_frame, text="R")
     scale_ind_r.grid(row=0, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, showvalue=True,
+    text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, showvalue=True, takefocus=True,
                                     width=11, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
     text_color_red_scale.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
     text_color_red_scale.set(config_red)
@@ -2193,7 +2193,7 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_g = tk.Label(color_frame, text="G")
     scale_ind_g.grid(row=1, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL,
+    text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True,
                                       width=11, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
     text_color_green_scale.grid(row=1, column=1, sticky=tk.EW, padx=0, pady=0)
     text_color_green_scale.set(config_green)
@@ -2202,7 +2202,7 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_b = tk.Label(color_frame, text="B")
     scale_ind_b.grid(row=2, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL,
+    text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True,
                                      width=11, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
     text_color_blue_scale.grid(row=2, column=1, sticky=tk.EW, padx=0, pady=0)
     text_color_blue_scale.set(config_blue)
