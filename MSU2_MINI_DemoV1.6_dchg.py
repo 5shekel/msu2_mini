@@ -1695,10 +1695,10 @@ def show_netspeed(text_color=(255, 128, 0)):
     im1 = Image.new("RGB", (size_USE_X1, size_USE_Y1), (0, 0, 0))
     draw = ImageDraw.Draw(im1)
 
-    # 绘制文字
-    text = "上传%10s" % sizeof_fmt(sent_per_second)
+    # 绘制文字, 字号20时一行可以放16个字符，汉字占2字符
+    text = "上传 %9s/s" % sizeof_fmt(sent_per_second)
     draw.text((0, 0), text, fill=text_color, font=default_font)
-    text = "下载%10s" % sizeof_fmt(recv_per_second)
+    text = "下载 %9s/s" % sizeof_fmt(recv_per_second)
     draw.text((0, size_USE_Y1 // 2), text, fill=text_color, font=default_font)
 
     # 绘图
@@ -1902,15 +1902,13 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
 
     draw = ImageDraw.Draw(im1)
 
-    # 绘制文字
+    # 绘制文字, 字号20时一行可以放16个字符，汉字占2字符
 
     # default_font字体支持中文
-    draw.text((0, 0), custom_selected_displayname[0][:8], fill=text_color, font=netspeed_font)
-    text = "%s" % sent_text
-    draw.text((80, 0), text, fill=text_color, font=netspeed_font)
-    draw.text((0, 40), custom_selected_displayname[1][:8], fill=text_color, font=netspeed_font)
-    text = "%s" % recv_text
-    draw.text((80, 40), text, fill=text_color, font=netspeed_font)
+    text = "%-3s %12s" % (custom_selected_displayname[0][:8], sent_text)
+    draw.text((0, 0), text, fill=text_color, font=netspeed_font)
+    text = "%-3s %12s" % (custom_selected_displayname[1][:8], recv_text)
+    draw.text((0, 40), text, fill=text_color, font=netspeed_font)
 
     # 绘图
     # 决定最小范围
@@ -2404,15 +2402,15 @@ def UI_Page():  # 进行图像界面显示
 
         text_area = tk.Text(text_frame, wrap=tk.WORD, width=10, height=10, padx=0, pady=0)
         text_area.insert(tk.END, full_custom_template)
-        text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=0, pady=0)
 
         view_frame = ttk.Frame(text_frame, padding="0")
         view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
         desc_label = tk.Label(view_frame, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=0, pady=0)
-        desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
+        desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
-        canvas = tk.Canvas(view_frame, width=160, height=80)
+        canvas = tk.Canvas(view_frame, width=160, height=80, borderwidth=0)
         canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
         text_area.bind("<KeyRelease>", update_global_text)  # 按键弹起时触发
