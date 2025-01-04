@@ -68,6 +68,8 @@ class MiniMarkParser:
 
     def parse_line(self, line, draw, img, record_dict=None, record_dict_value=None):
         parts = line.split()
+        if len(parts) == 0:
+            return
         command = parts[0]
 
         if command == 'a':

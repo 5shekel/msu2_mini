@@ -1974,15 +1974,15 @@ def get_full_custom_im():
 
     custom_values = []
     for name in custom_selected_names_tech:
-        if name == "":
-            continue
-        try:
-            value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
-        except KeyError:
-            continue
-        if value is None:
-            full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序" % name
-            continue
+        value = None
+        value_formatted = None
+        if name != "":
+            try:
+                value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
+            except KeyError:
+                pass
+            if value is None:
+                full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序。\n" % name
         custom_values.append((value, value_formatted))
 
     # 绘制图片
@@ -1996,9 +1996,7 @@ def get_full_custom_im():
     try:
         mini_mark_parser.reset_state()
         for line in full_custom_template.split('\n'):
-            line = line.rstrip('\r').strip()  # possible
-            if line == "":
-                continue
+            line = line.rstrip('\r')  # possible
             error_line = line
             mini_mark_parser.parse_line(
                 line, draw, im1, record_dict=record_dict, record_dict_value=record_dict_value)
@@ -2257,7 +2255,7 @@ def UI_Page():  # 进行图像界面显示
     full_custom_template = config_obj.get("full_custom_template", full_custom_template)
 
     def change_netspeed_font():
-        global netspeed_font, netspeed_font_size
+        global netspeed_font, netspeed_font_size, custom_selected_displayname
         longer = 0
         if (netspeed_font.getlength(custom_selected_displayname[0][:8]) <
                 netspeed_font.getlength(custom_selected_displayname[1][:8])):
@@ -2408,7 +2406,7 @@ def UI_Page():  # 进行图像界面显示
         view_frame = ttk.Frame(text_frame, padding="0")
         view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
-        desc_label = tk.Label(view_frame, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=0, pady=0)
+        desc_label = tk.Label(view_frame, width=1, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=0, pady=0)
         desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
         canvas = tk.Canvas(view_frame, width=160, height=80, borderwidth=0)
@@ -2432,7 +2430,7 @@ def UI_Page():  # 进行图像界面显示
 
         def show_error():
             get_full_custom_im()
-            print(full_custom_error)
+            print(full_custom_error.rstrip('\n'))
             if full_custom_error == "OK":
                 tk.messagebox.showinfo(title="提示", message=full_custom_error, parent=sub_window)
             else:
