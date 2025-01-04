@@ -162,7 +162,7 @@ def Get_Photo_Path4():  # 获取文件路径
 
 
 def Write_Photo_Path1():  # 写入文件
-    global photo_path1, write_path_index, Text1, Img_data_use
+    global photo_path1, write_path_index, Img_data_use
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index, False)
         return
@@ -176,7 +176,7 @@ def Write_Photo_Path1():  # 写入文件
 
 
 def Write_Photo_Path2():  # 写入文件
-    global photo_path2, write_path_index, Text1
+    global photo_path2, write_path_index
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index, False)
         return
@@ -189,7 +189,7 @@ def Write_Photo_Path2():  # 写入文件
 
 
 def Write_Photo_Path3():  # 写入文件
-    global photo_path3, write_path_index, Text1, Img_data_use
+    global photo_path3, write_path_index, Img_data_use
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index, False)
         return
@@ -203,7 +203,7 @@ def Write_Photo_Path3():  # 写入文件
 
 
 def Write_Photo_Path4():  # 写入文件
-    global photo_path4, write_path_index, Text1, Img_data_use
+    global photo_path4, write_path_index, Img_data_use
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index, False)
         return
@@ -653,7 +653,6 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
 # Write_Flash_Photo_fast(4026, "N24X33P")  # 状态显示页面字体，24*33分辨率数码管图像，占用12个Page
 # Write_Flash_Photo_fast(4038, "MP1")  # 状态显示页面背景，160*80单色图片，占用7个Page
 def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式的照片
-    global Text1
     binfile = None
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
@@ -692,7 +691,6 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
 
 
 def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
-    global Text1
     Fsize = len(img_use)
     if Fsize == 0:
         insert_text_message("未读到数据，取消烧录。\n", False)
@@ -1267,12 +1265,12 @@ def show_gif():  # 显示GIF动图
         time.sleep(gif_wait_time)
 
 
-disk_io_counter = psutil.disk_io_counters()
-net_io_counter = psutil.net_io_counters()
+# disk_io_counter = psutil.disk_io_counters()
+# net_io_counter = psutil.net_io_counters()
 
 
 def show_PC_state(FC, BC):  # 显示PC状态
-    global State_change, disk_io_counter, net_io_counter
+    global State_change
     photo_add = 4038
     num_add = 4026
     if State_change == 1:
@@ -1640,10 +1638,24 @@ netspeed_plot_data = None
 
 
 def sizeof_fmt(num, suffix="B", base=1024.0):
-    # Use KB for small value
+    num = abs(num)
+    if num < base:
+        return "%3.1f%s" % (num, suffix)
     for unit in ("K", "M", "G", "T", "P", "E", "Z"):
         num /= base
-        if abs(num) < base:
+        if num < base:
+            return "%3.1f%s%s" % (num, unit, suffix)
+    return "%3.1fY%s" % (num, suffix)
+
+
+def sizeof1000_fmt(num, suffix="B", base=1000.0):
+    if num < base:
+        if 0 < num < 1:
+            return "%3.1fm%s" % (num * base, suffix)
+        return "%3.1f%s" % (num, suffix)
+    for unit in ("K", "M", "G", "T", "P", "E", "Z"):
+        num /= base
+        if num < base:
             return "%3.1f%s%s" % (num, unit, suffix)
     return "%3.1fY%s" % (num, suffix)
 
@@ -1722,7 +1734,36 @@ def show_netspeed(text_color=(255, 128, 0)):
 # 独立线程加载，忽略错误，以免错误影响到程序的其他功能
 def load_hardware_monitor():
     from HardwareMonitor import Hardware
-    from HardwareMonitor.Util import SensorValueToString
+
+    SensorTypeUnitFormatter = {
+        Hardware.SensorType.Voltage: [sizeof1000_fmt, "V"],
+        Hardware.SensorType.Current: [sizeof1000_fmt, "A"],
+        Hardware.SensorType.Clock: [sizeof1000_fmt, "Hz", 1000 * 1000],
+        Hardware.SensorType.Load: "{:.1f}%",
+        Hardware.SensorType.Temperature: "{:.1f}°C",
+        Hardware.SensorType.Fan: [sizeof1000_fmt, "RPM"],
+        Hardware.SensorType.Flow: [sizeof1000_fmt, "L/h"],
+        Hardware.SensorType.Control: "{:.1f}%",
+        Hardware.SensorType.Level: "{:.1f}%",
+        Hardware.SensorType.Power: [sizeof1000_fmt, "W"],
+        Hardware.SensorType.Data: [sizeof_fmt, "B", 1024 * 1024 * 1024],
+        Hardware.SensorType.SmallData: [sizeof_fmt, "B", 1024 * 1024],
+        Hardware.SensorType.Factor: "{:.3f}",
+        Hardware.SensorType.Frequency: [sizeof1000_fmt, "Hz"],
+        Hardware.SensorType.Throughput: [sizeof_fmt, "B/s"],
+        Hardware.SensorType.TimeSpan: "{}",
+        Hardware.SensorType.Energy: [sizeof1000_fmt, "Wh", 0.001],
+    }
+
+    def FormatSensor(value: float, sensortype) -> str:
+        if not value:
+            value = 0
+        formatStr = SensorTypeUnitFormatter.get(sensortype, "{}")
+        if type(formatStr) == type([]):
+            if len(formatStr) > 2:
+                value *= formatStr[2]
+            return formatStr[0](value, suffix=formatStr[1])
+        return formatStr.format(value)
 
     class UpdateVisitor(Hardware.IVisitor):
         __namespace__ = "TestHardwareMonitor"
@@ -1779,7 +1820,7 @@ def load_hardware_monitor():
         def get_value_formatted(self, sensor_name):
             hardware, sensor = self.sensors[sensor_name]
             hardware.Update()
-            return sensor.Value, SensorValueToString(sensor.Value, sensor.SensorType)
+            return sensor.Value, FormatSensor(sensor.Value, sensor.SensorType)
 
     return HardwareMonitorManager
 
@@ -2629,9 +2670,9 @@ def UI_Page():  # 进行图像界面显示
     def on_closing():
         # 结束时保存配置
         config_obj = {
-            "text_color_r": int(text_color_red_scale.get()),
-            "text_color_g": int(text_color_green_scale.get()),
-            "text_color_b": int(text_color_blue_scale.get()),
+            "text_color_r": rgb_tuple[0],
+            "text_color_g": rgb_tuple[1],
+            "text_color_b": rgb_tuple[2],
             "state_machine": machine_model,
             "lcd_change": LCD_Change_use,
             "photo_interval_var": photo_interval + second_times,
