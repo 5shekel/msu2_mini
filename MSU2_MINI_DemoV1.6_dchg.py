@@ -1797,13 +1797,14 @@ def load_hardware_monitor():
     class HardwareMonitorManager:
         def __init__(self):
             self.computer = Hardware.Computer()
-            self.computer.IsMotherboardEnabled = True
+            self.computer.IsBatteryEnabled = True
             self.computer.IsControllerEnabled = True
             self.computer.IsCpuEnabled = True
             self.computer.IsGpuEnabled = True
-            self.computer.IsBatteryEnabled = True
             self.computer.IsMemoryEnabled = True
+            self.computer.IsMotherboardEnabled = True
             self.computer.IsNetworkEnabled = True
+            self.computer.IsPsuEnabled = True
             self.computer.IsStorageEnabled = True
             self.computer.Open()
 
