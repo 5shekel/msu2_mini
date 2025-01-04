@@ -1735,6 +1735,7 @@ def show_netspeed(text_color=(255, 128, 0)):
 def load_hardware_monitor():
     from HardwareMonitor import Hardware
 
+    # see `HardwareMonitor.Util.SensorTypeUnitFormatter`
     SensorTypeUnitFormatter = {
         Hardware.SensorType.Voltage: [sizeof1000_fmt, "V"],
         Hardware.SensorType.Current: [sizeof1000_fmt, "A"],
@@ -1759,7 +1760,7 @@ def load_hardware_monitor():
         if not value:
             value = 0
         formatStr = SensorTypeUnitFormatter.get(sensortype, "{}")
-        if type(formatStr) == type([]):
+        if isinstance(formatStr, list):
             if len(formatStr) > 2:
                 value *= formatStr[2]
             return formatStr[0](value, suffix=formatStr[1])
@@ -1817,9 +1818,16 @@ def load_hardware_monitor():
             hardware.Update()
             return sensor.Value
 
+        def get_hardware(self, sensor_name):
+            return self.sensors[sensor_name][0]
+
+        @staticmethod
+        def update_hardwares(hardwares):
+            for hardware in hardwares:
+                hardware.Update()
+
         def get_value_formatted(self, sensor_name):
             hardware, sensor = self.sensors[sensor_name]
-            hardware.Update()
             return sensor.Value, FormatSensor(sensor.Value, sensor.SensorType)
 
     return HardwareMonitorManager
@@ -1855,6 +1863,14 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
 
     # 获取 libre hardware monitor 数值
+    hardwares = set()  # 因为hardware不能重复更新，所以这里用set去掉重复项
+    for name in custom_selected_names:
+        if name == "":
+            continue
+        hardware = hardware_monitor_manager.get_hardware(name)
+        hardwares.add(hardware)
+    hardware_monitor_manager.update_hardwares(hardwares)
+
     sent = None
     sent_text = None
     try:
@@ -1949,6 +1965,14 @@ def get_full_custom_im():
 
     full_custom_error_tmp = ""
     # 获取 libre hardware monitor 数值
+    hardwares = set()  # 因为hardware不能重复更新，所以这里用set去掉重复项
+    for name in custom_selected_names_tech:
+        if name == "":
+            continue
+        hardware = hardware_monitor_manager.get_hardware(name)
+        hardwares.add(hardware)
+    hardware_monitor_manager.update_hardwares(hardwares)
+
     custom_values = []
     for name in custom_selected_names_tech:
         if name == "":
