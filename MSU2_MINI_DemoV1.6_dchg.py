@@ -1765,13 +1765,11 @@ def load_hardware_monitor():
 
         def VisitHardware(self, hardware: Hardware.IHardware):
             hardware.Update()
-            for subHardware in hardware.SubHardware:
-                subHardware.Update()
-                for sensor in subHardware.Sensors:
-                    self.sensors.append([subHardware, sensor])
-
             for sensor in hardware.Sensors:
                 self.sensors.append([hardware, sensor])
+
+            for subHardware in hardware.SubHardware:
+                self.VisitHardware(subHardware)
 
         def VisitParameter(self, parameter: Hardware.IParameter):
             pass
