@@ -1636,6 +1636,7 @@ netspeed_last_refresh_time = None
 netspeed_last_refresh_snetio = None
 netspeed_plot_data = None
 default_data_range = [0] * 80
+time_second = timedelta(seconds=1)
 
 
 def sizeof_fmt(num, suffix="B", base=1024.0):
@@ -1670,13 +1671,13 @@ def show_netspeed(text_color=(255, 128, 0)):
 
     # 获取网速 bytes/second
 
-    seconds_elapsed = (current_time - netspeed_last_refresh_time) / timedelta(seconds=1)
-
-    sent_per_second = (current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent) / seconds_elapsed
+    # 因为刷新间隔刚好是1秒，所以不需要除时间
+    sent_per_second = current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent
     netspeed_plot_data["sent"] = netspeed_plot_data["sent"][1:] + [sent_per_second]
-    recv_per_second = (current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv) / seconds_elapsed
+    recv_per_second = current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv
     netspeed_plot_data["recv"] = netspeed_plot_data["recv"][1:] + [recv_per_second]
 
+    seconds_elapsed = (current_time - netspeed_last_refresh_time) / time_second
     netspeed_last_refresh_time = current_time
     netspeed_last_refresh_snetio = current_snetio
 
@@ -1882,7 +1883,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     custom_plot_data["sent"] = custom_plot_data["sent"][1:] + [sent]
     custom_plot_data["recv"] = custom_plot_data["recv"][1:] + [recv]
 
-    seconds_elapsed = (current_time - custom_last_refresh_time) / timedelta(seconds=1)
+    seconds_elapsed = (current_time - custom_last_refresh_time) / time_second
     custom_last_refresh_time = current_time
 
     # 绘制图片
@@ -2015,7 +2016,7 @@ def show_full_custom():
         custom_last_refresh_time = current_time
         LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
 
-    seconds_elapsed = (current_time - custom_last_refresh_time) / timedelta(seconds=1)
+    seconds_elapsed = (current_time - custom_last_refresh_time) / time_second
 
     custom_last_refresh_time = current_time
 
