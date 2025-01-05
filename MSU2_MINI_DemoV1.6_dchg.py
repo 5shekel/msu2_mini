@@ -1639,24 +1639,12 @@ netspeed_plot_data = None
 
 def sizeof_fmt(num, suffix="B", base=1024.0):
     num = abs(num)
-    if num < base:
-        return "%3.1f%s" % (num, suffix)
-    for unit in ("K", "M", "G", "T", "P", "E", "Z"):
-        num /= base
+    if 0 < num < 0.5:  # 小于0.5才显示mA/mV/mW/mWh/mL
+        return "%3.1fm%s" % (num * base, suffix)
+    for unit in ("", "K", "M", "G", "T", "P", "E", "Z"):
         if num < base:
             return "%3.1f%s%s" % (num, unit, suffix)
-    return "%3.1fY%s" % (num, suffix)
-
-
-def sizeof1000_fmt(num, suffix="B", base=1000.0):
-    if num < base:
-        if 0 < num < 1:
-            return "%3.1fm%s" % (num * base, suffix)
-        return "%3.1f%s" % (num, suffix)
-    for unit in ("K", "M", "G", "T", "P", "E", "Z"):
         num /= base
-        if num < base:
-            return "%3.1f%s%s" % (num, unit, suffix)
     return "%3.1fY%s" % (num, suffix)
 
 
@@ -1737,23 +1725,23 @@ def load_hardware_monitor():
 
     # see `HardwareMonitor.Util.SensorTypeUnitFormatter`
     SensorTypeUnitFormatter = {
-        Hardware.SensorType.Voltage: [sizeof1000_fmt, "V"],
-        Hardware.SensorType.Current: [sizeof1000_fmt, "A"],
-        Hardware.SensorType.Clock: [sizeof1000_fmt, "Hz", 1000 * 1000],
+        Hardware.SensorType.Voltage: [sizeof_fmt, "V", 1000],
+        Hardware.SensorType.Current: [sizeof_fmt, "A", 1000],
+        Hardware.SensorType.Clock: [sizeof_fmt, "Hz", 1000, 1000 * 1000],
         Hardware.SensorType.Load: "{:.1f}%",
         Hardware.SensorType.Temperature: "{:.1f}°C",
-        Hardware.SensorType.Fan: [sizeof1000_fmt, "RPM"],
-        Hardware.SensorType.Flow: [sizeof1000_fmt, "L/h"],
+        Hardware.SensorType.Fan: [sizeof_fmt, "RPM", 1000],
+        Hardware.SensorType.Flow: [sizeof_fmt, "L/h", 1000],
         Hardware.SensorType.Control: "{:.1f}%",
         Hardware.SensorType.Level: "{:.1f}%",
-        Hardware.SensorType.Power: [sizeof1000_fmt, "W"],
-        Hardware.SensorType.Data: [sizeof_fmt, "B", 1024 * 1024 * 1024],
-        Hardware.SensorType.SmallData: [sizeof_fmt, "B", 1024 * 1024],
+        Hardware.SensorType.Power: [sizeof_fmt, "W", 1000],
+        Hardware.SensorType.Data: [sizeof_fmt, "B", 1024, 1024 * 1024 * 1024],
+        Hardware.SensorType.SmallData: [sizeof_fmt, "B", 1024, 1024 * 1024],
         Hardware.SensorType.Factor: "{:.3f}",
-        Hardware.SensorType.Frequency: [sizeof1000_fmt, "Hz"],
-        Hardware.SensorType.Throughput: [sizeof_fmt, "B/s"],
+        Hardware.SensorType.Frequency: [sizeof_fmt, "Hz", 1000],
+        Hardware.SensorType.Throughput: [sizeof_fmt, "B/s", 1024],
         Hardware.SensorType.TimeSpan: "{}",
-        Hardware.SensorType.Energy: [sizeof1000_fmt, "Wh", 0.001],
+        Hardware.SensorType.Energy: [sizeof_fmt, "Wh", 1000, 0.001],
     }
 
     def FormatSensor(value: float, sensortype) -> str:
@@ -1761,9 +1749,9 @@ def load_hardware_monitor():
             value = 0
         formatStr = SensorTypeUnitFormatter.get(sensortype, "{}")
         if isinstance(formatStr, list):
-            if len(formatStr) > 2:
-                value *= formatStr[2]
-            return formatStr[0](value, suffix=formatStr[1])
+            if len(formatStr) > 3:
+                value *= formatStr[3]
+            return formatStr[0](value, suffix=formatStr[1], base=formatStr[2])
         return formatStr.format(value)
 
     class UpdateVisitor(Hardware.IVisitor):
@@ -1814,11 +1802,6 @@ def load_hardware_monitor():
             self.sensors = {format_sensor_name(hardware, sensor): (hardware, sensor)
                             for hardware, sensor in self.visitor.sensors}
 
-        def get_value(self, sensor_name):
-            hardware, sensor = self.sensors[sensor_name]
-            hardware.Update()
-            return sensor.Value
-
         def get_hardware(self, sensor_name):
             return self.sensors[sensor_name][0]
 
@@ -1826,6 +1809,10 @@ def load_hardware_monitor():
         def update_hardwares(hardwares):
             for hardware in hardwares:
                 hardware.Update()
+
+        def get_value(self, sensor_name):
+            hardware, sensor = self.sensors[sensor_name]
+            return sensor.Value
 
         def get_value_formatted(self, sensor_name):
             hardware, sensor = self.sensors[sensor_name]
