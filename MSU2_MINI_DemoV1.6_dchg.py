@@ -1635,6 +1635,7 @@ def show_PC_Screen():  # 显示照片
 netspeed_last_refresh_time = None
 netspeed_last_refresh_snetio = None
 netspeed_plot_data = None
+default_data_range = [0] * 80
 
 
 def sizeof_fmt(num, suffix="B", base=1024.0):
@@ -1660,7 +1661,7 @@ def show_netspeed(text_color=(255, 128, 0)):
     if State_change == 1:
         # 初始化
         if netspeed_plot_data is None:
-            netspeed_plot_data = [{"sent": 0, "recv": 0}] * (size_USE_X1 // bar_width)
+            netspeed_plot_data = {"sent": default_data_range, "recv": default_data_range}
         State_change = 0
         wait_time = 0
         netspeed_last_refresh_time = current_time - timedelta(seconds=0.001)
@@ -1672,9 +1673,9 @@ def show_netspeed(text_color=(255, 128, 0)):
     seconds_elapsed = (current_time - netspeed_last_refresh_time) / timedelta(seconds=1)
 
     sent_per_second = (current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent) / seconds_elapsed
+    netspeed_plot_data["sent"] = netspeed_plot_data["sent"][1:] + [sent_per_second]
     recv_per_second = (current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv) / seconds_elapsed
-
-    netspeed_plot_data = netspeed_plot_data[1:] + [{"sent": sent_per_second, "recv": recv_per_second}]
+    netspeed_plot_data["recv"] = netspeed_plot_data["recv"][1:] + [recv_per_second]
 
     netspeed_last_refresh_time = current_time
     netspeed_last_refresh_snetio = current_snetio
@@ -1690,13 +1691,14 @@ def show_netspeed(text_color=(255, 128, 0)):
     draw.text((0, size_USE_Y1 // 2), text, fill=text_color, font=default_font)
 
     # 绘图
+    min_draw = 1024  # 最小范围 1KB/s
     for start_y, key, color in zip([19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)]):
-        sent_values = [data[key] for data in netspeed_plot_data]
-        max_value = max(1024 * 100, max(sent_values))  # 最小范围 100KB/s
+        sent_values = netspeed_plot_data[key]
+        max_value = max(min_draw, max(sent_values))
 
         for i, sent in enumerate(sent_values[-(size_USE_X1 // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = int(sent * image_height / max_value) if max_value else 0
+            bar_height = int(sent * image_height / max_value)
             x0 = i * bar_width
             y0 = image_height - bar_height
             x1 = (i + 1) * bar_width
@@ -1829,7 +1831,7 @@ custom_plot_data = None
 
 def show_custom_two_rows(text_color=(255, 128, 0)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global custom_last_refresh_time, custom_plot_data, State_change, wait_time, current_time
+    global custom_last_refresh_time, custom_plot_data, default_data_range, State_change, wait_time, current_time
     global hardware_monitor_manager, custom_selected_names, custom_selected_displayname, netspeed_font
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
@@ -1841,7 +1843,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
 
     if State_change == 1:
         if custom_plot_data is None:
-            custom_plot_data = [{"sent": 0, "recv": 0}] * (size_USE_X1 // bar_width)
+            custom_plot_data = {"sent": default_data_range, "recv": default_data_range}
         State_change = 0
         wait_time = 0
         custom_last_refresh_time = current_time
@@ -1877,9 +1879,10 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         recv = 0
         recv_text = "--"
 
-    seconds_elapsed = (current_time - custom_last_refresh_time) / timedelta(seconds=1)
-    custom_plot_data = custom_plot_data[1:] + [{"sent": sent, "recv": recv}]
+    custom_plot_data["sent"] = custom_plot_data["sent"][1:] + [sent]
+    custom_plot_data["recv"] = custom_plot_data["recv"][1:] + [recv]
 
+    seconds_elapsed = (current_time - custom_last_refresh_time) / timedelta(seconds=1)
     custom_last_refresh_time = current_time
 
     # 绘制图片
@@ -1897,23 +1900,23 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     draw.text((0, 40), text, fill=text_color, font=netspeed_font)
 
     # 绘图
-    # 决定最小范围
-    min_max = [0.01, 0.01]
+    # 决定最小范围, 需大于0
+    min_max = [1.0, 1.0]
     # 百分比或温度的，是100
-    if sent_text[-1] in ("%", "C"):
-        min_max[0] = 100
-    if recv_text[-1] in ("%", "C"):
-        min_max[1] = 100
+    # if sent_text[-1] in ("%", "C"):
+    #     min_max[0] = 100
+    # if recv_text[-1] in ("%", "C"):
+    #     min_max[1] = 100
 
     for start_y, key, color, minmax_it in zip(
             [19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)], min_max):
-        sent_values = [data[key] for data in custom_plot_data]
+        sent_values = custom_plot_data[key]
 
         max_value = max(minmax_it, max(sent_values))
 
         for i, sent in enumerate(sent_values[-80:]):
             # Scale the sent value to the image height
-            bar_height = int(sent * image_height / max_value) if max_value else 0
+            bar_height = int(sent * image_height / max_value)
             x0 = i * bar_width
             y0 = image_height - bar_height + start_y
             x1 = (i + 1) * bar_width - 1
@@ -1968,7 +1971,7 @@ def get_full_custom_im():
                 pass
             if value is None:
                 full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序。\n" % name
-        custom_values.append((value, value_formatted))
+        custom_values.append((value, value_formatted))  # 没有数据也要放入列表，因为脚本是用序号来读数据的
 
     # 绘制图片
 
@@ -2208,8 +2211,8 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_r = tk.Label(color_frame, text="R")
     scale_ind_r.grid(row=0, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, showvalue=True, takefocus=True,
-                                    width=11, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
+    text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True, borderwidth=0,
+                                    width=14, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
     text_color_red_scale.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
     text_color_red_scale.set(config_red)
     text_color_red_scale.config(command=lambda x: update_label_color_red())
@@ -2217,8 +2220,8 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_g = tk.Label(color_frame, text="G")
     scale_ind_g.grid(row=1, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True,
-                                      width=11, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
+    text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True, borderwidth=0,
+                                      width=14, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
     text_color_green_scale.grid(row=1, column=1, sticky=tk.EW, padx=0, pady=0)
     text_color_green_scale.set(config_green)
     text_color_green_scale.config(command=lambda x: update_label_color_green())
@@ -2226,8 +2229,8 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_b = tk.Label(color_frame, text="B")
     scale_ind_b.grid(row=2, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True,
-                                     width=11, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
+    text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True, borderwidth=0,
+                                     width=14, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
     text_color_blue_scale.grid(row=2, column=1, sticky=tk.EW, padx=0, pady=0)
     text_color_blue_scale.set(config_blue)
     text_color_blue_scale.config(command=lambda x: update_label_color_blue())
@@ -2479,7 +2482,7 @@ def UI_Page():  # 进行图像界面显示
         desc_label.grid(row=1, column=1, padx=5, pady=5)
 
         def update_sensor_value(i):
-            global custom_plot_data
+            global custom_plot_data, default_data_range
             if custom_selected_names[i] != sensor_vars[i].get():
                 custom_selected_names[i] = sensor_vars[i].get()
 
@@ -2488,11 +2491,9 @@ def UI_Page():  # 进行图像界面显示
                     return
                 key = None
                 if i == 0:
-                    key = "sent"
+                    custom_plot_data["sent"] = default_data_range
                 elif i == 1:
-                    key = "recv"
-                for index in range(0, len(custom_plot_data)):
-                    custom_plot_data[index][key] = 0
+                    custom_plot_data["recv"] = default_data_range
 
         def change_sensor_displayname(i):
             if custom_selected_displayname[i] != sensor_displayname_vars[i].get():
