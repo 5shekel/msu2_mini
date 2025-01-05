@@ -132,7 +132,7 @@ def convertImageFileToRGB(file_path):
 def Get_Photo_Path1():  # 获取文件路径
     global photo_path1, Label3
     photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
-    if photo_path != "" and photo_path != photo_path1:
+    if photo_path and photo_path != photo_path1:
         photo_path1 = photo_path
         insert_text_message(photo_path1, item=Label3)
 
@@ -140,7 +140,7 @@ def Get_Photo_Path1():  # 获取文件路径
 def Get_Photo_Path2():  # 获取文件路径
     global photo_path2, Label4
     photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("Bin file", "*.bin")])
-    if photo_path != "" and photo_path != photo_path2:
+    if photo_path and photo_path != photo_path2:
         photo_path2 = photo_path
         insert_text_message(photo_path2, item=Label4)
 
@@ -148,7 +148,7 @@ def Get_Photo_Path2():  # 获取文件路径
 def Get_Photo_Path3():  # 获取文件路径
     global photo_path3, Label5  # 支持JPG、PNG、BMP图像格式
     photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
-    if photo_path != "" and photo_path != photo_path3:
+    if photo_path and photo_path != photo_path3:
         photo_path3 = photo_path
         insert_text_message(photo_path3, item=Label5)
 
@@ -156,7 +156,7 @@ def Get_Photo_Path3():  # 获取文件路径
 def Get_Photo_Path4():  # 获取文件路径
     global photo_path4, Label6
     photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
-    if photo_path != "" and photo_path != photo_path4:
+    if photo_path and photo_path != photo_path4:
         photo_path4 = photo_path
         insert_text_message(photo_path4, item=Label6)
 
@@ -1699,7 +1699,7 @@ def show_netspeed(text_color=(255, 128, 0)):
 
         for i, sent in enumerate(sent_values[-(size_USE_X1 // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = int(sent * image_height / max_value)
+            bar_height = sent * image_height // max_value
             x0 = i * bar_width
             y0 = image_height - bar_height
             x1 = (i + 1) * bar_width
@@ -1902,7 +1902,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
 
     # 绘图
     # 决定最小范围, 需大于0
-    min_max = [1.0, 1.0]
+    min_max = [1, 1]
     # 百分比或温度的，是100
     # if sent_text[-1] in ("%", "C"):
     #     min_max[0] = 100
