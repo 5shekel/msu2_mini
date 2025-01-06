@@ -262,8 +262,11 @@ def Write_Photo_Path4():  # 写入文件
     write_path_index = 4
 
 
+sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
+
+
 def Page_UP():  # 上一页
-    global State_change, machine_model
+    global State_change, machine_model, sleep_event
     if machine_model == 3903:
         machine_model = 0
     elif machine_model == 5:
@@ -271,11 +274,12 @@ def Page_UP():  # 上一页
     else:
         machine_model = machine_model + 1
     State_change = 1
+    sleep_event.set()  # 取消sleep
     insert_text_message("模式切换为: %s" % machine_model)
 
 
 def Page_Down():  # 下一页
-    global State_change, machine_model
+    global State_change, machine_model, sleep_event
     if machine_model == 3901:
         machine_model = 5
     elif machine_model == 0:
@@ -283,11 +287,12 @@ def Page_Down():  # 下一页
     else:
         machine_model = machine_model - 1
     State_change = 1
+    sleep_event.set()  # 取消sleep
     insert_text_message("模式切换为: %s" % machine_model)
 
 
 def LCD_Change():  # 切换显示方向
-    global LCD_Change_use, Device_State
+    global LCD_Change_use, Device_State, sleep_event
     if Device_State == 0:
         insert_text_message("设备未连接，切换失败")
         return
@@ -297,6 +302,7 @@ def LCD_Change():  # 切换显示方向
     else:  # 1
         LCD_Change_use = 0
         insert_text_message("正向")
+    sleep_event.set()  # 取消sleep
 
 
 # 由于设备不支持多线程访问，请不要直接使用SER_Write，应使用SER_rw方法
@@ -1240,13 +1246,14 @@ second_pass = 0
 
 
 def show_gif():  # 显示GIF动图
-    global photo_interval, second_times, second_pass
+    global photo_interval, second_times, second_pass, sleep_event
     global current_time, last_show_gif_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
         # gif_num = 0
         gif_wait_time = 0
         last_show_gif_time = current_time
+        sleep_event.clear()
     if gif_num > 35:
         gif_num = 0
 
@@ -1255,7 +1262,7 @@ def show_gif():  # 显示GIF动图
     if second_times != 0:
         if second_pass < second_times:
             second_pass += 1
-            time.sleep(1.0)
+            sleep_event.wait(1.0)
             return
         else:
             second_pass = 0
@@ -1269,7 +1276,7 @@ def show_gif():  # 显示GIF动图
     else:
         gif_wait_time += photo_interval - elapse_time + second_times
     if gif_wait_time > 0:
-        time.sleep(gif_wait_time)
+        sleep_event.wait(gif_wait_time)
 
 
 # disk_io_counter = psutil.disk_io_counters()
@@ -1277,11 +1284,12 @@ def show_gif():  # 显示GIF动图
 
 
 def show_PC_state(FC, BC):  # 显示PC状态
-    global State_change
+    global State_change, sleep_event
     photo_add = 4038
     num_add = 4026
     if State_change == 1:
         State_change = 0
+        sleep_event.clear()
         LCD_Photo_wb(0, 0, 160, 80, photo_add, FC, BC)  # 放置背景
 
     # CPU
@@ -1348,24 +1356,26 @@ def show_PC_state(FC, BC):  # 显示PC状态
         LCD_Photo_wb(24, 47, 8, 33, 11 + num_add, FC, BC)
     LCD_Photo_wb(32, 47, 24, 33, (FRQ // 10) + num_add, FC, BC)
     LCD_Photo_wb(56, 47, 24, 33, (FRQ % 10) + num_add, FC, BC)
-    time.sleep(0.3)  # 1秒左右刷新一次
+    sleep_event.wait(0.3)  # 1秒左右刷新一次
 
 
 def show_Photo1():  # 显示照片
-    global State_change
+    global State_change, sleep_event
     if State_change == 1:
         State_change = 0
+        sleep_event.clear()
 
     LCD_Photo(0, 0, 160, 80, 3926)  # 放置背景
-    time.sleep(1)  # 1秒刷新一次
+    sleep_event.wait(1)  # 1秒刷新一次
 
 
 def show_PC_time(FC):
-    global State_change, current_time
+    global State_change, current_time, sleep_event
     photo_add = 3826
     num_add = 3651
     if State_change == 1:
         State_change = 0
+        sleep_event.clear()
         LCD_Photo(0, 0, 160, 80, photo_add)  # 放置背景
         LCD_ASCII_32X64_MIX(56 + 8, 0, ":", FC, photo_add, num_add)
         # LCD_ASCII_32X64_MIX(136+8,32,":",FC,photo_add,num_add)
@@ -1379,7 +1389,7 @@ def show_PC_time(FC):
     LCD_ASCII_32X64_MIX(112 + 8, 8, chr((time_m % 10) + 48), FC, photo_add, num_add)
     # LCD_ASCII_32X64_MIX(160 + 8, 8, chr((time_S // 10) + 48), FC, photo_add, num_add)
     # LCD_ASCII_32X64_MIX(192 + 8, 8, chr((time_S % 10) + 48), FC, photo_add, num_add)
-    time.sleep(1)  # 1秒刷新一次
+    sleep_event.wait(1)  # 1秒刷新一次
 
 
 def digit_to_ints(di):
@@ -1602,14 +1612,15 @@ def screenshot_panic():
 
 def show_PC_Screen():  # 显示照片
     global State_change, Screen_Error, screenshot_test_frame, current_time, screen_process_queue
-    global screenshot_test_time, screenshot_last_limit_time, wait_time, screenshot_limit_fps
+    global screenshot_test_time, screenshot_last_limit_time, wait_time, screenshot_limit_fps, sleep_event
     if State_change == 1:
         State_change = 0
         Screen_Error = 0
+        sleep_event.clear()
         LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
 
     try:
-        hex_use = screen_process_queue.get(timeout=3)
+        hex_use = screen_process_queue.get(timeout=1)
     except queue.Empty:
         Screen_Error = Screen_Error + 1
         if Screen_Error > 100:
@@ -1636,7 +1647,7 @@ def show_PC_Screen():  # 显示照片
         Screen_Error = 0
     wait_time += 1.0 / screenshot_limit_fps - elapse_time
     if wait_time > 0:
-        time.sleep(wait_time)  # 精确控制FPS
+        sleep_event.wait(wait_time)  # 精确控制FPS
 
 
 netspeed_last_refresh_time = None
@@ -1659,7 +1670,7 @@ def sizeof_fmt(num, suffix="B", base=1024.0):
 
 def show_netspeed(text_color=(255, 128, 0)):
     global netspeed_last_refresh_time, netspeed_last_refresh_snetio, netspeed_plot_data
-    global default_font, State_change, wait_time, current_time
+    global default_font, State_change, wait_time, current_time, sleep_event
 
     bar_width = 2  # 每个点宽度
     image_height = 20  # 高度
@@ -1672,6 +1683,7 @@ def show_netspeed(text_color=(255, 128, 0)):
             netspeed_plot_data = {"sent": default_data_range, "recv": default_data_range}
         State_change = 0
         wait_time = 0
+        sleep_event.clear()
         netspeed_last_refresh_time = current_time - timedelta(seconds=0.001)
         netspeed_last_refresh_snetio = current_snetio
         LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
@@ -1724,7 +1736,7 @@ def show_netspeed(text_color=(255, 128, 0)):
     # 大约每1秒刷新一次
     wait_time += 1 - seconds_elapsed
     if wait_time > 0:
-        time.sleep(wait_time)
+        sleep_event.wait(wait_time)
 
 
 # 独立线程加载，忽略错误，以免错误影响到程序的其他功能
@@ -1838,7 +1850,7 @@ custom_plot_data = None
 def show_custom_two_rows(text_color=(255, 128, 0)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
     global custom_last_refresh_time, custom_plot_data, default_data_range, State_change, wait_time, current_time
-    global hardware_monitor_manager, custom_selected_names, custom_selected_displayname, netspeed_font
+    global hardware_monitor_manager, custom_selected_names, custom_selected_displayname, netspeed_font, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         time.sleep(0.2)
@@ -1852,6 +1864,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
             custom_plot_data = {"sent": default_data_range, "recv": default_data_range}
         State_change = 0
         wait_time = 0
+        sleep_event.clear()
         custom_last_refresh_time = current_time
         # 初始化的时候，先显示0
         LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
@@ -1941,7 +1954,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     # 大约每1秒刷新一次
     wait_time += 1 - seconds_elapsed
     if wait_time > 0:
-        time.sleep(wait_time)
+        sleep_event.wait(wait_time)
 
 
 mini_mark_parser = MiniMarkParser()
@@ -2006,7 +2019,7 @@ def get_full_custom_im():
 
 def show_full_custom():
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global custom_last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_time
+    global custom_last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_time, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         time.sleep(0.2)
@@ -2016,6 +2029,7 @@ def show_full_custom():
         # 初始化
         State_change = 0
         wait_time = 0
+        sleep_event.clear()
         custom_last_refresh_time = current_time
         LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
 
@@ -2035,7 +2049,7 @@ def show_full_custom():
     # 大约每1秒刷新一次
     wait_time += 1 - seconds_elapsed
     if wait_time > 0:
-        time.sleep(wait_time)
+        sleep_event.wait(wait_time)
 
 
 netspeed_font_size = 20
