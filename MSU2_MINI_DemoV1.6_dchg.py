@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+import ctypes
 import glob
 import json  # 用于保存json格式配置
 import os  # 用于读取文件
@@ -35,6 +36,12 @@ except:  # win 8.0 or less
 try:
     # 取消命令行窗口快速编辑模式，防止鼠标误触导致阻塞
     windll.kernel32.SetConsoleMode(windll.kernel32.GetStdHandle(-10), 128)
+except:
+    pass
+try:
+    if not ctypes.windll.shell32.IsUserAnAdmin():  # 测试是否是以管理员权限启动
+        print("WARN：需要以管理员权限启动本程序，否则部分指标将无法获取")
+        # ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
 except:
     pass
 
@@ -75,7 +82,7 @@ imagefiletypes = [
 
 def insert_text_message(text, clean=True, item=None):
     global Text1
-    if text != "":
+    if text:
         print(text.rstrip('\n'))
     if item is None:
         item = Text1
@@ -166,7 +173,7 @@ def Write_Photo_Path1():  # 写入文件
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index, False)
         return
-    if photo_path1 == "":
+    if not photo_path1:
         insert_text_message("Path1 is None\n", False)
         return
 
@@ -180,7 +187,7 @@ def Write_Photo_Path2():  # 写入文件
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index, False)
         return
-    if photo_path2 == "":
+    if not photo_path2:
         insert_text_message("Path2 is None\n", False)
         return
 
@@ -193,7 +200,7 @@ def Write_Photo_Path3():  # 写入文件
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index, False)
         return
-    if photo_path3 == "":
+    if not photo_path3:
         insert_text_message("Path3 is None\n", False)
         return
 
@@ -207,7 +214,7 @@ def Write_Photo_Path4():  # 写入文件
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index, False)
         return
-    if photo_path4 == "":
+    if not photo_path4:
         insert_text_message("Path4 is None\n", False)
         return
 
@@ -1718,8 +1725,6 @@ def show_netspeed(text_color=(255, 128, 0)):
     wait_time += 1 - seconds_elapsed
     if wait_time > 0:
         time.sleep(wait_time)
-    # 测试用：显示帧率
-    # print(1 / seconds_elapsed)
 
 
 # 独立线程加载，忽略错误，以免错误影响到程序的其他功能
@@ -1937,8 +1942,6 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     wait_time += 1 - seconds_elapsed
     if wait_time > 0:
         time.sleep(wait_time)
-    # 测试用：显示帧率
-    # print(1 / seconds_elapsed)
 
 
 mini_mark_parser = MiniMarkParser()
@@ -1964,7 +1967,7 @@ def get_full_custom_im():
     custom_values = []
     for name in custom_selected_names_tech:
         value = None
-        value_formatted = None
+        value_formatted = "--"  # 不能为None，否则解析时可能会有异常
         if name != "":
             try:
                 value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
