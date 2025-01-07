@@ -1931,7 +1931,8 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
             [19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)], min_max):
         sent_values = custom_plot_data[key]
 
-        max_value = max(minmax_it, max(sent_values))
+        min_value = min(sent_values)  # 防止显示太满
+        max_value = max(minmax_it, min_value * 2, max(sent_values))
 
         for i, sent in enumerate(sent_values[-80:]):
             # Scale the sent value to the image height
