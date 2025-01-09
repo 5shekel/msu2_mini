@@ -107,13 +107,13 @@ def convertImageFileToRGB(file_path):
         im1 = Image.open(file_path)
         if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
             im2 = im1.resize((SHOW_HEIGHT * im1.width // im1.height, SHOW_HEIGHT))
-            Img_m = im2.width // 2
-            box = (Img_m - SHOW_WIDTH // 2, 0, Img_m + SHOW_WIDTH // 2, SHOW_HEIGHT)  # 定义需要裁剪的空间
+            # 定义需要裁剪的空间
+            box = ((im2.width - SHOW_WIDTH) // 2, 0, (im2.width + SHOW_WIDTH) // 2, SHOW_HEIGHT)
             im2 = im2.crop(box)
         else:
             im2 = im1.resize((SHOW_WIDTH, SHOW_WIDTH * im1.height // im1.width))
-            Img_m = im2.height // 2
-            box = (0, Img_m - SHOW_HEIGHT // 2, SHOW_WIDTH, Img_m + SHOW_HEIGHT // 2)  # 定义需要裁剪的空间
+            # 定义需要裁剪的空间
+            box = (0, (im2.height - SHOW_HEIGHT) // 2, SHOW_WIDTH, (im2.height + SHOW_HEIGHT) // 2)
             im2 = im2.crop(box)
     except Exception as e:
         errstr = "图片\"%s\"打开失败：%s\n" % (file_path, e)
@@ -1356,7 +1356,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
     sleep_event.wait(0.3)  # 1秒左右刷新一次
 
 
-def show_Photo1():  # 显示照片
+def show_Photo():  # 显示照片
     global State_change, sleep_event
     if State_change == 1:
         State_change = 0
@@ -1919,12 +1919,6 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     # 绘图
     # 决定最小范围, 需大于0
     min_max = [1, 1]
-    # 百分比或温度的，是100
-    # if sent_text[-1] in ("%", "C"):
-    #     min_max[0] = 100
-    # if recv_text[-1] in ("%", "C"):
-    #     min_max[1] = 100
-
     for start_y, key, color, minmax_it in zip(
             [19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)], min_max):
         sent_values = custom_plot_data[key]
@@ -2875,7 +2869,7 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     elif machine_model == 2:
         show_PC_state(color_use, BLACK)
     elif machine_model == 3:
-        show_Photo1()
+        show_Photo()
     elif machine_model == 4:
         show_PC_time(color_use)
     elif machine_model == 5:
