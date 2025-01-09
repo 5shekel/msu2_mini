@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-import ctypes
 import glob
 import json  # 用于保存json格式配置
 import os  # 用于读取文件
@@ -39,9 +38,9 @@ try:
 except:
     pass
 try:
-    if not ctypes.windll.shell32.IsUserAnAdmin():  # 测试是否是以管理员权限启动
+    if not windll.shell32.IsUserAnAdmin():  # 测试是否是以管理员权限启动
         print("WARN：需要以管理员权限启动本程序，否则部分指标将无法获取")
-        # ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+        # windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
 except:
     pass
 
@@ -56,14 +55,12 @@ GRAY0 = 0xEF7D
 GRAY1 = 0x8410
 GRAY2 = 0x4208
 
+SHOW_WIDTH = 160  # 画布宽度
+SHOW_HEIGHT = 80  # 画布高度
+
 exit_code = 0
 current_time = datetime.now()
 Img_data_use = bytearray()
-size_USE_X1 = 160
-size_USE_Y1 = 80
-
-# SHOW_WIDTH = 160  # 画布宽度
-# SHOW_HEIGHT = 80  # 画布高度
 
 imagefiletypes = [
     ("Image file", "*.jpg"),
@@ -109,14 +106,14 @@ def convertImageFileToRGB(file_path):
     try:
         im1 = Image.open(file_path)
         if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
-            im2 = im1.resize((80 * im1.width // im1.height, 80))
+            im2 = im1.resize((SHOW_HEIGHT * im1.width // im1.height, SHOW_HEIGHT))
             Img_m = im2.width // 2
-            box = (Img_m - 80, 0, Img_m + 80, 80)  # 定义需要裁剪的空间
+            box = (Img_m - SHOW_WIDTH // 2, 0, Img_m + SHOW_WIDTH // 2, SHOW_HEIGHT)  # 定义需要裁剪的空间
             im2 = im2.crop(box)
         else:
-            im2 = im1.resize((160, 160 * im1.height // im1.width))
+            im2 = im1.resize((SHOW_WIDTH, SHOW_WIDTH * im1.height // im1.width))
             Img_m = im2.height // 2
-            box = (0, Img_m - 40, 160, Img_m + 40)  # 定义需要裁剪的空间
+            box = (0, Img_m - SHOW_HEIGHT // 2, SHOW_WIDTH, Img_m + SHOW_HEIGHT // 2)  # 定义需要裁剪的空间
             im2 = im2.crop(box)
     except Exception as e:
         errstr = "图片\"%s\"打开失败：%s\n" % (file_path, e)
@@ -127,8 +124,8 @@ def convertImageFileToRGB(file_path):
             im1.close()
 
     im2 = im2.convert("RGB")  # 转换为RGB格式
-    for y in range(0, 80):  # 逐字解析编码
-        for x in range(0, 160):  # 逐字解析编码
+    for y in range(0, SHOW_HEIGHT):  # 逐字解析编码
+        for x in range(0, SHOW_WIDTH):  # 逐字解析编码
             r, g, b = im2.getpixel((x, y))
             img_data.append(((r >> 3) << 3) | (g >> 5))
             img_data.append((((g % 32) >> 2) << 5) | (b >> 3))
@@ -1257,7 +1254,7 @@ def show_gif():  # 显示GIF动图
     if gif_num > 35:
         gif_num = 0
 
-    LCD_Photo(0, 0, 160, 80, gif_num * 100)
+    LCD_Photo(0, 0, SHOW_WIDTH, SHOW_HEIGHT, gif_num * 100)
 
     if second_times != 0:
         if second_pass < second_times:
@@ -1290,7 +1287,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
     if State_change == 1:
         State_change = 0
         sleep_event.clear()
-        LCD_Photo_wb(0, 0, 160, 80, photo_add, FC, BC)  # 放置背景
+        LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add, FC, BC)  # 放置背景
 
     # CPU
     CPU = int(psutil.cpu_percent(interval=0.5))
@@ -1365,7 +1362,7 @@ def show_Photo1():  # 显示照片
         State_change = 0
         sleep_event.clear()
 
-    LCD_Photo(0, 0, 160, 80, 3926)  # 放置背景
+    LCD_Photo(0, 0, SHOW_WIDTH, SHOW_HEIGHT, 3926)  # 放置背景
     sleep_event.wait(1)  # 1秒刷新一次
 
 
@@ -1376,7 +1373,7 @@ def show_PC_time(FC):
     if State_change == 1:
         State_change = 0
         sleep_event.clear()
-        LCD_Photo(0, 0, 160, 80, photo_add)  # 放置背景
+        LCD_Photo(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
         LCD_ASCII_32X64_MIX(56 + 8, 0, ":", FC, photo_add, num_add)
         # LCD_ASCII_32X64_MIX(136+8,32,":",FC,photo_add,num_add)
 
@@ -1399,7 +1396,7 @@ def digit_to_ints(di):
 def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
     uint16_data = Photo_data.astype(np.uint32)
     hex_use = bytearray()
-    total_data_size = size_USE_X1 * size_USE_Y1
+    total_data_size = SHOW_WIDTH * SHOW_HEIGHT
     data_per_page = 128
     for j in range(0, total_data_size // data_per_page):  # 每次写入一个Page
         data_w = uint16_data[j * data_per_page: (j + 1) * data_per_page]
@@ -1513,8 +1510,8 @@ def shrink_image_block_average(image, shrink_factor):
 screen_shot_queue = queue.Queue(2)
 screen_process_queue = queue.Queue(2)
 screenshot_monitor_id = 1
-screenshot_region = (0, 0, 160, 80)
-cropped_monitor = {"left": 0, "top": 0, "width": 160, "height": 80, "mon": 1}
+screenshot_region = (0, 0, SHOW_WIDTH, SHOW_HEIGHT)
+cropped_monitor = {"left": 0, "top": 0, "width": SHOW_WIDTH, "height": SHOW_HEIGHT, "mon": 1}
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
@@ -1568,11 +1565,11 @@ def screen_process_task():
         rgb = rgb[:, :, ::-1]
 
         if monitor["width"] <= monitor["height"] * 2:  # 横向充满
-            im1 = shrink_image_block_average(rgb, rgb.shape[1] / size_USE_X1)
-            im1 = im1[0: size_USE_Y1, :]
+            im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
+            im1 = im1[0: SHOW_HEIGHT, :]
         else:  # 纵向充满
-            im1 = shrink_image_block_average(rgb, rgb.shape[0] / size_USE_Y1)
-            im1 = im1[:, 0: size_USE_X1]
+            im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
+            im1 = im1[:, 0: SHOW_WIDTH]
 
         rgb888 = np.asarray(im1)
 
@@ -1617,10 +1614,10 @@ def show_PC_Screen():  # 显示照片
         State_change = 0
         Screen_Error = 0
         sleep_event.clear()
-        LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
+        LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     try:
-        hex_use = screen_process_queue.get(timeout=1)
+        hexstream = screen_process_queue.get(timeout=1)
     except queue.Empty:
         Screen_Error = Screen_Error + 1
         if Screen_Error > 100:
@@ -1628,7 +1625,7 @@ def show_PC_Screen():  # 显示照片
             Screen_Error = 0
         time.sleep(0.05)  # 防止频繁重试
         return
-    SER_rw(hex_use, read=False)  # 发出指令
+    SER_rw(hexstream, read=False)  # 发出指令
 
     elapse_time = (current_time - screenshot_last_limit_time).total_seconds()
     if elapse_time > 5:  # 有切换，重置参数
@@ -1653,7 +1650,7 @@ def show_PC_Screen():  # 显示照片
 netspeed_last_refresh_time = None
 netspeed_last_refresh_snetio = None
 netspeed_plot_data = None
-default_data_range = [0] * 80
+default_data_range = [0] * (SHOW_WIDTH // 2)
 time_second = timedelta(seconds=1)
 
 
@@ -1686,29 +1683,29 @@ def show_netspeed(text_color=(255, 128, 0)):
         sleep_event.clear()
         netspeed_last_refresh_time = current_time - timedelta(seconds=0.001)
         netspeed_last_refresh_snetio = current_snetio
-        LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
+        LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     # 获取网速 bytes/second
+    seconds_elapsed = (current_time - netspeed_last_refresh_time) / time_second
 
     # 因为刷新间隔刚好是1秒，所以不需要除时间
-    sent_per_second = current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent
+    sent_per_second = (current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent) / seconds_elapsed
     netspeed_plot_data["sent"] = netspeed_plot_data["sent"][1:] + [sent_per_second]
-    recv_per_second = current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv
+    recv_per_second = (current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv) / seconds_elapsed
     netspeed_plot_data["recv"] = netspeed_plot_data["recv"][1:] + [recv_per_second]
 
-    seconds_elapsed = (current_time - netspeed_last_refresh_time) / time_second
     netspeed_last_refresh_time = current_time
     netspeed_last_refresh_snetio = current_snetio
 
     # 绘制图片
-    im1 = Image.new("RGB", (size_USE_X1, size_USE_Y1), (0, 0, 0))
+    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), (0, 0, 0))
     draw = ImageDraw.Draw(im1)
 
-    # 绘制文字, 字号20时一行可以放16个字符，汉字占2字符
+    # 绘制文字
     text = "上传 %9s/s" % sizeof_fmt(sent_per_second)
     draw.text((0, 0), text, fill=text_color, font=default_font)
     text = "下载 %9s/s" % sizeof_fmt(recv_per_second)
-    draw.text((0, size_USE_Y1 // 2), text, fill=text_color, font=default_font)
+    draw.text((0, SHOW_HEIGHT // 2), text, fill=text_color, font=default_font)
 
     # 绘图
     min_draw = 1024  # 最小范围 1KB/s
@@ -1716,16 +1713,18 @@ def show_netspeed(text_color=(255, 128, 0)):
         sent_values = netspeed_plot_data[key]
         max_value = max(min_draw, max(sent_values))
 
-        for i, sent in enumerate(sent_values[-(size_USE_X1 // bar_width):]):
+        x0 = -bar_width
+        x1 = -1
+        y1 = image_height + start_y
+        for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = sent * image_height // max_value
-            x0 = i * bar_width
-            y0 = image_height - bar_height
-            x1 = (i + 1) * bar_width
-            y1 = image_height
+            bar_height = sent * image_height / max_value
+            x0 += bar_width
+            x1 += bar_width
+            y0 = y1 - bar_height
 
             # Draw the bar
-            draw.rectangle([x0, start_y + y0, x1 - 1, max(start_y + y0, start_y + y1 - 1)], fill=color)
+            draw.rectangle([x0, y0, x1, y1], fill=color)
 
     rgb888 = np.asarray(im1)
     rgb565 = rgb888_to_rgb565(rgb888)
@@ -1867,7 +1866,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         sleep_event.clear()
         custom_last_refresh_time = current_time
         # 初始化的时候，先显示0
-        LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
+        LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     # 获取 libre hardware monitor 数值
     hardwares = set()  # 因为hardware不能重复更新，所以这里用set去掉重复项
@@ -1906,17 +1905,16 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
 
     # 绘制图片
 
-    im1 = Image.new("RGB", (size_USE_X1, size_USE_Y1), (0, 0, 0))
+    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), (0, 0, 0))
 
     draw = ImageDraw.Draw(im1)
 
-    # 绘制文字, 字号20时一行可以放16个字符，汉字占2字符
+    # 绘制文字
 
-    # default_font字体支持中文
-    text = "%-3s %12s" % (custom_selected_displayname[0][:8], sent_text)
+    text = "%-6s %-s" % (custom_selected_displayname[0][:8], sent_text)
     draw.text((0, 0), text, fill=text_color, font=netspeed_font)
-    text = "%-3s %12s" % (custom_selected_displayname[1][:8], recv_text)
-    draw.text((0, 40), text, fill=text_color, font=netspeed_font)
+    text = "%-6s %-s" % (custom_selected_displayname[1][:8], recv_text)
+    draw.text((0, SHOW_HEIGHT // 2), text, fill=text_color, font=netspeed_font)
 
     # 绘图
     # 决定最小范围, 需大于0
@@ -1934,16 +1932,18 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         min_value = min(sent_values)  # 防止显示太满
         max_value = max(minmax_it, min_value * 2, max(sent_values))
 
-        for i, sent in enumerate(sent_values[-80:]):
+        x0 = -bar_width
+        x1 = -1
+        y1 = image_height + start_y
+        for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = int(sent * image_height / max_value)
-            x0 = i * bar_width
-            y0 = image_height - bar_height + start_y
-            x1 = (i + 1) * bar_width - 1
-            y1 = image_height + start_y - 1
+            bar_height = sent * image_height / max_value
+            x0 += bar_width
+            x1 += bar_width
+            y0 = y1 - bar_height
 
-            # Draw the Green bar
-            draw.rectangle([x0, y0, x1, max(y0, y1)], fill=color)
+            # Draw the bar
+            draw.rectangle([x0, y0, x1, y1], fill=color)
 
     rgb888 = np.asarray(im1)
 
@@ -1993,7 +1993,7 @@ def get_full_custom_im():
 
     # 绘制图片
 
-    im1 = Image.new("RGB", (size_USE_X1, size_USE_Y1), (255, 255, 255))
+    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), (255, 255, 255))
 
     draw = ImageDraw.Draw(im1)
     error_line = ""
@@ -2032,7 +2032,7 @@ def show_full_custom():
         wait_time = 0
         sleep_event.clear()
         custom_last_refresh_time = current_time
-        LCD_ADD(0, 0, size_USE_X1, size_USE_Y1)
+        LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     seconds_elapsed = (current_time - custom_last_refresh_time) / time_second
 
@@ -2109,7 +2109,8 @@ def UI_Page():  # 进行图像界面显示
     window.wm_iconphoto(True, defaulticon)
 
     # 创建 Frame 容器，并将其填充到整个窗口
-    root = tk.Frame(window, padx=5, pady=5, highlightthickness=1, highlightcolor="lightgray")
+    root = tk.Frame(window, padx=5, pady=5, highlightthickness=1, highlightcolor="lightgray",
+                    highlightbackground="lightgray")
     root.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # 设备连接状态标签
@@ -2267,10 +2268,14 @@ def UI_Page():  # 进行图像界面显示
         if (netspeed_font.getlength(custom_selected_displayname[0][:8]) <
                 netspeed_font.getlength(custom_selected_displayname[1][:8])):
             longer = 1
-        for index in range(4, 14, 2):
-            netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - index)
-            if netspeed_font.getlength(custom_selected_displayname[longer][:8]) < 80:
-                break
+        names = custom_selected_displayname[0][:8] + custom_selected_displayname[1][:8]
+        if len(names) == 0 or names.encode('utf-8').isalpha():
+            for index in range(4, 14, 2):
+                netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - index)
+                if netspeed_font.getlength(custom_selected_displayname[longer][:8]) < SHOW_WIDTH // 2:
+                    break
+        else:
+            netspeed_font = default_font  # 因Orbitron不支持汉字，有汉字使用默认字体
 
     change_netspeed_font()
 
@@ -2416,7 +2421,7 @@ def UI_Page():  # 进行图像界面显示
         desc_label = tk.Label(view_frame, width=1, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=0, pady=0)
         desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
-        canvas = tk.Canvas(view_frame, width=160, height=80, borderwidth=0)
+        canvas = tk.Canvas(view_frame, width=SHOW_WIDTH, height=SHOW_HEIGHT, borderwidth=0)
         canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
         text_area.bind("<KeyRelease>", update_global_text)  # 按键弹起时触发
@@ -2655,10 +2660,10 @@ def UI_Page():  # 进行图像界面显示
             t = tuple((0 if x.strip() == "" else int(x)) for x in screen_region_var.get().split(","))
         except ValueError as e:
             if len(screen_region_var.get()) > 0:
-                insert_text_message("投屏区域设置无效: %s\n示例: 0,0,160,80" % e)
+                insert_text_message("投屏区域设置无效: %s\n示例: 0,0,%s,%s" % (e, SHOW_WIDTH, SHOW_HEIGHT))
             return
         if len(t) != 4:
-            insert_text_message("投屏区域设置无效，示例: 0,0,160,80")
+            insert_text_message("投屏区域设置无效，示例: 0,0,%s,%s" % (SHOW_WIDTH, SHOW_HEIGHT))
             return
         insert_text_message("")
         if screenshot_region == t:
