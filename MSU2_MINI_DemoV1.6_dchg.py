@@ -1247,10 +1247,10 @@ def show_gif():  # 显示GIF动图
     global current_time, last_show_gif_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
+        sleep_event.clear()
         # gif_num = 0
         gif_wait_time = 0
         last_show_gif_time = current_time
-        sleep_event.clear()
     if gif_num > 35:
         gif_num = 0
 
@@ -1612,8 +1612,8 @@ def show_PC_Screen():  # 显示照片
     global screenshot_test_time, screenshot_last_limit_time, wait_time, screenshot_limit_fps, sleep_event
     if State_change == 1:
         State_change = 0
-        Screen_Error = 0
         sleep_event.clear()
+        Screen_Error = 0
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     try:
@@ -1679,8 +1679,8 @@ def show_netspeed(text_color=(255, 128, 0)):
         if netspeed_plot_data is None:
             netspeed_plot_data = {"sent": default_data_range, "recv": default_data_range}
         State_change = 0
-        wait_time = 0
         sleep_event.clear()
+        wait_time = 0
         netspeed_last_refresh_time = current_time - timedelta(seconds=0.001)
         netspeed_last_refresh_snetio = current_snetio
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
@@ -1862,8 +1862,8 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         if custom_plot_data is None:
             custom_plot_data = {"sent": default_data_range, "recv": default_data_range}
         State_change = 0
-        wait_time = 0
         sleep_event.clear()
+        wait_time = 0
         custom_last_refresh_time = current_time
         # 初始化的时候，先显示0
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
@@ -2023,8 +2023,8 @@ def show_full_custom():
     if State_change == 1:
         # 初始化
         State_change = 0
-        wait_time = 0
         sleep_event.clear()
+        wait_time = 0
         custom_last_refresh_time = current_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
@@ -2837,7 +2837,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     Screen_Error = 0
     # 配置按键阈值
     ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) // 3
-    ADC_det = ADC_det - 125  # 根据125的阈值判断是否被按下
+    ADC_det = ADC_det - 200  # 根据125的阈值判断是否被按下
     set_device_state(1)  # 可以正常连接
 
 
@@ -2997,8 +2997,10 @@ def manage_task():
         if ADC_ch == 0:
             continue
         if ADC_ch < ADC_det:  # 按键按下
+            if Read_ADC_CH(9) > ADC_det or Read_ADC_CH(9) > ADC_det:
+                continue  # 没有连续3次则忽略
             if key_on == 0:  # 第一次检测到按下
-                ADC_det += 50  # 增加后续检测的灵敏度
+                ADC_det += 150  # 增加后续检测的灵敏度
                 key_on = 1
                 if first_press_time != 0:
                     if now - first_press_time < double_key_limit:
@@ -3016,14 +3018,16 @@ def manage_task():
                         first_press_time = now
         else:  # 按键放开
             if key_on != 0:  # 第一次检测到放开
-                ADC_det -= 50  # 恢复检测的灵敏度
+                if Read_ADC_CH(9) < ADC_det or Read_ADC_CH(9) < ADC_det:
+                    continue  # 没有连续3次则忽略
+                ADC_det -= 150  # 恢复检测的灵敏度
                 key_on = 0
                 last_check_time = now  # 从第一次检测到放开1秒后再减缓频率
                 if first_press_time == 1:
                     first_press_time = 0
             elif now - last_check_time > check_limit:
-                if ADC_ch - ADC_det > 40 + 125:  # 校正检测阈值
-                    ADC_det = (ADC_det + ADC_ch - 125) // 2
+                if ADC_ch - ADC_det > 40 + 200:  # 校正检测阈值
+                    ADC_det = (ADC_det + ADC_ch - 200) // 2
                     print("校正按键检测阈值为：%d" % ADC_det)
                 time.sleep(0.1)  # 没有按键时减缓读取频率
             else:
@@ -3036,11 +3040,11 @@ def manage_task():
 
 MG_daemon_running = True
 MG_screen_thread_running = True
-daemon_thread = threading.Thread(target=daemon_task)
-load_thread = threading.Thread(target=load_task)
-manager_thread = threading.Thread(target=manage_task)
-screen_shot_thread = threading.Thread(target=screen_shot_task)
-screen_process_thread = threading.Thread(target=screen_process_task)
+daemon_thread = threading.Thread(target=daemon_task, daemon=True)
+load_thread = threading.Thread(target=load_task, daemon=True)
+manager_thread = threading.Thread(target=manage_task, daemon=True)
+screen_shot_thread = threading.Thread(target=screen_shot_task, daemon=True)
+screen_process_thread = threading.Thread(target=screen_process_task, daemon=True)
 
 # tkinter requires the main thread
 try:

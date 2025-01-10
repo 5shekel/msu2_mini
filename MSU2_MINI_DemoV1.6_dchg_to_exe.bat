@@ -11,9 +11,9 @@ set "dllpath=%pypath%..\Lib\site-packages\HardwareMonitor\lib\*.dll"
 :: -F one file
 :: -D one dir
 :: -w no console
-pyinstaller -D -w -y --distpath=dist --contents-directory=resource ^
-    --add-data "resource:resource" ^
-    --add-binary="%dllpath%:HardwareMonitor\lib" ^
+pyinstaller -D -w -y --distpath=dist ^
+    --add-data "resource;resource" ^
+    --add-binary="%dllpath%;HardwareMonitor\lib" ^
     --icon "resource/icon.ico" ^
     -n MSU2_MINI_DemoV1.6 MSU2_MINI_DemoV1.6_dchg.py
 
