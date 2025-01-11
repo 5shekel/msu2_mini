@@ -239,13 +239,13 @@ def Write_Photo_Path4():  # 写入文件
             Img_data_use = Img_data_use + converted
     else:  # 不是规则命名，只按文件类型查找文件
         file_path = os.path.join(os.path.dirname(Path_use1), "*%s" % path_file_type)
-        files = None
+        files = []
         try:
             files = glob.glob(file_path)  # 按类型列出所有文件
         except Exception as e:
             insert_text_message("转换失败: %s\n" % e, False)
             return  # 转换失败，取消写入
-        if files is None or len(files) < 36:
+        if len(files) < 36:
             insert_text_message("转换失败, 图片不够36张\n", False)
             return  # 转换失败，取消写入
         for i in range(0, 36):  # 依次转换36张图片
@@ -1515,7 +1515,7 @@ cropped_monitor = {"left": 0, "top": 0, "width": SHOW_WIDTH, "height": SHOW_HEIG
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
-    global MG_screen_thread_running, machine_model, screen_shot_queue, cropped_monitor
+    global MG_screen_thread_running, machine_model, screen_shot_queue, cropped_monitor, screenshot_limit_fps
     print("截图线程创建成功")
 
     with mss() as sct:
@@ -1529,8 +1529,8 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 time.sleep(1.0 / screenshot_limit_fps)  # 队列满时暂停一个周期
                 continue
 
+            sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
             try:
-                sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
                 screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
             except queue.Full:
                 # 每1s检测一次退出，并且如果下游不拿走，则重新截图
@@ -1716,9 +1716,10 @@ def show_netspeed(text_color=(255, 128, 0)):
         x0 = -bar_width
         x1 = -1
         y1 = image_height + start_y
+        percent = image_height / max_value
         for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = int(sent * image_height / max_value)
+            bar_height = percent * sent
             x0 += bar_width
             x1 += bar_width
             y0 = y1 - bar_height
@@ -1764,14 +1765,15 @@ def load_hardware_monitor():
     }
 
     def FormatSensor(value: float, sensortype) -> str:
-        if not value:
+        if value is None:
             value = 0
         formatStr = SensorTypeUnitFormatter.get(sensortype, "{}")
         if isinstance(formatStr, list):
             if len(formatStr) > 3:
                 value *= formatStr[3]
             return formatStr[0](value, suffix=formatStr[1], base=formatStr[2])
-        return formatStr.format(value)
+        else:
+            return formatStr.format(value)
 
     class UpdateVisitor(Hardware.IVisitor):
         __namespace__ = "TestHardwareMonitor"
@@ -1820,7 +1822,10 @@ def load_hardware_monitor():
                             for hardware, sensor in self.visitor.sensors}
 
         def get_hardware(self, sensor_name):
-            return self.sensors[sensor_name][0]
+            if sensor_name in self.sensors:
+                return self.sensors[sensor_name][0]
+            else:
+                return None
 
         @staticmethod
         def update_hardwares(hardwares):
@@ -1828,12 +1833,18 @@ def load_hardware_monitor():
                 hardware.Update()
 
         def get_value(self, sensor_name):
-            hardware, sensor = self.sensors[sensor_name]
-            return sensor.Value
+            if sensor_name in self.sensors:
+                hardware, sensor = self.sensors[sensor_name]
+                return sensor.Value
+            else:
+                return None
 
         def get_value_formatted(self, sensor_name):
-            hardware, sensor = self.sensors[sensor_name]
-            return sensor.Value, FormatSensor(sensor.Value, sensor.SensorType)
+            if sensor_name in self.sensors:
+                hardware, sensor = self.sensors[sensor_name]
+                return sensor.Value, FormatSensor(sensor.Value, sensor.SensorType)
+            else:
+                return None, "--"
 
     return HardwareMonitorManager
 
@@ -1874,25 +1885,16 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         if name == "":
             continue
         hardware = hardware_monitor_manager.get_hardware(name)
-        hardwares.add(hardware)
+        if hardware is not None:
+            hardwares.add(hardware)
     hardware_monitor_manager.update_hardwares(hardwares)
 
-    sent = None
-    sent_text = None
-    try:
-        sent, sent_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[0])
-    except KeyError:
-        pass
+    sent, sent_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[0])
     if sent is None:
         sent = 0
         sent_text = "--"
 
-    recv = None
-    recv_text = None
-    try:
-        recv, recv_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[1])
-    except KeyError:
-        pass
+    recv, recv_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[1])
     if recv is None:
         recv = 0
         recv_text = "--"
@@ -1929,9 +1931,10 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         x0 = -bar_width
         x1 = -1
         y1 = image_height + start_y
+        percent = image_height / max_value
         for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = int(sent * image_height / max_value)
+            bar_height = percent * sent
             x0 += bar_width
             x1 += bar_width
             y0 = y1 - bar_height
@@ -1969,7 +1972,8 @@ def get_full_custom_im():
         if name == "":
             continue
         hardware = hardware_monitor_manager.get_hardware(name)
-        hardwares.add(hardware)
+        if hardware is not None:
+            hardwares.add(hardware)
     hardware_monitor_manager.update_hardwares(hardwares)
 
     custom_values = []
@@ -1977,10 +1981,7 @@ def get_full_custom_im():
         value = None
         value_formatted = "--"  # 不能为None，否则解析时可能会有异常
         if name != "":
-            try:
-                value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
-            except KeyError:
-                pass
+            value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
             if value is None:
                 full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序。\n" % name
         custom_values.append((value, value_formatted))  # 没有数据也要放入列表，因为脚本是用序号来读数据的
@@ -2225,8 +2226,8 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_r = tk.Label(color_frame, text="R")
     scale_ind_r.grid(row=0, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True, borderwidth=0,
-                                    width=14, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
+    text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
+                                    takefocus=1, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
     text_color_red_scale.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
     text_color_red_scale.set(config_red)
     text_color_red_scale.config(command=lambda x: update_label_color_red())
@@ -2234,8 +2235,8 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_g = tk.Label(color_frame, text="G")
     scale_ind_g.grid(row=1, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True, borderwidth=0,
-                                      width=14, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
+    text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
+                                      takefocus=1, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
     text_color_green_scale.grid(row=1, column=1, sticky=tk.EW, padx=0, pady=0)
     text_color_green_scale.set(config_green)
     text_color_green_scale.config(command=lambda x: update_label_color_green())
@@ -2243,8 +2244,8 @@ def UI_Page():  # 进行图像界面显示
     scale_ind_b = tk.Label(color_frame, text="B")
     scale_ind_b.grid(row=2, column=0, padx=0, pady=0, sticky=tk.SW)
 
-    text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, takefocus=True, borderwidth=0,
-                                     width=14, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
+    text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
+                                     takefocus=1, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
     text_color_blue_scale.grid(row=2, column=1, sticky=tk.EW, padx=0, pady=0)
     text_color_blue_scale.set(config_blue)
     text_color_blue_scale.config(command=lambda x: update_label_color_blue())
@@ -2563,7 +2564,7 @@ def UI_Page():  # 进行图像界面显示
                 insert_text_message("Invalid number entered: %s" % e)
             return
         insert_text_message("")
-        if photo_interval + second_times * 2 != photo_interval_tmp:
+        if photo_interval_tmp >= 0 and photo_interval + second_times * 2 != photo_interval_tmp:
             second_times = int(photo_interval_tmp)
             photo_interval = photo_interval_tmp - second_times
             if second_times > 0 and photo_interval < 0.2:
@@ -2592,16 +2593,15 @@ def UI_Page():  # 进行图像界面显示
                 insert_text_message("Invalid number entered: %s" % e)
             return
         insert_text_message("")
-        if screenshot_monitor_id == screenshot_monitor_id_tmp:
+        if screenshot_monitor_id == screenshot_monitor_id_tmp or screenshot_monitor_id_tmp <= 0:
             return
 
         with mss() as sct:
-            if 0 < screenshot_monitor_id_tmp <= len(sct.monitors[1:]):
+            monitors = sct.monitors
+            # 序号为0的monitor是总体，所以len比实际数量多1个
+            if screenshot_monitor_id_tmp < len(monitors):
                 screenshot_monitor_id = screenshot_monitor_id_tmp
-                try:
-                    monitor = sct.monitors[screenshot_monitor_id]
-                except IndexError:
-                    monitor = sct.monitors[1]
+                monitor = monitors[screenshot_monitor_id]
                 cropped_monitor = {
                     "left": screenshot_region[0] + monitor["left"],
                     "top": screenshot_region[1] + monitor["top"],
@@ -2665,9 +2665,10 @@ def UI_Page():  # 进行图像界面显示
 
         screenshot_region = t
         with mss() as sct:
-            try:
+            monitors = sct.monitors
+            if screenshot_monitor_id > len(monitors):
                 monitor = sct.monitors[screenshot_monitor_id]
-            except IndexError:
+            else:
                 monitor = sct.monitors[1]
         cropped_monitor = {
             "left": screenshot_region[0] + monitor["left"],
@@ -2693,6 +2694,7 @@ def UI_Page():  # 进行图像界面显示
     Text1.grid(row=5, column=0, rowspan=3, columnspan=1, sticky=tk.NS, padx=5, pady=5)
 
     def on_closing():
+        sleep_event.set()  # 取消sleep
         # 结束时保存配置
         config_obj = {
             "text_color_r": rgb_tuple[0],
