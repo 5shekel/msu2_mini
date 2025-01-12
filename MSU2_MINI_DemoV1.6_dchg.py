@@ -772,7 +772,7 @@ def LCD_Set_XY(LCD_D0, LCD_D1):  # 设置起始位置
     hex_use.append(LCD_D0 % 256)  # Data1
     hex_use.append(LCD_D1 // 256)  # Data2
     hex_use.append(LCD_D1 % 256)  # Data3
-    SER_rw(hex_use, read=False)  # 发出指令
+    return hex_use
 
 
 def LCD_Set_Size(LCD_D0, LCD_D1):  # 设置大小
@@ -783,7 +783,7 @@ def LCD_Set_Size(LCD_D0, LCD_D1):  # 设置大小
     hex_use.append(LCD_D0 % 256)  # Data1
     hex_use.append(LCD_D1 // 256)  # Data2
     hex_use.append(LCD_D1 % 256)  # Data3
-    SER_rw(hex_use, read=False)  # 发出指令
+    return hex_use
 
 
 def LCD_Set_Color(LCD_D0, LCD_D1):  # 设置颜色（FC,BC）
@@ -816,9 +816,8 @@ def LCD_Photo(Page_Add):
 
 
 def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
-    LCD_Set_XY(LCD_X, LCD_Y)
-    LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
-    hex_use = bytearray()
+    hex_use = LCD_Set_XY(LCD_X, LCD_Y)
+    hex_use.extend(LCD_Set_Size(LCD_X_Size, LCD_Y_Size))
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
     hex_use.append(7)  # 载入地址
@@ -827,7 +826,7 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if recv != 0 and len(recv) > 1:
         return 1
     else:
         print("LCD_ADD failed: %s" % recv)
@@ -1089,9 +1088,8 @@ def Write_LCD_Screen_fast1(x_star, y_star, x_size, y_size, Photo_data):
 
 
 def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
-    LCD_Set_XY(LCD_X, LCD_Y)  # 重置位置
-    LCD_Set_Size(LCD_X_Size, LCD_Y_Size)  # 重置大小
-    hex_use = bytearray()
+    hex_use = LCD_Set_XY(LCD_X, LCD_Y)
+    hex_use.extend(LCD_Set_Size(LCD_X_Size, LCD_Y_Size))
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
     hex_use.append(1)  # 显示单色图片
@@ -1109,8 +1107,7 @@ def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
 
 
 def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, Num_Page):
-    LCD_Set_XY(LCD_X, LCD_Y)
-    hex_use = bytearray()
+    hex_use = LCD_Set_XY(LCD_X, LCD_Y)
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
     hex_use.append(2)  # 显示ASCII
@@ -1119,7 +1116,7 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, Num_Page):
     hex_use.append(Num_Page % 256)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if recv != 0 and len(recv) > 1:
         return 1
     else:
         print("LCD_ASCII_32X64 failed: %s" % recv)
@@ -1128,9 +1125,8 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, Num_Page):
 
 
 def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt):
-    LCD_Set_XY(LCD_X, LCD_Y)
+    hex_use = LCD_Set_XY(LCD_X, LCD_Y)
     Txt_Data = Txt.encode("gb2312")
-    hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
     hex_use.append(3)  # 显示彩色图片
@@ -1139,7 +1135,7 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if recv != 0 and len(recv) > 1:
         return 1
     else:
         print("LCD_GB2312_16X16 failed: %s" % recv)
@@ -1148,9 +1144,8 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt):
 
 
 def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
-    LCD_Set_XY(LCD_X, LCD_Y)
-    LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
-    hex_use = bytearray()
+    hex_use = LCD_Set_XY(LCD_X, LCD_Y)
+    hex_use.extend(LCD_Set_Size(LCD_X_Size, LCD_Y_Size))
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
     hex_use.append(4)  # 显示单色图片
@@ -1159,7 +1154,7 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if recv != 0 and len(recv) > 1:
         return 1
     else:
         print("LCD_Photo_wb_MIX failed: %s" % recv)
@@ -1168,8 +1163,7 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
 
 
 def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, Num_Page):
-    LCD_Set_XY(LCD_X, LCD_Y)
-    hex_use = bytearray()
+    hex_use = LCD_Set_XY(LCD_X, LCD_Y)
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
     hex_use.append(5)  # 显示ASCII
@@ -1187,9 +1181,8 @@ def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, Num_Page):
 
 
 def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt):
-    LCD_Set_XY(LCD_X, LCD_Y)
+    hex_use = LCD_Set_XY(LCD_X, LCD_Y)
     Txt_Data = Txt.encode("gb2312")
-    hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
     hex_use.append(6)  # 显示彩色图片
@@ -1198,7 +1191,7 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if recv != 0 and len(recv) > 1:
         return 1
     else:
         print("LCD_GB2312_16X16_MIX failed: %s" % recv)
@@ -1208,9 +1201,8 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt):
 
 # 对指定区域进行颜色填充
 def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
-    LCD_Set_XY(LCD_X, LCD_Y)
-    LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
-    hex_use = bytearray()
+    hex_use = LCD_Set_XY(LCD_X, LCD_Y)
+    hex_use.extend(LCD_Set_Size(LCD_X_Size, LCD_Y_Size))
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
     hex_use.append(11)  # 显示彩色图片
@@ -1219,7 +1211,7 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if recv != 0 and len(recv) > 1:
         return 1
     else:
         print("LCD_Color_set failed: %s" % recv)
