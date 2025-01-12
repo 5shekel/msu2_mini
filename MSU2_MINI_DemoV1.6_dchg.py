@@ -797,9 +797,7 @@ def LCD_Set_Color(LCD_D0, LCD_D1):  # 设置颜色（FC,BC）
     SER_rw(hex_use, read=False)  # 发出指令
 
 
-def LCD_Photo(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
-    LCD_Set_XY(LCD_X, LCD_Y)
-    LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
+def LCD_Photo(Page_Add):
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
@@ -1090,10 +1088,9 @@ def Write_LCD_Screen_fast1(x_star, y_star, x_size, y_size, Photo_data):
     SER_rw(hex_use, read=False)  # 发出指令
 
 
-def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC):
-    LCD_Set_XY(LCD_X, LCD_Y)
-    LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
-    LCD_Set_Color(LCD_FC, LCD_BC)
+def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
+    LCD_Set_XY(LCD_X, LCD_Y)  # 重置位置
+    LCD_Set_Size(LCD_X_Size, LCD_Y_Size)  # 重置大小
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
@@ -1103,7 +1100,7 @@ def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC)
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if recv != 0 and len(recv) > 1:
         return 1
     else:
         print("LCD_Photo_wb failed: %s" % recv)
@@ -1111,9 +1108,8 @@ def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, LCD_BC)
         return 0
 
 
-def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC, Num_Page):
+def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, Num_Page):
     LCD_Set_XY(LCD_X, LCD_Y)
-    LCD_Set_Color(LCD_FC, LCD_BC)
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
@@ -1131,9 +1127,8 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC, Num_Page):
         return 0
 
 
-def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC):
+def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt):
     LCD_Set_XY(LCD_X, LCD_Y)
-    LCD_Set_Color(LCD_FC, LCD_BC)
     Txt_Data = Txt.encode("gb2312")
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
@@ -1152,10 +1147,9 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt, LCD_FC, LCD_BC):
         return 0
 
 
-def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, BG_Page):
+def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     LCD_Set_XY(LCD_X, LCD_Y)
     LCD_Set_Size(LCD_X_Size, LCD_Y_Size)
-    LCD_Set_Color(LCD_FC, BG_Page)
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
@@ -1173,9 +1167,8 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add, LCD_FC, BG_
         return 0
 
 
-def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):
+def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, Num_Page):
     LCD_Set_XY(LCD_X, LCD_Y)
-    LCD_Set_Color(LCD_FC, BG_Page)
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
@@ -1185,7 +1178,7 @@ def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):
     hex_use.append(Num_Page % 256)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if recv != 0 and len(recv) > 1:
         return 1
     else:
         print("LCD_ASCII_32X64_MIX failed: %s" % recv)
@@ -1193,9 +1186,8 @@ def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page, Num_Page):
         return 0
 
 
-def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt, LCD_FC, BG_Page):
+def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt):
     LCD_Set_XY(LCD_X, LCD_Y)
-    LCD_Set_Color(LCD_FC, BG_Page)
     Txt_Data = Txt.encode("gb2312")
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
@@ -1251,10 +1243,11 @@ def show_gif():  # 显示GIF动图
         # gif_num = 0
         gif_wait_time = 0
         last_show_gif_time = current_time
+        LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
     if gif_num > 35:
         gif_num = 0
 
-    LCD_Photo(0, 0, SHOW_WIDTH, SHOW_HEIGHT, gif_num * 100)
+    LCD_Photo(gif_num * 100)
 
     if second_times != 0:
         if second_pass < second_times:
@@ -1287,7 +1280,8 @@ def show_PC_state(FC, BC):  # 显示PC状态
     if State_change == 1:
         State_change = 0
         sleep_event.clear()
-        LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add, FC, BC)  # 放置背景
+        LCD_Set_Color(FC, BC)
+        LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
 
     # CPU
     CPU = int(psutil.cpu_percent(interval=0.5))
@@ -1326,33 +1320,33 @@ def show_PC_state(FC, BC):  # 显示PC状态
     # net_io_counter = net_io_counter_cur
 
     if CPU >= 100:
-        LCD_Photo_wb(24, 0, 8, 33, 10 + num_add, FC, BC)
+        LCD_Photo_wb(24, 0, 8, 33, 10 + num_add)
         CPU = CPU % 100
     else:
-        LCD_Photo_wb(24, 0, 8, 33, 11 + num_add, FC, BC)
-    LCD_Photo_wb(32, 0, 24, 33, (CPU // 10) + num_add, FC, BC)
-    LCD_Photo_wb(56, 0, 24, 33, (CPU % 10) + num_add, FC, BC)
+        LCD_Photo_wb(24, 0, 8, 33, 11 + num_add)
+    LCD_Photo_wb(32, 0, 24, 33, (CPU // 10) + num_add)
+    LCD_Photo_wb(56, 0, 24, 33, (CPU % 10) + num_add)
     if RAM >= 100:
-        LCD_Photo_wb(104, 0, 8, 33, 10 + num_add, FC, BC)
+        LCD_Photo_wb(104, 0, 8, 33, 10 + num_add)
         RAM = RAM % 100
     else:
-        LCD_Photo_wb(104, 0, 8, 33, 11 + num_add, FC, BC)
-    LCD_Photo_wb(112, 0, 24, 33, (RAM // 10) + num_add, FC, BC)
-    LCD_Photo_wb(136, 0, 24, 33, (RAM % 10) + num_add, FC, BC)
+        LCD_Photo_wb(104, 0, 8, 33, 11 + num_add)
+    LCD_Photo_wb(112, 0, 24, 33, (RAM // 10) + num_add)
+    LCD_Photo_wb(136, 0, 24, 33, (RAM % 10) + num_add)
     if BAT >= 100:
-        LCD_Photo_wb(104, 47, 8, 33, 10 + num_add, FC, BC)
+        LCD_Photo_wb(104, 47, 8, 33, 10 + num_add)
         BAT = BAT % 100
     else:
-        LCD_Photo_wb(104, 47, 8, 33, 11 + num_add, FC, BC)
-    LCD_Photo_wb(112, 47, 24, 33, (BAT // 10) + num_add, FC, BC)
-    LCD_Photo_wb(136, 47, 24, 33, (BAT % 10) + num_add, FC, BC)
+        LCD_Photo_wb(104, 47, 8, 33, 11 + num_add)
+    LCD_Photo_wb(112, 47, 24, 33, (BAT // 10) + num_add)
+    LCD_Photo_wb(136, 47, 24, 33, (BAT % 10) + num_add)
     if FRQ >= 100:
-        LCD_Photo_wb(24, 47, 8, 33, 10 + num_add, FC, BC)
+        LCD_Photo_wb(24, 47, 8, 33, 10 + num_add)
         FRQ = FRQ % 100
     else:
-        LCD_Photo_wb(24, 47, 8, 33, 11 + num_add, FC, BC)
-    LCD_Photo_wb(32, 47, 24, 33, (FRQ // 10) + num_add, FC, BC)
-    LCD_Photo_wb(56, 47, 24, 33, (FRQ % 10) + num_add, FC, BC)
+        LCD_Photo_wb(24, 47, 8, 33, 11 + num_add)
+    LCD_Photo_wb(32, 47, 24, 33, (FRQ // 10) + num_add)
+    LCD_Photo_wb(56, 47, 24, 33, (FRQ % 10) + num_add)
     sleep_event.wait(0.3)  # 1秒左右刷新一次
 
 
@@ -1361,8 +1355,9 @@ def show_Photo():  # 显示照片
     if State_change == 1:
         State_change = 0
         sleep_event.clear()
+        LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
-    LCD_Photo(0, 0, SHOW_WIDTH, SHOW_HEIGHT, 3926)  # 放置背景
+    LCD_Photo(3926)  # 放置背景
     sleep_event.wait(1)  # 1秒刷新一次
 
 
@@ -1373,17 +1368,19 @@ def show_PC_time(FC):
     if State_change == 1:
         State_change = 0
         sleep_event.clear()
-        LCD_Photo(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
-        LCD_ASCII_32X64_MIX(56 + 8, 0, ":", FC, photo_add, num_add)
+        LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
+        LCD_Set_Color(FC, photo_add)
+        LCD_Photo(photo_add)  # 放置背景
+        LCD_ASCII_32X64_MIX(56 + 8, 0, ":", num_add)
         # LCD_ASCII_32X64_MIX(136+8,32,":",FC,photo_add,num_add)
 
     time_h = int(current_time.hour)
     time_m = int(current_time.minute)
     time_S = int(current_time.second)
-    LCD_ASCII_32X64_MIX(0 + 8, 8, chr((time_h // 10) + 48), FC, photo_add, num_add)
-    LCD_ASCII_32X64_MIX(32 + 8, 8, chr((time_h % 10) + 48), FC, photo_add, num_add)
-    LCD_ASCII_32X64_MIX(80 + 8, 8, chr((time_m // 10) + 48), FC, photo_add, num_add)
-    LCD_ASCII_32X64_MIX(112 + 8, 8, chr((time_m % 10) + 48), FC, photo_add, num_add)
+    LCD_ASCII_32X64_MIX(0 + 8, 8, chr((time_h // 10) + 48), num_add)
+    LCD_ASCII_32X64_MIX(32 + 8, 8, chr((time_h % 10) + 48), num_add)
+    LCD_ASCII_32X64_MIX(80 + 8, 8, chr((time_m // 10) + 48), num_add)
+    LCD_ASCII_32X64_MIX(112 + 8, 8, chr((time_m % 10) + 48), num_add)
     # LCD_ASCII_32X64_MIX(160 + 8, 8, chr((time_S // 10) + 48), FC, photo_add, num_add)
     # LCD_ASCII_32X64_MIX(192 + 8, 8, chr((time_S % 10) + 48), FC, photo_add, num_add)
     sleep_event.wait(1)  # 1秒刷新一次
