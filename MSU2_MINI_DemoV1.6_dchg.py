@@ -332,8 +332,8 @@ def SER_Read():
             trytimes -= 1
         if trytimes == 0:
             print("SER_Read timeout")
-            set_device_state(0)
-            ser.close()  # 先将异常的串口连接关闭，防止无法打开
+            # set_device_state(0)
+            # ser.close()  # 先将异常的串口连接关闭，防止无法打开
         return recv
     except Exception as e:  # 出现异常
         print("接收异常, %s" % e)
