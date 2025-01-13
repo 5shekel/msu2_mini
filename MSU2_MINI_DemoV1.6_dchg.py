@@ -345,12 +345,24 @@ def SER_Read():
 SER_lock = threading.Lock()
 
 
-def SER_rw(data, read=True):
+def SER_rw(data, read=True, size=0):
     SER_lock.acquire()
     try:
         SER_Write(data)  # 发出指令
         if read:
-            return SER_Read()  # 等待收回信息
+            result = bytearray()
+            recv = SER_Read()
+            if recv != 0:
+                result.extend(recv)
+            else:
+                return recv
+            while len(result) < size:
+                recv = SER_Read()
+                if recv != 0:
+                    result.extend(recv)
+                else:
+                    break
+            return result
         else:
             return 1
     finally:
@@ -1096,14 +1108,7 @@ def LCD_Photo_wb(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     hex_use.append(Page_Add // 256)
     hex_use.append(Page_Add % 256)
     hex_use.append(0)
-
-    recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1:
-        return 1
-    else:
-        print("LCD_Photo_wb failed: %s" % recv)
-        set_device_state(0)  # 接收出错
-        return 0
+    return hex_use
 
 
 def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, Num_Page):
@@ -1171,13 +1176,7 @@ def LCD_ASCII_32X64_MIX(LCD_X, LCD_Y, Txt, Num_Page):
     hex_use.append(Num_Page // 256)
     hex_use.append(Num_Page % 256)
 
-    recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1:
-        return 1
-    else:
-        print("LCD_ASCII_32X64_MIX failed: %s" % recv)
-        set_device_state(0)  # 接收出错
-        return 0
+    return hex_use
 
 
 def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt):
@@ -1219,7 +1218,7 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
         return 0
 
 
-last_show_gif_time = current_time
+last_refresh_time = current_time
 photo_interval = 0.1
 second_times = 0  # 设备超过5秒收不到消息就会断开连接，所以每隔1秒发送一次消息
 gif_wait_time = 0.0
@@ -1228,13 +1227,13 @@ second_pass = 0
 
 def show_gif():  # 显示GIF动图
     global photo_interval, second_times, second_pass, sleep_event
-    global current_time, last_show_gif_time, gif_wait_time, State_change, gif_num
+    global current_time, last_refresh_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
         sleep_event.clear()
         # gif_num = 0
         gif_wait_time = 0
-        last_show_gif_time = current_time
+        last_refresh_time = current_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
     if gif_num > 35:
         gif_num = 0
@@ -1251,8 +1250,8 @@ def show_gif():  # 显示GIF动图
 
     gif_num = gif_num + 1
     # 精确调整动图播放速度
-    elapse_time = (current_time - last_show_gif_time).total_seconds()
-    last_show_gif_time = current_time
+    elapse_time = (current_time - last_refresh_time).total_seconds()
+    last_refresh_time = current_time
     if elapse_time - second_times > photo_interval + 5:
         gif_wait_time = photo_interval
     else:
@@ -1266,14 +1265,19 @@ def show_gif():  # 显示GIF动图
 
 
 def show_PC_state(FC, BC):  # 显示PC状态
-    global State_change, sleep_event
+    global State_change, sleep_event, last_refresh_time, wait_time
     photo_add = 4038
     num_add = 4026
     if State_change == 1:
         State_change = 0
+        wait_time = 0
         sleep_event.clear()
         LCD_Set_Color(FC, BC)
-        LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
+        hex_use = LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
+        recv = SER_rw(hex_use)  # 发出指令
+        if recv == 0:
+            print("show_PC_state failed")
+            set_device_state(0)  # 接收出错
 
     # CPU
     CPU = int(psutil.cpu_percent(interval=0.5))
@@ -1311,35 +1315,48 @@ def show_PC_state(FC, BC):  # 显示PC状态
     #     BAT = net_used * 8 // 1024 // 1024  # Mb
     # net_io_counter = net_io_counter_cur
 
+    hex_use = bytearray()
+
     if CPU >= 100:
-        LCD_Photo_wb(24, 0, 8, 33, 10 + num_add)
+        hex_use.extend(LCD_Photo_wb(24, 0, 8, 33, 10 + num_add))
         CPU = CPU % 100
     else:
-        LCD_Photo_wb(24, 0, 8, 33, 11 + num_add)
-    LCD_Photo_wb(32, 0, 24, 33, (CPU // 10) + num_add)
-    LCD_Photo_wb(56, 0, 24, 33, (CPU % 10) + num_add)
+        hex_use.extend(LCD_Photo_wb(24, 0, 8, 33, 11 + num_add))
+    hex_use.extend(LCD_Photo_wb(32, 0, 24, 33, (CPU // 10) + num_add))
+    hex_use.extend(LCD_Photo_wb(56, 0, 24, 33, (CPU % 10) + num_add))
     if RAM >= 100:
-        LCD_Photo_wb(104, 0, 8, 33, 10 + num_add)
+        hex_use.extend(LCD_Photo_wb(104, 0, 8, 33, 10 + num_add))
         RAM = RAM % 100
     else:
-        LCD_Photo_wb(104, 0, 8, 33, 11 + num_add)
-    LCD_Photo_wb(112, 0, 24, 33, (RAM // 10) + num_add)
-    LCD_Photo_wb(136, 0, 24, 33, (RAM % 10) + num_add)
+        hex_use.extend(LCD_Photo_wb(104, 0, 8, 33, 11 + num_add))
+    hex_use.extend(LCD_Photo_wb(112, 0, 24, 33, (RAM // 10) + num_add))
+    hex_use.extend(LCD_Photo_wb(136, 0, 24, 33, (RAM % 10) + num_add))
     if BAT >= 100:
-        LCD_Photo_wb(104, 47, 8, 33, 10 + num_add)
+        hex_use.extend(LCD_Photo_wb(104, 47, 8, 33, 10 + num_add))
         BAT = BAT % 100
     else:
-        LCD_Photo_wb(104, 47, 8, 33, 11 + num_add)
-    LCD_Photo_wb(112, 47, 24, 33, (BAT // 10) + num_add)
-    LCD_Photo_wb(136, 47, 24, 33, (BAT % 10) + num_add)
+        hex_use.extend(LCD_Photo_wb(104, 47, 8, 33, 11 + num_add))
+    hex_use.extend(LCD_Photo_wb(112, 47, 24, 33, (BAT // 10) + num_add))
+    hex_use.extend(LCD_Photo_wb(136, 47, 24, 33, (BAT % 10) + num_add))
     if FRQ >= 100:
-        LCD_Photo_wb(24, 47, 8, 33, 10 + num_add)
+        hex_use.extend(LCD_Photo_wb(24, 47, 8, 33, 10 + num_add))
         FRQ = FRQ % 100
     else:
-        LCD_Photo_wb(24, 47, 8, 33, 11 + num_add)
-    LCD_Photo_wb(32, 47, 24, 33, (FRQ // 10) + num_add)
-    LCD_Photo_wb(56, 47, 24, 33, (FRQ % 10) + num_add)
-    sleep_event.wait(0.3)  # 1秒左右刷新一次
+        hex_use.extend(LCD_Photo_wb(24, 47, 8, 33, 11 + num_add))
+    hex_use.extend(LCD_Photo_wb(32, 47, 24, 33, (FRQ // 10) + num_add))
+    hex_use.extend(LCD_Photo_wb(56, 47, 24, 33, (FRQ % 10) + num_add))
+
+    recv = SER_rw(hex_use, size=6 * 12)  # 发出指令
+    if recv == 0:
+        print("show_PC_state failed")
+        set_device_state(0)  # 接收出错
+
+    seconds_elapsed = (current_time - last_refresh_time) / time_second
+    last_refresh_time = current_time
+    # 1秒左右刷新一次
+    wait_time += 1 - seconds_elapsed
+    if wait_time > 0:
+        sleep_event.wait(wait_time)
 
 
 def show_Photo():  # 显示照片
@@ -1363,18 +1380,30 @@ def show_PC_time(FC):
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
         LCD_Set_Color(FC, photo_add)
         LCD_Photo(photo_add)  # 放置背景
-        LCD_ASCII_32X64_MIX(56 + 8, 0, ":", num_add)
+        hex_use = LCD_ASCII_32X64_MIX(56 + 8, 0, ":", num_add)
+        recv = SER_rw(hex_use)  # 发出指令
+        if recv == 0:
+            print("show_PC_time failed")
+            set_device_state(0)
         # LCD_ASCII_32X64_MIX(136+8,32,":",FC,photo_add,num_add)
+
+    hex_use = bytearray()
 
     time_h = int(current_time.hour)
     time_m = int(current_time.minute)
     time_S = int(current_time.second)
-    LCD_ASCII_32X64_MIX(0 + 8, 8, chr((time_h // 10) + 48), num_add)
-    LCD_ASCII_32X64_MIX(32 + 8, 8, chr((time_h % 10) + 48), num_add)
-    LCD_ASCII_32X64_MIX(80 + 8, 8, chr((time_m // 10) + 48), num_add)
-    LCD_ASCII_32X64_MIX(112 + 8, 8, chr((time_m % 10) + 48), num_add)
+    hex_use.extend(LCD_ASCII_32X64_MIX(0 + 8, 8, chr((time_h // 10) + 48), num_add))
+    hex_use.extend(LCD_ASCII_32X64_MIX(32 + 8, 8, chr((time_h % 10) + 48), num_add))
+    hex_use.extend(LCD_ASCII_32X64_MIX(80 + 8, 8, chr((time_m // 10) + 48), num_add))
+    hex_use.extend(LCD_ASCII_32X64_MIX(112 + 8, 8, chr((time_m % 10) + 48), num_add))
     # LCD_ASCII_32X64_MIX(160 + 8, 8, chr((time_S // 10) + 48), FC, photo_add, num_add)
     # LCD_ASCII_32X64_MIX(192 + 8, 8, chr((time_S % 10) + 48), FC, photo_add, num_add)
+
+    recv = SER_rw(hex_use, size=6 * 4)  # 发出指令
+    if recv == 0:
+        print("show_PC_time failed")
+        set_device_state(0)
+
     sleep_event.wait(1)  # 1秒刷新一次
 
 
@@ -1636,7 +1665,6 @@ def show_PC_Screen():  # 显示照片
         sleep_event.wait(wait_time)  # 精确控制FPS
 
 
-netspeed_last_refresh_time = None
 netspeed_last_refresh_snetio = None
 netspeed_plot_data = None
 default_data_range = [0] * (SHOW_WIDTH // 2)
@@ -1655,7 +1683,7 @@ def sizeof_fmt(num, suffix="B", base=1024.0):
 
 
 def show_netspeed(text_color=(255, 128, 0)):
-    global netspeed_last_refresh_time, netspeed_last_refresh_snetio, netspeed_plot_data
+    global last_refresh_time, netspeed_last_refresh_snetio, netspeed_plot_data
     global default_font, State_change, wait_time, current_time, sleep_event
 
     bar_width = 2  # 每个点宽度
@@ -1670,12 +1698,12 @@ def show_netspeed(text_color=(255, 128, 0)):
         State_change = 0
         sleep_event.clear()
         wait_time = 0
-        netspeed_last_refresh_time = current_time - timedelta(seconds=0.001)
+        last_refresh_time = current_time - timedelta(seconds=0.001)
         netspeed_last_refresh_snetio = current_snetio
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     # 获取网速 bytes/second
-    seconds_elapsed = (current_time - netspeed_last_refresh_time) / time_second
+    seconds_elapsed = (current_time - last_refresh_time) / time_second
 
     # 因为刷新间隔刚好是1秒，所以不需要除时间
     sent_per_second = (current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent) / seconds_elapsed
@@ -1683,7 +1711,7 @@ def show_netspeed(text_color=(255, 128, 0)):
     recv_per_second = (current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv) / seconds_elapsed
     netspeed_plot_data["recv"] = netspeed_plot_data["recv"][1:] + [recv_per_second]
 
-    netspeed_last_refresh_time = current_time
+    last_refresh_time = current_time
     netspeed_last_refresh_snetio = current_snetio
 
     # 绘制图片
@@ -1842,13 +1870,12 @@ custom_selected_names = [""] * 2
 custom_selected_displayname = [""] * 2
 custom_selected_names_tech = [""] * 6
 
-custom_last_refresh_time = None
 custom_plot_data = None
 
 
 def show_custom_two_rows(text_color=(255, 128, 0)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global custom_last_refresh_time, custom_plot_data, default_data_range, State_change, wait_time, current_time
+    global last_refresh_time, custom_plot_data, default_data_range, State_change, wait_time, current_time
     global hardware_monitor_manager, custom_selected_names, custom_selected_displayname, netspeed_font, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
@@ -1864,7 +1891,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         State_change = 0
         sleep_event.clear()
         wait_time = 0
-        custom_last_refresh_time = current_time
+        last_refresh_time = current_time
         # 初始化的时候，先显示0
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
@@ -1891,8 +1918,8 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     custom_plot_data["sent"] = custom_plot_data["sent"][1:] + [sent]
     custom_plot_data["recv"] = custom_plot_data["recv"][1:] + [recv]
 
-    seconds_elapsed = (current_time - custom_last_refresh_time) / time_second
-    custom_last_refresh_time = current_time
+    seconds_elapsed = (current_time - last_refresh_time) / time_second
+    last_refresh_time = current_time
 
     # 绘制图片
 
@@ -2004,7 +2031,7 @@ def get_full_custom_im():
 
 def show_full_custom():
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global custom_last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_time, sleep_event
+    global last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_time, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         time.sleep(0.2)
@@ -2015,12 +2042,12 @@ def show_full_custom():
         State_change = 0
         sleep_event.clear()
         wait_time = 0
-        custom_last_refresh_time = current_time
+        last_refresh_time = current_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
-    seconds_elapsed = (current_time - custom_last_refresh_time) / time_second
+    seconds_elapsed = (current_time - last_refresh_time) / time_second
 
-    custom_last_refresh_time = current_time
+    last_refresh_time = current_time
 
     im1 = get_full_custom_im()
 
@@ -2819,8 +2846,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     if My_MSN_Device is None:  # 没有找到可用的设备
         return
 
-    My_MSN_Data = Read_M_SFR_Data(256)  # 读取u8在0x0100之后的128字节
-    Print_MSN_Data(My_MSN_Data)  # 解析字节中的数据格式
+    # My_MSN_Data = Read_M_SFR_Data(256)  # 读取u8在0x0100之后的128字节
+    # Print_MSN_Data(My_MSN_Data)  # 解析字节中的数据格式
     # Read_MSN_Data(My_MSN_Data)  # 从设备读取更详细的数据，如序列号等
     LCD_Change_now = LCD_Change_use
     LCD_State(LCD_Change_now)  # 配置显示方向
