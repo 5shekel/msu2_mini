@@ -2851,12 +2851,12 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     # Read_MSN_Data(My_MSN_Data)  # 从设备读取更详细的数据，如序列号等
     LCD_Change_now = LCD_Change_use
     LCD_State(LCD_Change_now)  # 配置显示方向
-    State_change = 1  # 状态发生变化
-    Screen_Error = 0
     # 配置按键阈值
     ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) // 3
     ADC_det = ADC_det - 200  # 根据125的阈值判断是否被按下
+    State_change = 1  # 状态发生变化
     set_device_state(1)  # 可以正常连接
+    Screen_Error = 0
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
