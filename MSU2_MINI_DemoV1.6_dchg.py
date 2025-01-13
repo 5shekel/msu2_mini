@@ -1404,8 +1404,10 @@ def show_PC_time(FC):
         print("show_PC_time failed")
         set_device_state(0)
 
-    if time_S != 59:  # 分钟切换时不等待
+    if time_S != 59:
         sleep_event.wait(1)  # 1秒刷新一次
+    else:
+        sleep_event.wait(1 - current_time.microsecond / 1000000)  # 分钟切换时
 
 
 def digit_to_ints(di):
