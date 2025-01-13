@@ -1280,15 +1280,15 @@ def show_PC_state(FC, BC):  # 显示PC状态
             set_device_state(0)  # 接收出错
 
     # CPU
-    CPU = int(psutil.cpu_percent(interval=0.5))
+    CPU = round(psutil.cpu_percent(interval=0.5))
     # mem
     mem = psutil.virtual_memory()
-    RAM = int(mem.percent)
+    RAM = round(mem.percent)
 
     # battery
     battery = psutil.sensors_battery()
     if battery is not None:
-        BAT = int(battery.percent)
+        BAT = round(battery.percent)
     else:
         BAT = 100
     # 磁盘使用率
@@ -1296,7 +1296,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
     if disk_info.total == 0:
         FRQ = 100
     else:
-        FRQ = disk_info.used * 100 // disk_info.total
+        FRQ = round(disk_info.used * 100 / disk_info.total)
 
     # # 磁盘IO
     # FRQ = 0
@@ -1304,7 +1304,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
     # disk_used = (disk_io_counter_cur.read_bytes + disk_io_counter_cur.write_bytes
     #              - disk_io_counter.read_bytes - disk_io_counter.write_bytes)
     # if disk_used > 0:
-    #     FRQ = disk_used // 1024 // 1024  # MB
+    #     FRQ = round(disk_used / (1024 * 1024))  # MB
     # disk_io_counter = disk_io_counter_cur
     # # 网络IO
     # BAT = 0
@@ -1312,7 +1312,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
     # net_used = (net_io_counter_cur.bytes_sent + net_io_counter_cur.bytes_recv
     #             - net_io_counter.bytes_sent - net_io_counter.bytes_recv)
     # if net_used > 0:
-    #     BAT = net_used * 8 // 1024 // 1024  # Mb
+    #     BAT = round(net_used / (1024 * 1024 / 8))  # Mb
     # net_io_counter = net_io_counter_cur
 
     hex_use = bytearray()
@@ -1480,7 +1480,7 @@ def shrink_image_block_average(image, shrink_factor):
     """
 
     # Calculate the new shape
-    new_shape = (int(image.shape[0] / shrink_factor), int(image.shape[1] / shrink_factor))
+    new_shape = (round(image.shape[0] / shrink_factor), round(image.shape[1] / shrink_factor))
 
     shrunk_parts = []
     # 4倍多重采样
@@ -1515,7 +1515,7 @@ def shrink_image_block_average(image, shrink_factor):
     #                       .mean(axis=(1, 3), dtype=np.uint32))
     #
     # # Nearest neighbor interpolation to handle fractional part
-    # final_shape = (int(image.shape[0] / shrink_factor), int(image.shape[1] / shrink_factor))
+    # final_shape = (round(image.shape[0] / shrink_factor), round(image.shape[1] / shrink_factor))
     #
     # row_indices = np.round(np.linspace(0, averaged_image.shape[0] - 1, final_shape[0])).astype(np.uint32)
     # col_indices = np.round(np.linspace(0, averaged_image.shape[1] - 1, final_shape[1])).astype(np.uint32)
@@ -2584,7 +2584,7 @@ def UI_Page():  # 进行图像界面显示
             return
         insert_text_message("")
         if photo_interval_tmp >= 0 and photo_interval + second_times * 2 != photo_interval_tmp:
-            second_times = int(photo_interval_tmp)
+            second_times = int(photo_interval_tmp)  # 舍去小数部分
             photo_interval = photo_interval_tmp - second_times
             if second_times > 0 and photo_interval < 0.2:
                 photo_interval += 1
