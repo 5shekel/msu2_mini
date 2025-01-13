@@ -1404,7 +1404,8 @@ def show_PC_time(FC):
         print("show_PC_time failed")
         set_device_state(0)
 
-    sleep_event.wait(1)  # 1秒刷新一次
+    if time_S != 59:  # 分钟切换时不等待
+        sleep_event.wait(1)  # 1秒刷新一次
 
 
 def digit_to_ints(di):
@@ -2710,7 +2711,6 @@ def UI_Page():  # 进行图像界面显示
     Text1.grid(row=5, column=0, rowspan=3, columnspan=1, sticky=tk.NS, padx=5, pady=5)
 
     def on_closing():
-        sleep_event.set()  # 取消sleep
         # 结束时保存配置
         config_obj = {
             "text_color_r": rgb_tuple[0],
@@ -3076,6 +3076,8 @@ finally:
     print("closing")
     MG_screen_thread_running = False
     MG_daemon_running = False
+    sleep_event.set()  # 取消sleep
+
     if load_thread.is_alive():
         load_thread.join(timeout=5.0)
     if manager_thread.is_alive():
