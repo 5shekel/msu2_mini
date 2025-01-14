@@ -694,7 +694,7 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
         if Data_Remain != 0:  # 还存在没写完的数据
             Fdata = binfile.read(Data_Remain)  # 将剩下的数据读完
             for i in range(Data_Remain, 256):
-                Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
+                Fdata = Fdata + b'\xff'  # 不足位置补充0xFF
             Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
         u_time = time.time() - u_time
         insert_text_message("烧写完成，耗时%.3f秒\n" % u_time, False)
@@ -728,7 +728,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
     if Data_Remain != 0:  # 还存在没写完的数据
         Fdata = img_use[Page_Count * 256:]  # 将剩下的数据读完
         for i in range(Data_Remain, 256):
-            Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
+            Fdata = Fdata + b'\xff'  # 不足位置补充0xFF
         Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
     insert_text_message("烧写完成，耗时%.3f秒\n" % (time.time() - u_time), False)
     return 1
@@ -759,7 +759,7 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
         if Data_Remain != 0:  # 还存在没写完的数据
             Fdata = binfile.read(Data_Remain)  # 将剩下的数据读完
             for i in range(Data_Remain, 256):
-                Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
+                Fdata = Fdata + b'\xff'  # 不足位置补充0xFF
             Write_Flash_Page(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
         print("%s 烧写完成" % filepath)
         return 1
@@ -851,7 +851,7 @@ def LCD_State(LCD_S):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
+    if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
         print("LCD towards change failed: %s" % recv)
@@ -899,7 +899,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
         if Fsize % 256 != 0:  # 还存在没写完的数据
             Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
             for i in range(Fsize % 256, 256):
-                Fdata = Fdata + int(255).to_bytes(1, byteorder="little")  # 不足位置补充0xFF
+                Fdata = Fdata + b'\xff'  # 不足位置补充0xFF
             LCD_DATA(Fdata, Fsize % 256)  # (page,数据，大小)
         u_time = time.time() - u_time
         insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time), False)
@@ -948,7 +948,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
             data_w = binfile.read(Fsize % 256)  # 将剩下的数据读完
             for i in range(Fsize % 256, 256):
                 # 不足位置补充0xFF
-                data_w = data_w + int(255).to_bytes(1, byteorder="little")
+                data_w = data_w + b'\xff'
             for i in range(0, 64):  # 256字节数据分为64个指令
                 hex_use.append(4)
                 hex_use.append(i)
@@ -1270,8 +1270,8 @@ def show_PC_state(FC, BC):  # 显示PC状态
         LCD_Set_Color(FC, BC)
         hex_use = LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
         recv = SER_rw(hex_use)  # 发出指令
-        if len(recv) == 0:
-            print("show_PC_state failed")
+        if len(recv) == 0 or recv[0] != 2 or recv[1] != 3:
+            print("show_PC_state failed: %s" % recv)
             set_device_state(0)  # 接收出错
 
     # CPU
@@ -1342,7 +1342,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
     hex_use.extend(LCD_Photo_wb(56, 47, 24, 33, (FRQ % 10) + num_add))
     recv = SER_rw(hex_use, size=6 * 12)  # 发出指令
     if len(recv) == 0 or recv[0] != 2 or recv[1] != 3:
-        print("show_PC_state failed")
+        print("show_PC_state failed: %s" % recv)
         set_device_state(0)  # 接收出错
 
     seconds_elapsed = (current_time - last_refresh_time) / time_second
@@ -1376,8 +1376,8 @@ def show_PC_time(FC):
         LCD_Photo(photo_add)  # 放置背景
         hex_use = LCD_ASCII_32X64_MIX(56 + 8, 0, ":", num_add)
         recv = SER_rw(hex_use)  # 发出指令
-        if len(recv) == 0:
-            print("show_PC_time failed")
+        if len(recv) == 0 or recv[0] != 2 or recv[1] != 3:
+            print("show_PC_time failed: %s" % recv)
             set_device_state(0)
         # LCD_ASCII_32X64_MIX(136+8,32,":",FC,photo_add,num_add)
 
@@ -2806,24 +2806,21 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             print("未接收到设备响应，打开失败：%s" % port_list[i].name)
             ser.close()  # 将串口关闭，防止下次无法打开
             continue  # 尝试下一个端口
-        else:
-            recv = recv.decode("gbk")  # 获取串口数据
 
         # 逐字解析编码，收到6个字符以上数据时才进行解析
         for n in range(0, len(recv) - 5):
             # 当前字节为0时进行解析，确保为MSN设备，确保版本号为数字ASC码
-            if (ord(recv[n]) != 0 or recv[n + 1: n + 4] != "MSN" or recv[n + 4] < '0'
-                    or recv[n + 4] > '9' or recv[n + 5] < '0' or recv[n + 5] > '9'):
+            version1 = recv[n + 4] - 48
+            version2 = recv[n + 5] - 48
+            if recv[n: n + 4] != b'\x00MSN' or not (0 <= version1 < 10 and 0 <= version1 < 10):
                 print("连接失败，设备版本号校验失败：%s" % recv)
                 continue
-            msn_version = (ord(recv[n + 4]) - 48) * 10 + (ord(recv[n + 5]) - 48)
+            msn_version = version1 * 10 + version2
             # 可以逐个加入数组
-            hex_code = int(0).to_bytes(1, byteorder="little")
-            hex_use = hex_code + b"MSNCN"
+            hex_use = b"\x00MSNCN"
             recv = SER_rw(hex_use)  # 发出指令
-            recv = recv.decode("gbk")  # 获取串口数据
             # 确保为MSN设备
-            if len(recv) > 5 and ord(recv[0]) == 0 and recv[1:6] == "MSNCN":
+            if recv[:6] == hex_use:
                 print(get_formatted_time_string(current_time), end=' ')
                 insert_text_message("端口%s连接成功" % port_list[i].name)
                 # 对MSN设备进行登记
