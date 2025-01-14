@@ -446,7 +446,7 @@ def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if len(recv) > 5:
         return recv[4] * 256 + recv[5]
     else:
         print("Read_ADC_CH failed, will reconnect: %s" % recv)
@@ -814,7 +814,7 @@ def LCD_Photo(Page_Add):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if len(recv) > 1:
         return 1
     else:
         print("LCD_Photo failed: %s" % recv)
@@ -851,7 +851,7 @@ def LCD_State(LCD_S):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
+    if len(recv) > 5:
         return 1
     else:
         print("LCD towards change failed: %s" % recv)
