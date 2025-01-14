@@ -446,7 +446,7 @@ def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 5:
+    if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return recv[4] * 256 + recv[5]
     else:
         print("Read_ADC_CH failed, will reconnect: %s" % recv)
@@ -814,7 +814,7 @@ def LCD_Photo(Page_Add):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1:
+    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
         print("LCD_Photo failed: %s" % recv)
@@ -833,7 +833,7 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1:
+    if len(recv) > 1 and recv[0] == 2 and recv[1] == 3:
         return 1
     else:
         print("LCD_ADD failed: %s" % recv)
@@ -851,7 +851,7 @@ def LCD_State(LCD_S):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 5:
+    if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
         return 1
     else:
         print("LCD towards change failed: %s" % recv)
@@ -1116,7 +1116,7 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, Num_Page):
     hex_use.append(Num_Page % 256)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1:
+    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
         print("LCD_ASCII_32X64 failed: %s" % recv)
@@ -1135,7 +1135,7 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1:
+    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
         print("LCD_GB2312_16X16 failed: %s" % recv)
@@ -1154,7 +1154,7 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1:
+    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
         print("LCD_Photo_wb_MIX failed: %s" % recv)
@@ -1185,7 +1185,7 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1:
+    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
         print("LCD_GB2312_16X16_MIX failed: %s" % recv)
@@ -1205,7 +1205,7 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1:
+    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
         print("LCD_Color_set failed: %s" % recv)
@@ -1340,9 +1340,8 @@ def show_PC_state(FC, BC):  # 显示PC状态
         hex_use.extend(LCD_Photo_wb(24, 47, 8, 33, 11 + num_add))
     hex_use.extend(LCD_Photo_wb(32, 47, 24, 33, (FRQ // 10) + num_add))
     hex_use.extend(LCD_Photo_wb(56, 47, 24, 33, (FRQ % 10) + num_add))
-
     recv = SER_rw(hex_use, size=6 * 12)  # 发出指令
-    if len(recv) == 0:
+    if len(recv) == 0 or recv[0] != 2 or recv[1] != 3:
         print("show_PC_state failed")
         set_device_state(0)  # 接收出错
 
@@ -1395,8 +1394,8 @@ def show_PC_time(FC):
     # LCD_ASCII_32X64_MIX(192 + 8, 8, chr((time_S % 10) + 48), FC, photo_add, num_add)
 
     recv = SER_rw(hex_use, size=6 * 4)  # 发出指令
-    if len(recv) == 0:
-        print("show_PC_time failed")
+    if len(recv) == 0 or recv[0] != 2 or recv[1] != 3:
+        print("show_PC_time failed: %s" % recv)
         set_device_state(0)
 
     if time_S != 59:
@@ -1665,7 +1664,6 @@ def show_PC_Screen():  # 显示照片
 
 netspeed_last_refresh_snetio = None
 netspeed_plot_data = None
-default_data_range = [0] * (SHOW_WIDTH // 2)
 time_second = timedelta(seconds=1)
 
 
@@ -1692,7 +1690,7 @@ def show_netspeed(text_color=(255, 128, 0)):
     if State_change == 1:
         # 初始化
         if netspeed_plot_data is None:
-            netspeed_plot_data = {"sent": default_data_range, "recv": default_data_range}
+            netspeed_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
         State_change = 0
         sleep_event.clear()
         wait_time = 0
@@ -1705,9 +1703,11 @@ def show_netspeed(text_color=(255, 128, 0)):
 
     # 因为刷新间隔刚好是1秒，所以不需要除时间
     sent_per_second = (current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent) / seconds_elapsed
-    netspeed_plot_data["sent"] = netspeed_plot_data["sent"][1:] + [sent_per_second]
+    netspeed_plot_data["sent"].append(sent_per_second)
+    netspeed_plot_data["sent"].pop(0)
     recv_per_second = (current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv) / seconds_elapsed
-    netspeed_plot_data["recv"] = netspeed_plot_data["recv"][1:] + [recv_per_second]
+    netspeed_plot_data["recv"].append(recv_per_second)
+    netspeed_plot_data["recv"].pop(0)
 
     last_refresh_time = current_time
     netspeed_last_refresh_snetio = current_snetio
@@ -1873,7 +1873,7 @@ custom_plot_data = None
 
 def show_custom_two_rows(text_color=(255, 128, 0)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global last_refresh_time, custom_plot_data, default_data_range, State_change, wait_time, current_time
+    global last_refresh_time, custom_plot_data, State_change, wait_time, current_time
     global hardware_monitor_manager, custom_selected_names, custom_selected_displayname, netspeed_font, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
@@ -1885,7 +1885,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
 
     if State_change == 1:
         if custom_plot_data is None:
-            custom_plot_data = {"sent": default_data_range, "recv": default_data_range}
+            custom_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
         State_change = 0
         sleep_event.clear()
         wait_time = 0
@@ -1913,8 +1913,10 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         recv = 0
         recv_text = "--"
 
-    custom_plot_data["sent"] = custom_plot_data["sent"][1:] + [sent]
-    custom_plot_data["recv"] = custom_plot_data["recv"][1:] + [recv]
+    custom_plot_data["sent"].append(sent)
+    custom_plot_data["sent"].pop(0)
+    custom_plot_data["recv"].append(recv)
+    custom_plot_data["recv"].pop(0)
 
     seconds_elapsed = (current_time - last_refresh_time) / time_second
     last_refresh_time = current_time
@@ -2515,7 +2517,7 @@ def UI_Page():  # 进行图像界面显示
         desc_label.grid(row=1, column=1, padx=5, pady=5)
 
         def update_sensor_value(i):
-            global custom_plot_data, default_data_range
+            global custom_plot_data
             if custom_selected_names[i] != sensor_vars[i].get():
                 custom_selected_names[i] = sensor_vars[i].get()
 
@@ -2524,9 +2526,9 @@ def UI_Page():  # 进行图像界面显示
                     return
                 key = None
                 if i == 0:
-                    custom_plot_data["sent"] = default_data_range
+                    custom_plot_data["sent"] = [0] * (SHOW_WIDTH // 2)
                 elif i == 1:
-                    custom_plot_data["recv"] = default_data_range
+                    custom_plot_data["recv"] = [0] * (SHOW_WIDTH // 2)
 
         def change_sensor_displayname(i):
             if custom_selected_displayname[i] != sensor_displayname_vars[i].get():
