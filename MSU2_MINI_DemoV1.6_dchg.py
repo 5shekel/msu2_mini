@@ -327,13 +327,14 @@ def SER_Read():
     try:  # 尝试获取数据
         trytimes = 500000  # 尝试次数计数，防止一直获取不到数据
         recv = ser.read(ser.in_waiting)
-        while recv != 0 and len(recv) == 0 and trytimes > 0:
+        while len(recv) == 0 and trytimes > 0:
             recv = ser.read(ser.in_waiting)
             trytimes -= 1
         if trytimes == 0:
             print("SER_Read timeout")
             # set_device_state(0)
             # ser.close()  # 先将异常的串口连接关闭，防止无法打开
+            return 0
         return recv
     except Exception as e:  # 出现异常
         print("接收异常, %s" % e)
@@ -349,22 +350,16 @@ def SER_rw(data, read=True, size=0):
     SER_lock.acquire()
     try:
         SER_Write(data)  # 发出指令
-        if read:
-            result = bytearray()
-            recv = SER_Read()
-            if recv != 0:
-                result.extend(recv)
-            else:
-                return recv
-            while len(result) < size:
-                recv = SER_Read()
-                if recv != 0:
-                    result.extend(recv)
-                else:
-                    break
+        result = bytearray()
+        if not read:
             return result
-        else:
-            return 1
+        while True:
+            recv = SER_Read()
+            if recv == 0:
+                return result
+            result.extend(recv)
+            if len(result) >= size:
+                return result
     finally:
         SER_lock.release()
 
@@ -379,7 +374,7 @@ def Read_M_u8(add):  # 读取主机u8寄存器（MSC设备编码，Add）
     hex_use.append(0)  # 数值
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 5:
+    if len(recv) > 5:
         return recv[5]
     else:
         print("Read_M_u8 failed: %s" % recv)
@@ -397,7 +392,7 @@ def Read_M_u16(add):  # 读取主机u8寄存器（MSC设备编码，Add）
     hex_use.append(0)  # 低位数值
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 5:
+    if len(recv) > 5:
         return recv[4] * 256 + recv[5]
     else:
         print("Read_M_u16 failed: %s" % recv)
@@ -415,7 +410,7 @@ def Write_M_u8(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add�
     hex_use.append(data_w % 256)  # 数值
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 0:
+    if len(recv) > 0:
         return 1
     else:
         print("Write_M_u8 failed: %s" % recv)
@@ -433,7 +428,7 @@ def Write_M_u16(add, data_w):  # 修改主机u8寄存器（MSC设备编码，Add
     hex_use.append(data_w % 256)  # 低位数值
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 0:
+    if len(recv) > 0:
         return 1
     else:
         print("Write_M_u16 failed: %s" % recv)
@@ -451,7 +446,7 @@ def Read_ADC_CH(ch):  # 读取主机ADC寄存器数值（ADC通道）
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return recv[4] * 256 + recv[5]
     else:
         print("Read_ADC_CH failed, will reconnect: %s" % recv)
@@ -589,7 +584,7 @@ def Write_Flash_Page(Page_add, data_w, Page_num):  # 往Flash指定页写入256B
     hex_use.append(Page_num % 256)  # Data3
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 0:
+    if len(recv) > 0:
         return 1
     else:
         print("Write_Flash_Page failed: %s" % recv)
@@ -616,7 +611,7 @@ def Write_Flash_Page_fast(Page_add, data_w, Page_num):
     hex_use.append(Page_num)  # Data3
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 0:
+    if len(recv) > 0:
         return 1
     else:
         print("Write_Flash_Page_fast failed: %s" % recv)
@@ -634,7 +629,7 @@ def Erase_Flash_page(add, size):  # 清空指定区域的内存
     hex_use.append(size % 256)  # Data2
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 0:
+    if len(recv) > 0:
         return 1
     else:
         print("Erase_Flash_page failed: %s" % recv)
@@ -652,7 +647,7 @@ def Read_Flash_byte(add):  # 读取指定地址的数值
     hex_use.append(0)  # Data3
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 5:
+    if len(recv) > 5:
         return recv[5]
     else:
         print("Read_Flash_byte failed: %s" % recv)
@@ -819,7 +814,7 @@ def LCD_Photo(Page_Add):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
         return 1
     else:
         print("LCD_Photo failed: %s" % recv)
@@ -838,7 +833,7 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1:
+    if len(recv) > 1:
         return 1
     else:
         print("LCD_ADD failed: %s" % recv)
@@ -856,7 +851,7 @@ def LCD_State(LCD_S):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
+    if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1] and recv[3] == LCD_S:
         return 1
     else:
         print("LCD towards change failed: %s" % recv)
@@ -1121,7 +1116,7 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, Num_Page):
     hex_use.append(Num_Page % 256)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1:
+    if len(recv) > 1:
         return 1
     else:
         print("LCD_ASCII_32X64 failed: %s" % recv)
@@ -1140,7 +1135,7 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1:
+    if len(recv) > 1:
         return 1
     else:
         print("LCD_GB2312_16X16 failed: %s" % recv)
@@ -1159,7 +1154,7 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1:
+    if len(recv) > 1:
         return 1
     else:
         print("LCD_Photo_wb_MIX failed: %s" % recv)
@@ -1190,7 +1185,7 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1:
+    if len(recv) > 1:
         return 1
     else:
         print("LCD_GB2312_16X16_MIX failed: %s" % recv)
@@ -1210,7 +1205,7 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if recv != 0 and len(recv) > 1:
+    if len(recv) > 1:
         return 1
     else:
         print("LCD_Color_set failed: %s" % recv)
@@ -1275,7 +1270,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
         LCD_Set_Color(FC, BC)
         hex_use = LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
         recv = SER_rw(hex_use)  # 发出指令
-        if recv == 0:
+        if len(recv) == 0:
             print("show_PC_state failed")
             set_device_state(0)  # 接收出错
 
@@ -1347,7 +1342,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
     hex_use.extend(LCD_Photo_wb(56, 47, 24, 33, (FRQ % 10) + num_add))
 
     recv = SER_rw(hex_use, size=6 * 12)  # 发出指令
-    if recv == 0:
+    if len(recv) == 0:
         print("show_PC_state failed")
         set_device_state(0)  # 接收出错
 
@@ -1382,7 +1377,7 @@ def show_PC_time(FC):
         LCD_Photo(photo_add)  # 放置背景
         hex_use = LCD_ASCII_32X64_MIX(56 + 8, 0, ":", num_add)
         recv = SER_rw(hex_use)  # 发出指令
-        if recv == 0:
+        if len(recv) == 0:
             print("show_PC_time failed")
             set_device_state(0)
         # LCD_ASCII_32X64_MIX(136+8,32,":",FC,photo_add,num_add)
@@ -1400,7 +1395,7 @@ def show_PC_time(FC):
     # LCD_ASCII_32X64_MIX(192 + 8, 8, chr((time_S % 10) + 48), FC, photo_add, num_add)
 
     recv = SER_rw(hex_use, size=6 * 4)  # 发出指令
-    if recv == 0:
+    if len(recv) == 0:
         print("show_PC_time failed")
         set_device_state(0)
 
@@ -2815,8 +2810,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
         # 逐字解析编码，收到6个字符以上数据时才进行解析
         for n in range(0, len(recv) - 5):
             # 当前字节为0时进行解析，确保为MSN设备，确保版本号为数字ASC码
-            if (ord(recv[n]) != 0 or recv[n + 1: n + 4] != "MSN" or recv[n + 4] < "0"
-                    or recv[n + 4] > "9" or recv[n + 5] < "0" or recv[n + 5] > "9"):
+            if (ord(recv[n]) != 0 or recv[n + 1: n + 4] != "MSN" or recv[n + 4] < '0'
+                    or recv[n + 4] > '9' or recv[n + 5] < '0' or recv[n + 5] > '9'):
                 print("连接失败，设备版本号校验失败：%s" % recv)
                 continue
             msn_version = (ord(recv[n + 4]) - 48) * 10 + (ord(recv[n + 5]) - 48)
@@ -2824,11 +2819,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             hex_code = int(0).to_bytes(1, byteorder="little")
             hex_use = hex_code + b"MSNCN"
             recv = SER_rw(hex_use)  # 发出指令
-            if recv == 0:
-                print("连接失败，设备发送消息失败：%s" % port_list[i].name)
-                break  # 未接收到响应，串口异常，直接退出
-            else:
-                recv = recv.decode("gbk")  # 获取串口数据
+            recv = recv.decode("gbk")  # 获取串口数据
             # 确保为MSN设备
             if len(recv) > 5 and ord(recv[0]) == 0 and recv[1:6] == "MSNCN":
                 print(get_formatted_time_string(current_time), end=' ')
