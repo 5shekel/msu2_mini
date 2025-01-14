@@ -1475,7 +1475,7 @@ def shrink_image_block_average(image, shrink_factor):
     """
 
     # Calculate the new shape
-    new_shape = (round(image.shape[0] / shrink_factor), round(image.shape[1] / shrink_factor))
+    new_shape = (int(image.shape[0] / shrink_factor), int(image.shape[1] / shrink_factor))
 
     shrunk_parts = []
     # 4倍多重采样
