@@ -3009,6 +3009,12 @@ def manage_task():
         if ADC_ch < ADC_det:  # 按键按下
             if Read_ADC_CH(9) > ADC_det or Read_ADC_CH(9) > ADC_det:
                 continue  # 没有连续3次则忽略
+
+            if ADC_det - ADC_ch > 2500:  # 校正检测阈值
+                ADC_det = (ADC_det + ADC_ch - 200) // 2
+                print("校正按下检测阈值为：%d" % ADC_det)
+                continue
+
             if key_on == 0:  # 第一次检测到按下
                 ADC_det += 150  # 增加后续检测的灵敏度
                 key_on = 1
