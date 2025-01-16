@@ -1238,7 +1238,7 @@ def show_gif():  # 显示GIF动图
     if second_times != 0:
         if second_pass < second_times:
             second_pass += 1
-            sleep_event.wait(1.0)
+            sleep_event.wait(1)
             return
         else:
             second_pass = 0
@@ -1401,7 +1401,7 @@ def show_PC_time(FC):
     if time_S != 59:
         sleep_event.wait(1)  # 1秒刷新一次
     else:
-        sleep_event.wait(1 - current_time.microsecond / 1000000)  # 分钟切换时
+        sleep_event.wait(1 - current_time.microsecond / 1000000.0)  # 分钟切换时
 
 
 def digit_to_ints(di):
@@ -1731,7 +1731,7 @@ def show_netspeed(text_color=(255, 128, 0)):
         x0 = -bar_width
         x1 = -1
         y1 = image_height + start_y
-        percent = image_height / max_value
+        percent = image_height * 1.0 / max_value
         for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
             bar_height = percent * sent
@@ -1758,7 +1758,7 @@ def show_netspeed(text_color=(255, 128, 0)):
 def load_hardware_monitor():
     from HardwareMonitor import Hardware
 
-    # see `HardwareMonitor.Util.SensorTypeUnitFormatter`
+    # see `import HardwareMonitor.Util.SensorTypeUnitFormatter`
     SensorTypeUnitFormatter = {
         Hardware.SensorType.Voltage: [sizeof_fmt, "V", 1000],
         Hardware.SensorType.Current: [sizeof_fmt, "A", 1000],
@@ -1947,7 +1947,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         x0 = -bar_width
         x1 = -1
         y1 = image_height + start_y
-        percent = image_height / max_value
+        percent = image_height * 1.0 / max_value
         for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
             bar_height = percent * sent
