@@ -1742,7 +1742,7 @@ def show_netspeed(text_color=(255, 128, 0)):
         percent = image_height / max_value
         for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = round(percent * sent)
+            bar_height = percent * sent
             x0 += bar_width
             x1 += bar_width
             y0 = y1 - bar_height
@@ -1956,7 +1956,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         percent = image_height / max_value
         for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = round(percent * sent)
+            bar_height = percent * sent
             x0 += bar_width
             x1 += bar_width
             y0 = y1 - bar_height
