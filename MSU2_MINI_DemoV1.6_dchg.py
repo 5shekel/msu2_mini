@@ -1421,16 +1421,13 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
         data_w = uint16_data[data_page1: data_page2]
         cmp_use = data_w[::2] << 16 | data_w[1::2]  # 256字节数据分为64个指令
 
-        result = 0
-        if data_w.size > 0:
-            u, c = np.unique(cmp_use, return_counts=True)
-            result = u[c.argmax()]  # 找最频繁的指令
-
+        # 找最频繁的颜色作为背景色填充整个区域
+        u, c = np.unique(cmp_use, return_counts=True)
+        result = u[c.argmax()]
         hex_use.extend([2, 4])
-
-        # 最常见的指令，背景色？
         hex_use.extend(digit_to_ints(result))
-        # 每个前景色
+
+        # 填充与背景色不同的像素
         for i, cmp_value in enumerate(cmp_use):
             if cmp_value != result:
                 hex_use.extend([4, i])
