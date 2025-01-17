@@ -1944,7 +1944,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
 
     # 绘图
     # 决定最小范围, 需大于0
-    min_max = [1, 1]
+    min_max = [0.001, 0.001]
     for start_y, key, color, minmax_it in zip(
             [19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)], min_max):
         sent_values = custom_plot_data[key]
