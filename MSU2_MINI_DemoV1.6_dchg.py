@@ -1742,7 +1742,7 @@ def show_netspeed(text_color=(255, 128, 0)):
         percent = image_height * 1.0 / max_value
         for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = percent * sent
+            bar_height = round(percent * sent)
             x0 += bar_width
             x1 += bar_width
             y0 = y1 - bar_height
@@ -1902,7 +1902,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     # 获取 libre hardware monitor 数值
-    hardwares = set()  # 因为hardware不能重复更新，所以这里用set去掉重复项
+    hardwares = set()  # 因为hardware同一个周期内不能重复更新，所以这里用set去掉重复项
     for name in custom_selected_names:
         if name == "":
             continue
@@ -1958,7 +1958,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         percent = image_height * 1.0 / max_value
         for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
             # Scale the sent value to the image height
-            bar_height = percent * sent
+            bar_height = round(percent * sent)
             x0 += bar_width
             x1 += bar_width
             y0 = y1 - bar_height
