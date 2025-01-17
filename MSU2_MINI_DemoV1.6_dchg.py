@@ -1410,7 +1410,7 @@ def digit_to_ints(di):
 
 def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
     uint16_data = Photo_data.astype(np.uint32)
-    total_data_size = len(uint16_data)
+    total_data_size = len(uint16_data)  # SHOW_WIDTH * SHOW_HEIGHT ?
     data_per_page = 128
     data_page1 = 0
     data_page2 = 0
