@@ -168,10 +168,10 @@ def Get_Photo_Path4():  # 获取文件路径
 def Write_Photo_Path1():  # 写入文件
     global photo_path1, write_path_index, Img_data_use
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index, False)
+        insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index)
         return
     if not photo_path1:
-        insert_text_message("Path1 is None\n", False)
+        insert_text_message("Path1 is None\n")
         return
 
     insert_text_message("图像格式转换...\n")
@@ -182,10 +182,10 @@ def Write_Photo_Path1():  # 写入文件
 def Write_Photo_Path2():  # 写入文件
     global photo_path2, write_path_index
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index, False)
+        insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index)
         return
     if not photo_path2:
-        insert_text_message("Path2 is None\n", False)
+        insert_text_message("Path2 is None\n")
         return
 
     insert_text_message("准备烧写Flash固件...\n")
@@ -195,10 +195,10 @@ def Write_Photo_Path2():  # 写入文件
 def Write_Photo_Path3():  # 写入文件
     global photo_path3, write_path_index, Img_data_use
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index, False)
+        insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index)
         return
     if not photo_path3:
-        insert_text_message("Path3 is None\n", False)
+        insert_text_message("Path3 is None\n")
         return
 
     insert_text_message("图像格式转换...\n")
@@ -209,10 +209,10 @@ def Write_Photo_Path3():  # 写入文件
 def Write_Photo_Path4():  # 写入文件
     global photo_path4, write_path_index, Img_data_use
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index, False)
+        insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index)
         return
     if not photo_path4:
-        insert_text_message("Path4 is None\n", False)
+        insert_text_message("Path4 is None\n")
         return
 
     insert_text_message("动图格式转换中...\n")
@@ -1410,11 +1410,15 @@ def digit_to_ints(di):
 
 def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
     uint16_data = Photo_data.astype(np.uint32)
-    hex_use = bytearray()
-    total_data_size = SHOW_WIDTH * SHOW_HEIGHT
+    total_data_size = len(uint16_data)
     data_per_page = 128
+    data_page1 = 0
+    data_page2 = 0
+    hex_use = bytearray()
     for j in range(0, total_data_size // data_per_page):  # 每次写入一个Page
-        data_w = uint16_data[j * data_per_page: (j + 1) * data_per_page]
+        data_page1 = data_page2
+        data_page2 += data_per_page
+        data_w = uint16_data[data_page1: data_page2]
         cmp_use = data_w[::2] << 16 | data_w[1::2]  # 256字节数据分为64个指令
 
         result = 0
@@ -1429,7 +1433,8 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
         # 每个前景色
         for i, cmp_value in enumerate(cmp_use):
             if cmp_value != result:
-                hex_use.extend([4, i] + digit_to_ints(cmp_value))
+                hex_use.extend([4, i])
+                hex_use.extend(digit_to_ints(cmp_value))
 
         # Append footer
         hex_use.extend([2, 3, 8, 1, 0, 0])
@@ -1439,7 +1444,8 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
         data_w += b"\xff\xff" * (128 - remaining_data_size)  # 补全128个 uint16
         cmp_use = data_w[::2] << 16 | data_w[1::2]
         for i, cmp_value in enumerate(cmp_use):
-            hex_use.extend([4, i] + digit_to_ints(cmp_value))
+            hex_use.extend([4, i])
+            hex_use.extend(digit_to_ints(cmp_value))
         hex_use.extend([2, 3, 8, 0, remaining_data_size * 2, 0])
     return hex_use
 
