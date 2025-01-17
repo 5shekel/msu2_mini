@@ -1875,7 +1875,6 @@ def load_hardware_monitor():
 custom_selected_names = [""] * 2
 custom_selected_displayname = [""] * 2
 custom_selected_names_tech = [""] * 6
-
 custom_plot_data = None
 
 
@@ -1898,7 +1897,6 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
         sleep_event.clear()
         wait_time = 0
         last_refresh_time = current_time
-        # 初始化的时候，先显示0
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     # 获取 libre hardware monitor 数值
