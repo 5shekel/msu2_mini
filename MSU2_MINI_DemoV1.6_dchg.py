@@ -2341,10 +2341,10 @@ def UI_Page():  # 进行图像界面显示
     def show_custom():
         global full_custom_template, sub_window, custom_selected_names_tech
         if hardware_monitor_manager == 1:
-            tk.messagebox.showerror(message="Libre Hardware Monitor 加载失败！")
+            tk.messagebox.showerror(title="提示", message="Libre Hardware Monitor 加载失败！", parent=window)
             return
         elif hardware_monitor_manager is None:
-            tk.messagebox.showwarning(message="Libre Hardware Monitor 正在加载，请稍候……")
+            tk.messagebox.showwarning(title="提示", message="Libre Hardware Monitor 正在加载，请稍候……", parent=window)
             return
 
         if sub_window is not None:
