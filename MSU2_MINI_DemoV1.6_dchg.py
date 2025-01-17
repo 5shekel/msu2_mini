@@ -1435,10 +1435,12 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
 
         # Append footer
         hex_use.extend([2, 3, 8, 1, 0, 0])
+
     remaining_data_size = total_data_size % data_per_page
     if remaining_data_size != 0:  # 还存在没写完的数据
         data_w = uint16_data[-remaining_data_size:]  # 取最后的没有写的
-        data_w += b"\xff\xff" * (128 - remaining_data_size)  # 补全128个 uint16
+        # 补全128个 uint16
+        data_w = np.append(data_w, np.full(data_per_page - remaining_data_size, 0xffff, dtype=np.uint32))
         cmp_use = data_w[::2] << 16 | data_w[1::2]
         for i, cmp_value in enumerate(cmp_use):
             hex_use.extend([4, i])
@@ -1547,8 +1549,8 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 time.sleep(1.0 / screenshot_limit_fps)  # 队列满时暂停一个周期
                 continue
 
-            sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
             try:
+                sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
                 screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
             except queue.Full:
                 # 每1s检测一次退出，并且如果下游不拿走，则重新截图
@@ -1620,7 +1622,10 @@ def screenshot_panic():
         screen_shot_thread.join()
     if screen_process_thread.is_alive():
         screen_process_thread.join()
+
     MG_screen_thread_running = True
+    screen_shot_thread = threading.Thread(target=screen_shot_task, daemon=True)
+    screen_process_thread = threading.Thread(target=screen_process_task, daemon=True)
     screen_shot_thread.start()
     screen_process_thread.start()
 
