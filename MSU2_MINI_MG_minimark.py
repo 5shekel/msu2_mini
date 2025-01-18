@@ -16,7 +16,7 @@ image_cache = {}
 def get_resource(relative_path):
     base_path = os.path.dirname(os.path.realpath(sys.argv[0]))  # 启动路径
     path = os.path.normpath(os.path.join(base_path, relative_path))
-    if os.path.exists(path):
+    if os.path.isfile(path):
         return path
     base_path = getattr(sys, "_MEIPASS", None)  # pyinstaller打包后的路径
     if base_path is None:
@@ -31,7 +31,7 @@ def load_font(font_name, font_size):
             font_cache[key] = ImageFont.truetype(get_resource(font_name), font_size)
         except (OSError, ValueError) as e:
             print("Warning: font %s load failed, %s:%s" % (key, type(e), e))
-            font_cache[key] = ImageFont.load_default(font_size)
+            return load_font("simhei.ttf", font_size)
     return font_cache[key]
 
 
@@ -45,7 +45,10 @@ def load_image(image_path):
         except FileNotFoundError as e:
             print("Warning: image %s load failed: %s" % (image_path, e))
             # 没有图片，弄一个品红色的图片代替
-            image_cache[image_path] = Image.new("RGBA", (16, 16), (255, 0, 255))
+            image_default = "default"
+            if image_default not in image_cache:
+                image_cache[image_default] = Image.new("RGBA", (16, 16), (255, 0, 255))
+            return image_cache[image_default]
         finally:
             if image is not None:
                 image.close()
