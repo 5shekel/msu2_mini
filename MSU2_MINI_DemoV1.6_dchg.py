@@ -2112,17 +2112,7 @@ def UI_Page():  # 进行图像界面显示
     window.title("MG USB屏幕助手V1.0")  # 设置标题
 
     # 修改默认图标
-    image = None
-    try:
-        image = Image.open(MiniMark.get_resource("resource/icon.ico"))
-        iconimage = image.convert()
-    except Exception as e:
-        print("读取图片失败：%s" % e)
-        # 没找到图标时使用一个方块做图标
-        iconimage = Image.new("RGBA", (16, 16), (255, 0, 255))
-    finally:
-        if image is not None:
-            image.close()
+    iconimage = MiniMark.load_image("resource/icon.ico")
     defaulticon = ImageTk.PhotoImage(iconimage)
     window.wm_iconphoto(True, defaulticon)
 
