@@ -1556,10 +1556,10 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
                 screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
             except queue.Full:
-                # 每1s检测一次退出，并且如果下游不拿走，则重新截图
-                pass
+                continue
             except Exception as e:
                 print("截屏失败 %s" % traceback.format_exc())
+                time.sleep(0.2)
 
     # stop
     print("stop screenshot")
@@ -1580,29 +1580,29 @@ def screen_process_task():
 
         try:
             sct_img, monitor = screen_shot_queue.get(timeout=3)
-        except queue.Empty:
-            continue
 
-        bgra = np.frombuffer(sct_img.bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
-        rgb = bgra[:, :, :3]
-        rgb = rgb[:, :, ::-1]
+            bgra = np.frombuffer(sct_img.bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
+            rgb = bgra[:, :, :3]
+            rgb = rgb[:, :, ::-1]
 
-        if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
-            im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
-            im1 = im1[:, 0: SHOW_WIDTH]
-        else:  # 纵向充满
-            im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
-            im1 = im1[0: SHOW_HEIGHT, :]
+            if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
+                im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
+                im1 = im1[:, 0: SHOW_WIDTH]
+            else:  # 纵向充满
+                im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
+                im1 = im1[0: SHOW_HEIGHT, :]
 
-        # rgb888 = np.asarray(im1)
-        rgb565 = rgb888_to_rgb565(im1)
-        # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
-        hexstream = Screen_Date_Process(rgb565.flatten())
+            # rgb888 = np.asarray(im1)
+            rgb565 = rgb888_to_rgb565(im1)
+            # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
+            hexstream = Screen_Date_Process(rgb565.flatten())
 
-        try:
             screen_process_queue.put(hexstream, timeout=3)
-        except queue.Full:
-            pass
+        except (queue.Empty, queue.Full):
+            continue
+        except Exception as e:
+            print("screen_process_task error: %s" % e)
+            time.sleep(0.2)
 
     # stop
     print("stop screen process")
