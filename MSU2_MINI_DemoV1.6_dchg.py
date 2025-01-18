@@ -1256,12 +1256,13 @@ def show_gif():  # 显示GIF动图
 
 
 def show_PC_state(FC, BC):  # 显示PC状态
-    global State_change, sleep_event, last_refresh_time, wait_time
+    global State_change, sleep_event, last_refresh_time, wait_time, current_time
     photo_add = 4038
     num_add = 4026
     if State_change == 1:
         State_change = 0
         wait_time = 0
+        last_refresh_time = current_time
         sleep_event.clear()
         LCD_Set_Color(FC, BC)
         hex_use = LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
@@ -1637,6 +1638,8 @@ def show_PC_Screen():  # 显示照片
     if State_change == 1:
         State_change = 0
         sleep_event.clear()
+        wait_time = 0
+        screenshot_last_limit_time = current_time
         Screen_Error = 0
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
