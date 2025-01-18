@@ -1409,8 +1409,7 @@ def digit_to_ints(di):
 
 
 def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
-    uint16_data = Photo_data.astype(np.uint32)
-    total_data_size = len(uint16_data)  # SHOW_WIDTH * SHOW_HEIGHT ?
+    total_data_size = len(Photo_data)  # SHOW_WIDTH * SHOW_HEIGHT ?
     data_per_page = 128
     data_page1 = 0
     data_page2 = 0
@@ -1418,7 +1417,7 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
     for j in range(0, total_data_size // data_per_page):  # 每次写入一个Page
         data_page1 = data_page2
         data_page2 += data_per_page
-        data_w = uint16_data[data_page1: data_page2]
+        data_w = Photo_data[data_page1: data_page2]
         cmp_use = data_w[::2] << 16 | data_w[1::2]  # 256字节数据分为64个指令
 
         # 找最频繁的颜色作为背景色填充整个区域
@@ -1438,7 +1437,7 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
 
     remaining_data_size = total_data_size % data_per_page
     if remaining_data_size != 0:  # 还存在没写完的数据
-        data_w = uint16_data[-remaining_data_size:]  # 取最后的没有写的
+        data_w = Photo_data[-remaining_data_size:]  # 取最后的没有写的
         # 补全128个 uint16
         data_w = np.append(data_w, np.full(data_per_page - remaining_data_size, 0xffff, dtype=np.uint32))
         cmp_use = data_w[::2] << 16 | data_w[1::2]
@@ -1598,8 +1597,8 @@ def screen_process_task():
             im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
             im1 = im1[:, 0: SHOW_WIDTH]
 
-        rgb888 = np.asarray(im1, dtype=np.uint16)
-        rgb565 = rgb888_to_rgb565(rgb888)
+        # rgb888 = np.asarray(im1)
+        rgb565 = rgb888_to_rgb565(im1)
         # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
         hexstream = Screen_Date_Process(rgb565.flatten())
 
@@ -1756,7 +1755,7 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
             # Draw the bar
             draw.rectangle([x0, y0, x1, y1], fill=color)
 
-    rgb888 = np.asarray(im1, dtype=np.uint16)
+    rgb888 = np.asarray(im1, dtype=np.uint32)
     rgb565 = rgb888_to_rgb565(rgb888)
     # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
     hex_use = Screen_Date_Process(rgb565.flatten())
@@ -1969,7 +1968,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
             # Draw the bar
             draw.rectangle([x0, y0, x1, y1], fill=color)
 
-    rgb888 = np.asarray(im1, dtype=np.uint16)
+    rgb888 = np.asarray(im1, dtype=np.uint32)
     rgb565 = rgb888_to_rgb565(rgb888)
     # arr = np.frombuffer(rgb565.flatten().tobytes(), dtype=np.uint16).astype(np.uint32)
     hex_use = Screen_Date_Process(rgb565.flatten())
@@ -2061,7 +2060,7 @@ def show_full_custom():
 
     im1 = get_full_custom_im()
 
-    rgb888 = np.asarray(im1, dtype=np.uint16)
+    rgb888 = np.asarray(im1, dtype=np.uint32)
     rgb565 = rgb888_to_rgb565(rgb888)
     # arr = np.frombuffer(rgb565.flatten().tobytes(), dtype=np.uint16).astype(np.uint32)
     hex_use = Screen_Date_Process(rgb565.flatten())
@@ -2211,7 +2210,7 @@ def UI_Page():  # 进行图像界面显示
     def update_label_color(r1, g1, b1):
         global color_use, rgb_tuple, State_change
         rgb_tuple = (r1, g1, b1)  # rgb
-        color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint16))[0][0]
+        color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
             Label2.config(bg=color_La)
