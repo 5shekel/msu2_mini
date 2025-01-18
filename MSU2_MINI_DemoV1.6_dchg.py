@@ -1449,21 +1449,28 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
     return hex_use
 
 
+# in: [[[255 255 255]]], type: np.asarray((((r, g, b),),)), out: [[rgb565_int]]
 def rgb888_to_rgb565(rgb888_array):
     # Convert RGB888 to RGB565
-    r = (rgb888_array[:, :, 0] >> 3) & 0x1F  # 5 bits for red
-    g = (rgb888_array[:, :, 1] >> 2) & 0x3F  # 6 bits for green
+    r = (rgb888_array[:, :, 0] << 8) & 0xF800  # 5 bits for red
+    g = (rgb888_array[:, :, 1] << 3) & 0x7E0  # 6 bits for green
     b = (rgb888_array[:, :, 2] >> 3) & 0x1F  # 5 bits for blue
 
-    r = r.astype(np.uint16)
-    g = g.astype(np.uint16)
-    b = b.astype(np.uint16)
+    # r = r.astype(np.uint16)
+    # g = g.astype(np.uint16)
+    # b = b.astype(np.uint16)
 
     # Combine into RGB565 format
-    rgb565 = (r << 11) | (g << 5) | b
+    rgb565 = r | g | b
 
     # Convert to a 16-bit unsigned integer array
-    return rgb565.astype(np.uint16)
+    # return rgb565.astype(np.uint16)
+    return rgb565
+
+
+# in: rgb565_int, out: rgb_tuple(r, g, b)
+def rgb565_to_rgb888(rgb565_int):
+    return (rgb565_int >> 8) & 0xF8, (rgb565_int >> 3) & 0xFC, (rgb565_int << 3) & 0xF8
 
 
 def shrink_image_block_average(image, shrink_factor):
@@ -1591,8 +1598,7 @@ def screen_process_task():
             im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
             im1 = im1[:, 0: SHOW_WIDTH]
 
-        rgb888 = np.asarray(im1)
-
+        rgb888 = np.asarray(im1, dtype=np.uint16)
         rgb565 = rgb888_to_rgb565(rgb888)
         # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
         hexstream = Screen_Date_Process(rgb565.flatten())
@@ -1686,7 +1692,7 @@ def sizeof_fmt(num, suffix="B", base=1024.0):
     return "%3.1fY%s" % (num, suffix)
 
 
-def show_netspeed(text_color=(255, 128, 0)):
+def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_color=(146, 211, 217)):
     global last_refresh_time, netspeed_last_refresh_snetio, netspeed_plot_data
     global default_font, State_change, wait_time, current_time, sleep_event
 
@@ -1732,7 +1738,7 @@ def show_netspeed(text_color=(255, 128, 0)):
 
     # 绘图
     min_draw = 1024  # 最小范围 1KB/s
-    for start_y, key, color in zip([19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)]):
+    for start_y, key, color in zip([19, 59], ["sent", "recv"], [bar1_color, bar2_color]):
         sent_values = netspeed_plot_data[key]
         max_value = max(min_draw, max(sent_values))
 
@@ -1750,7 +1756,7 @@ def show_netspeed(text_color=(255, 128, 0)):
             # Draw the bar
             draw.rectangle([x0, y0, x1, y1], fill=color)
 
-    rgb888 = np.asarray(im1)
+    rgb888 = np.asarray(im1, dtype=np.uint16)
     rgb565 = rgb888_to_rgb565(rgb888)
     # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
     hex_use = Screen_Date_Process(rgb565.flatten())
@@ -1878,7 +1884,7 @@ custom_selected_names_tech = [""] * 6
 custom_plot_data = None
 
 
-def show_custom_two_rows(text_color=(255, 128, 0)):
+def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_color=(146, 211, 217)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
     global last_refresh_time, custom_plot_data, State_change, wait_time, current_time
     global hardware_monitor_manager, custom_selected_names, custom_selected_displayname, netspeed_font, sleep_event
@@ -1943,8 +1949,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
     # 绘图
     # 决定最小范围, 需大于0
     min_max = [0.001, 0.001]
-    for start_y, key, color, minmax_it in zip(
-            [19, 59], ["sent", "recv"], [(235, 139, 139), (146, 211, 217)], min_max):
+    for start_y, key, color, minmax_it in zip([19, 59], ["sent", "recv"], [bar1_color, bar2_color], min_max):
         sent_values = custom_plot_data[key]
 
         min_value = min(sent_values)  # 防止显示太满
@@ -1964,8 +1969,7 @@ def show_custom_two_rows(text_color=(255, 128, 0)):
             # Draw the bar
             draw.rectangle([x0, y0, x1, y1], fill=color)
 
-    rgb888 = np.asarray(im1)
-
+    rgb888 = np.asarray(im1, dtype=np.uint16)
     rgb565 = rgb888_to_rgb565(rgb888)
     # arr = np.frombuffer(rgb565.flatten().tobytes(), dtype=np.uint16).astype(np.uint32)
     hex_use = Screen_Date_Process(rgb565.flatten())
@@ -2057,8 +2061,7 @@ def show_full_custom():
 
     im1 = get_full_custom_im()
 
-    rgb888 = np.asarray(im1)
-
+    rgb888 = np.asarray(im1, dtype=np.uint16)
     rgb565 = rgb888_to_rgb565(rgb888)
     # arr = np.frombuffer(rgb565.flatten().tobytes(), dtype=np.uint16).astype(np.uint32)
     hex_use = Screen_Date_Process(rgb565.flatten())
@@ -2208,7 +2211,7 @@ def UI_Page():  # 进行图像界面显示
     def update_label_color(r1, g1, b1):
         global color_use, rgb_tuple, State_change
         rgb_tuple = (r1, g1, b1)  # rgb
-        color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),)))[0][0]
+        color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),)), dtype=np.uint16)[0][0]
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
             Label2.config(bg=color_La)
@@ -2877,6 +2880,9 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         write_path_index = 0
         State_change = 1
 
+    bar_colors = [(235, 139, 139), (146, 212, 217)]
+    # bar_colors = [(128, 255, 128), (255, 128, 255)]
+    # bar_colors = [(128, 128, 255), (0, 128, 192)]
     if machine_model == 0:
         show_gif()
     elif machine_model == 1:
@@ -2890,9 +2896,9 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     elif machine_model == 5:
         show_PC_Screen()
     elif machine_model == 3901:
-        show_netspeed(text_color=rgb_tuple)
+        show_netspeed(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
     elif machine_model == 3902:
-        show_custom_two_rows(text_color=rgb_tuple)
+        show_custom_two_rows(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
     elif machine_model == 3903:
         show_full_custom()
 
