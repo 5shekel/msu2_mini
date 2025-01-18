@@ -1889,7 +1889,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
     global hardware_monitor_manager, custom_selected_names, custom_selected_displayname, netspeed_font, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
-        time.sleep(0.2)
+        sleep_event.wait(0.2)
         return
 
     bar_width = 2  # 每个点宽度
@@ -2043,7 +2043,7 @@ def show_full_custom():
     global last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_time, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
-        time.sleep(0.2)
+        sleep_event.wait(0.2)
         return
 
     if State_change == 1:
@@ -2958,7 +2958,7 @@ def load_task():
 
 
 def daemon_task():
-    global current_time, Device_State, Device_State_Labelen
+    global current_time, Device_State, Device_State_Labelen, sleep_event
 
     while MG_daemon_running:
         try:
@@ -2982,10 +2982,10 @@ def daemon_task():
                 if Device_State == 0:
                     print(get_formatted_time_string(current_time), end=' ')
                     insert_text_message("没有找到可用的设备，请确认设备是否正确连接")
-                    time.sleep(1)  # 防止频繁重试
+                    sleep_event.wait(1)  # 防止频繁重试
         except Exception as e:  # 出现非预期异常
             print("Exception in daemon_task, %s" % traceback.format_exc())
-            time.sleep(1)  # 防止频繁重试
+            sleep_event.wait(1)  # 防止频繁重试
 
     # stop
     print("stop daemon")
