@@ -1601,7 +1601,7 @@ def screen_process_task():
         except (queue.Empty, queue.Full):
             continue
         except Exception as e:
-            print("screen_process_task error: %s" % e)
+            print("screen_process_task error: %s" % traceback.format_exc())
             time.sleep(0.2)
 
     # stop
@@ -3009,55 +3009,59 @@ def manage_task():
             time.sleep(0.3)
             continue
 
-        now = datetime.now()
-        ADC_ch = Read_ADC_CH(9)
-        if ADC_ch == 0:
-            continue
-        if ADC_ch < ADC_det:  # 按键按下
-            if Read_ADC_CH(9) > ADC_det or Read_ADC_CH(9) > ADC_det:
-                continue  # 没有连续3次则忽略
-
-            if ADC_det - ADC_ch > 2500:  # 校正检测阈值
-                ADC_det = (ADC_det + ADC_ch - 200) // 2
-                print("校正按下检测阈值为：%d" % ADC_det)
+        try:
+            now = datetime.now()
+            ADC_ch = Read_ADC_CH(9)
+            if ADC_ch == 0:
                 continue
-
-            if key_on == 0:  # 第一次检测到按下
-                ADC_det += 150  # 增加后续检测的灵敏度
-                key_on = 1
-                if first_press_time != 0:
-                    if now - first_press_time < double_key_limit:
-                        Page_Down()  # 双击上一页
-                        first_press_time = 1  # 已触发事件
-                else:  # 第一次按下
-                    first_press_time = now
-            else:
-                if first_press_time != 1:
-                    if first_press_time != 0:
-                        if now - first_press_time > key_on_limit:
-                            LCD_Change()  # 长按切换方向
-                            first_press_time = 1  # 已触发事件
-                    else:
-                        first_press_time = now
-        else:  # 按键放开
-            if key_on != 0:  # 第一次检测到放开
-                if Read_ADC_CH(9) < ADC_det or Read_ADC_CH(9) < ADC_det:
+            if ADC_ch < ADC_det:  # 按键按下
+                if Read_ADC_CH(9) > ADC_det or Read_ADC_CH(9) > ADC_det:
                     continue  # 没有连续3次则忽略
-                ADC_det -= 150  # 恢复检测的灵敏度
-                key_on = 0
-                last_check_time = now  # 从第一次检测到放开1秒后再减缓频率
-                if first_press_time == 1:
-                    first_press_time = 0
-            elif now - last_check_time > check_limit:
-                if ADC_ch - ADC_det > 40 + 200:  # 校正检测阈值
+
+                if ADC_det - ADC_ch > 2500:  # 校正检测阈值
                     ADC_det = (ADC_det + ADC_ch - 200) // 2
-                    print("校正按键检测阈值为：%d" % ADC_det)
-                time.sleep(0.1)  # 没有按键时减缓读取频率
-            else:
-                if first_press_time != 0:
-                    if now - first_press_time > double_key_limit:  # 没有双击，就是单击
-                        Page_UP()  # 单击下一页
+                    print("校正按下检测阈值为：%d" % ADC_det)
+                    continue
+
+                if key_on == 0:  # 第一次检测到按下
+                    ADC_det += 150  # 增加后续检测的灵敏度
+                    key_on = 1
+                    if first_press_time != 0:
+                        if now - first_press_time < double_key_limit:
+                            Page_Down()  # 双击上一页
+                            first_press_time = 1  # 已触发事件
+                    else:  # 第一次按下
+                        first_press_time = now
+                else:
+                    if first_press_time != 1:
+                        if first_press_time != 0:
+                            if now - first_press_time > key_on_limit:
+                                LCD_Change()  # 长按切换方向
+                                first_press_time = 1  # 已触发事件
+                        else:
+                            first_press_time = now
+            else:  # 按键放开
+                if key_on != 0:  # 第一次检测到放开
+                    if Read_ADC_CH(9) < ADC_det or Read_ADC_CH(9) < ADC_det:
+                        continue  # 没有连续3次则忽略
+                    ADC_det -= 150  # 恢复检测的灵敏度
+                    key_on = 0
+                    last_check_time = now  # 从第一次检测到放开1秒后再减缓频率
+                    if first_press_time == 1:
                         first_press_time = 0
+                elif now - last_check_time > check_limit:
+                    if ADC_ch - ADC_det > 40 + 200:  # 校正检测阈值
+                        ADC_det = (ADC_det + ADC_ch - 200) // 2
+                        print("校正按键检测阈值为：%d" % ADC_det)
+                    time.sleep(0.1)  # 没有按键时减缓读取频率
+                else:
+                    if first_press_time != 0:
+                        if now - first_press_time > double_key_limit:  # 没有双击，就是单击
+                            Page_UP()  # 单击下一页
+                            first_press_time = 0
+        except Exception as e:
+            print("Exception in manage_task, %s" % traceback.format_exc())
+
     print("stop manager")
 
 
