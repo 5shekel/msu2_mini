@@ -105,7 +105,7 @@ def convertImageFileToRGB(file_path):
     im1 = None
     try:
         im1 = Image.open(file_path)
-        if im1.width >= (im1.height * 2):  # 图片长宽比例超过2:1
+        if im1.width > (im1.height * 2):  # 图片长宽比例超过2:1
             im2 = im1.resize((SHOW_HEIGHT * im1.width // im1.height, SHOW_HEIGHT))
             # 定义需要裁剪的空间
             box = ((im2.width - SHOW_WIDTH) // 2, 0, (im2.width + SHOW_WIDTH) // 2, SHOW_HEIGHT)
@@ -1587,12 +1587,12 @@ def screen_process_task():
         rgb = bgra[:, :, :3]
         rgb = rgb[:, :, ::-1]
 
-        if monitor["width"] <= monitor["height"] * 2:  # 横向充满
-            im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
-            im1 = im1[0: SHOW_HEIGHT, :]
-        else:  # 纵向充满
+        if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
             im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
             im1 = im1[:, 0: SHOW_WIDTH]
+        else:  # 纵向充满
+            im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
+            im1 = im1[0: SHOW_HEIGHT, :]
 
         # rgb888 = np.asarray(im1)
         rgb565 = rgb888_to_rgb565(im1)
