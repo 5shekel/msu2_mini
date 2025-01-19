@@ -264,8 +264,8 @@ sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
 
 def Page_UP():  # 上一页
     global State_change, machine_model, sleep_event
-    if machine_model >= 7:
-        machine_model = 0
+    if machine_model >= 8:
+        machine_model = 1
     else:
         machine_model = machine_model + 1
     State_change = 1
@@ -275,8 +275,8 @@ def Page_UP():  # 上一页
 
 def Page_Down():  # 下一页
     global State_change, machine_model, sleep_event
-    if machine_model <= 0:
-        machine_model = 7
+    if machine_model <= 1:
+        machine_model = 8
     else:
         machine_model = machine_model - 1
     State_change = 1
@@ -1543,7 +1543,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 
     with mss() as sct:
         while MG_screen_thread_running:
-            if machine_model != 4:
+            if machine_model != 5:
                 if not screen_shot_queue.empty():  # 清空缓存，防止显示旧的窗口
                     screen_shot_queue.get()
                 time.sleep(0.5)  # 不需要截图时
@@ -1569,7 +1569,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 def screen_process_task():
     global MG_screen_thread_running, machine_model, screen_process_queue, screenshot_limit_fps, screen_shot_queue
     while MG_screen_thread_running:
-        if machine_model != 4:
+        if machine_model != 5:
             if not screen_process_queue.empty():  # 清空缓存，防止显示旧的窗口
                 screen_process_queue.get()
             time.sleep(0.5)  # 不需要截图时
@@ -2104,7 +2104,7 @@ def UI_Page():  # 进行图像界面显示
     load_thread.start()
 
     config_obj = load_config()
-    machine_model = config_obj.get("state_machine", 0)
+    machine_model = config_obj.get("state_machine", 1)
     LCD_Change_use = config_obj.get("lcd_change", 0)
 
     # 创建主窗口
@@ -2871,21 +2871,21 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     bar_colors = [(235, 139, 139), (146, 212, 217)]
     # bar_colors = [(128, 255, 128), (255, 128, 255)]
     # bar_colors = [(128, 128, 255), (0, 128, 192)]
-    if machine_model == 1:
+    if machine_model == 2:
         show_PC_state(color_use, BLACK)
-    elif machine_model == 2:
-        show_Photo()
     elif machine_model == 3:
-        show_PC_time(color_use)
+        show_Photo()
     elif machine_model == 4:
-        show_PC_Screen()
+        show_PC_time(color_use)
     elif machine_model == 5:
-        show_netspeed(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
+        show_PC_Screen()
     elif machine_model == 6:
-        show_custom_two_rows(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
+        show_netspeed(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
     elif machine_model == 7:
+        show_custom_two_rows(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
+    elif machine_model == 8:
         show_full_custom()
-    else:  # default
+    else:  # default 1
         show_gif()
 
 
@@ -2908,7 +2908,7 @@ def get_formatted_time_string(time):
 State_change = 1  # 状态发生变化
 Screen_Error = 0
 gif_num = 0
-machine_model = 0  # 定义初始状态
+machine_model = 1  # 定义初始状态
 Device_State = 0  # 初始为未连接
 Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
 LCD_Change_use = 0  # 设置显示方向
