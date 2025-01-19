@@ -1793,7 +1793,7 @@ def load_hardware_monitor():
 
     def FormatSensor(value: float, sensortype) -> str:
         if value is None:
-            value = 0
+            return "--"
         formatStr = SensorTypeUnitFormatter.get(sensortype, "{}")
         if isinstance(formatStr, list):
             if len(formatStr) > 3:
@@ -1916,12 +1916,10 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
     sent, sent_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[0])
     if sent is None:
         sent = 0
-        sent_text = "--"
 
     recv, recv_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[1])
     if recv is None:
         recv = 0
-        recv_text = "--"
 
     custom_plot_data["sent"].append(sent)
     custom_plot_data["sent"].pop(0)
