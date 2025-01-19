@@ -268,8 +268,8 @@ def Page_UP():  # 上一页
         machine_model = 1
     else:
         machine_model = machine_model + 1
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
     State_change = 1
-    sleep_event.set()  # 取消sleep
     insert_text_message("页面%s" % machine_model)
 
 
@@ -279,8 +279,8 @@ def Page_Down():  # 下一页
         machine_model = 8
     else:
         machine_model = machine_model - 1
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
     State_change = 1
-    sleep_event.set()  # 取消sleep
     insert_text_message("页面%s" % machine_model)
 
 
@@ -295,7 +295,7 @@ def LCD_Change():  # 切换显示方向
     else:  # 1
         LCD_Change_use = 0
         insert_text_message("正向")
-    sleep_event.set()  # 取消sleep
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
 
 # 由于设备不支持多线程访问，请不要直接使用SER_Write，应使用SER_rw方法
@@ -1221,7 +1221,7 @@ def show_gif():  # 显示GIF动图
     global current_time, last_refresh_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
-        sleep_event.clear()
+        sleep_event.clear()  # 使sleep_event.wait生效
         # gif_num = 0
         gif_wait_time = 0
         last_refresh_time = current_time
@@ -1261,9 +1261,9 @@ def show_PC_state(FC, BC):  # 显示PC状态
     num_add = 4026
     if State_change == 1:
         State_change = 0
+        sleep_event.clear()  # 使sleep_event.wait生效
         wait_time = 0
         last_refresh_time = current_time
-        sleep_event.clear()
         LCD_Set_Color(FC, BC)
         hex_use = LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
         recv = SER_rw(hex_use)  # 发出指令
@@ -1354,7 +1354,7 @@ def show_Photo():  # 显示照片
     global State_change, sleep_event
     if State_change == 1:
         State_change = 0
-        sleep_event.clear()
+        sleep_event.clear()  # 使sleep_event.wait生效
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     LCD_Photo(3926)  # 放置背景
@@ -1367,7 +1367,7 @@ def show_PC_time(FC):
     num_add = 3651
     if State_change == 1:
         State_change = 0
-        sleep_event.clear()
+        sleep_event.clear()  # 使sleep_event.wait生效
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
         LCD_Set_Color(FC, photo_add)
         LCD_Photo(photo_add)  # 放置背景
@@ -1637,7 +1637,7 @@ def show_PC_Screen():  # 显示照片
     global screenshot_test_time, screenshot_last_limit_time, wait_time, screenshot_limit_fps, sleep_event
     if State_change == 1:
         State_change = 0
-        sleep_event.clear()
+        sleep_event.clear()  # 使sleep_event.wait生效
         wait_time = 0
         screenshot_last_limit_time = current_time
         Screen_Error = 0
@@ -1704,7 +1704,7 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
         if netspeed_plot_data is None:
             netspeed_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
         State_change = 0
-        sleep_event.clear()
+        sleep_event.clear()  # 使sleep_event.wait生效
         wait_time = 0
         last_refresh_time = current_time - timedelta(seconds=0.001)
         netspeed_last_refresh_snetio = current_snetio
@@ -1898,7 +1898,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
         if custom_plot_data is None:
             custom_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
         State_change = 0
-        sleep_event.clear()
+        sleep_event.clear()  # 使sleep_event.wait生效
         wait_time = 0
         last_refresh_time = current_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
@@ -2046,7 +2046,7 @@ def show_full_custom():
     if State_change == 1:
         # 初始化
         State_change = 0
-        sleep_event.clear()
+        sleep_event.clear()  # 使sleep_event.wait生效
         wait_time = 0
         last_refresh_time = current_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
@@ -3073,7 +3073,7 @@ finally:
     print("closing")
     MG_screen_thread_running = False
     MG_daemon_running = False
-    sleep_event.set()  # 取消sleep
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
     if load_thread.is_alive():
         load_thread.join(timeout=5.0)
