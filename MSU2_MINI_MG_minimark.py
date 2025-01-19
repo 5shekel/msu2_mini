@@ -101,8 +101,12 @@ class MiniMarkParser:
             self.position = (self.position[0] + dx, self.position[1] + dy)
 
         elif command == 'f':
-            font_name = parts[1]
-            font_size = int(parts[2])
+            if len(parts) > 3:
+                font_name = line[line.index(parts[0]) + 1:line.rindex(parts[-1])].strip()
+                font_size = int(parts[-1])
+            else:
+                font_name = parts[1]
+                font_size = int(parts[2])
             self.font = load_font(font_name, font_size)
 
         elif command == 'c':
@@ -112,7 +116,10 @@ class MiniMarkParser:
             self.color = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
 
         elif command == 'i':
-            image_path = parts[1]
+            if len(parts) > 2:
+                image_path = line[line.index(parts[0]) + 1:].strip()
+            else:
+                image_path = parts[1]
             image = load_image(image_path)
             # Paste the image onto the main image at the current position
             img.paste(image, self.position, image)  # Use image as mask for transparency
