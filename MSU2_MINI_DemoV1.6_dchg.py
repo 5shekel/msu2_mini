@@ -2836,8 +2836,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     # My_MSN_Data = Read_M_SFR_Data(256)  # 读取u8在0x0100之后的128字节
     # Print_MSN_Data(My_MSN_Data)  # 解析字节中的数据格式
     # Read_MSN_Data(My_MSN_Data)  # 从设备读取更详细的数据，如序列号等
-    LCD_Change_now = LCD_Change_use
     LCD_State(LCD_Change_now)  # 配置显示方向
+    LCD_Change_now = LCD_Change_use
     # 配置按键阈值
     ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) // 3
     ADC_det = ADC_det - 200  # 根据125的阈值判断是否被按下
@@ -2851,8 +2851,8 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     global write_path_index, Img_data_use, color_use, rgb_tuple
 
     if LCD_Change_now != LCD_Change_use:  # 显示方向与设置不符合
-        LCD_Change_now = LCD_Change_use
         LCD_State(LCD_Change_now)  # 配置显示方向
+        LCD_Change_now = LCD_Change_use
         State_change = 1
 
     if write_path_index != 0:
