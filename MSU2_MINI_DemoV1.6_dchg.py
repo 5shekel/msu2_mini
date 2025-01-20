@@ -1612,7 +1612,7 @@ def screen_process_task():
 screenshot_test_time = current_time
 screenshot_last_limit_time = screenshot_test_time
 screenshot_test_frame = 0
-screenshot_limit_fps = 100
+screenshot_limit_fps = 10
 wait_time = 0.0
 
 
@@ -2648,9 +2648,9 @@ def UI_Page():  # 进行图像界面显示
         if 0 < screenshot_limit_fps_tmp != screenshot_limit_fps:
             screenshot_limit_fps = screenshot_limit_fps_tmp
 
-    fps_var = tk.StringVar(root, "100")
+    fps_var = tk.StringVar(root, "10")
     fps_var.trace_add("write", change_fps)
-    fps_var.set(config_obj.get("fps_var", "100"))
+    fps_var.set(config_obj.get("fps_var", "10"))
 
     label = ttk.Label(root, text="最大 FPS")
     label.grid(row=6, column=3, sticky=tk.E, padx=5, pady=5)
