@@ -1448,9 +1448,9 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
 # in: [[[255 255 255]]], type: np.asarray((((r, g, b),),)), out: [[rgb565_int]]
 def rgb888_to_rgb565(rgb888_array):
     # Convert RGB888 to RGB565
-    r = (rgb888_array[:, :, 0] & 0x00F8) << 8  # 5 bits for red
-    g = (rgb888_array[:, :, 1] & 0x00FC) << 3  # 6 bits for green
-    b = (rgb888_array[:, :, 2] & 0x00F8) >> 3  # 5 bits for blue
+    r = (rgb888_array[:, :, 0] & 0xF8) << 8  # 5 bits for red
+    g = (rgb888_array[:, :, 1] & 0xFC) << 3  # 6 bits for green
+    b = (rgb888_array[:, :, 2] & 0xF8) >> 3  # 5 bits for blue
 
     # r = r.astype(np.uint16)
     # g = g.astype(np.uint16)
@@ -1466,7 +1466,7 @@ def rgb888_to_rgb565(rgb888_array):
 
 # in: rgb565_int, out: rgb_tuple(r, g, b)
 def rgb565_to_rgb888(rgb565_int):
-    return (rgb565_int >> 8) & 0x00F8, (rgb565_int >> 3) & 0x00FC, (rgb565_int << 3) & 0x00F8
+    return (rgb565_int >> 8) & 0xF8, (rgb565_int >> 3) & 0xFC, (rgb565_int << 3) & 0xF8
 
 
 def shrink_image_block_average(image, shrink_factor):
@@ -2198,7 +2198,7 @@ def UI_Page():  # 进行图像界面显示
     def update_label_color(r1, g1, b1):
         global color_use, rgb_tuple, State_change
         # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
-        color_use = ((r1 & 0x00F8) << 8) | ((g1 & 0x00FC) << 3) | ((b1 & 0x00F8) >> 3)
+        color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
         rgb_tuple = (r1, g1, b1)  # rgb
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
