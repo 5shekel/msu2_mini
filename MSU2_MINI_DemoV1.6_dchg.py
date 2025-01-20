@@ -1582,8 +1582,9 @@ def screen_process_task():
             sct_img, monitor = screen_shot_queue.get(timeout=3)
 
             bgra = np.frombuffer(sct_img.bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
-            rgb = bgra[:, :, :3]
-            rgb = rgb[:, :, ::-1]
+            # rgb = bgra[:, :, :3]
+            # rgb = rgb[:, :, ::-1]
+            rgb = bgra[:, :, [2, 1, 0]]
 
             if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                 im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
