@@ -2200,10 +2200,10 @@ def UI_Page():  # 进行图像界面显示
         # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
         color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
         rgb_tuple = (r1, g1, b1)  # rgb
+        State_change = 1
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
             Label2.config(bg=color_La)
-        State_change = 1
 
     def update_label_color_red():
         global rgb_tuple
