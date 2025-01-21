@@ -2818,7 +2818,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             # 确保为MSN设备
             if recv[-6:] == hex_use:
                 print(get_formatted_time_string(current_time), end=' ')
-                insert_text_message("%s连接成功。\n%s" % (port.name, port.hwid))
+                insert_text_message("端口%s连接成功" % port.location)
                 # 对MSN设备进行登记
                 My_MSN_Device = MSN_Device(port.name, msn_version)
                 break  # 退出当前for循环
