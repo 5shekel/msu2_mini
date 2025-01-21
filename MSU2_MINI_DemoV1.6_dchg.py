@@ -1544,7 +1544,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 
     with mss() as sct:
         while MG_screen_thread_running:
-            if machine_model != 5:
+            if machine_model != 4:
                 if not screen_shot_queue.empty():  # 清空缓存，防止显示旧的窗口
                     screen_shot_queue.get()
                 time.sleep(0.5)  # 不需要截图时
@@ -1570,7 +1570,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 def screen_process_task():
     global MG_screen_thread_running, machine_model, screen_process_queue, screenshot_limit_fps, screen_shot_queue
     while MG_screen_thread_running:
-        if machine_model != 5:
+        if machine_model != 4:
             if not screen_process_queue.empty():  # 清空缓存，防止显示旧的窗口
                 screen_process_queue.get()
             time.sleep(0.5)  # 不需要截图时
@@ -2873,13 +2873,13 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     # bar_colors = [(128, 255, 128), (255, 128, 255)]
     # bar_colors = [(128, 128, 255), (0, 128, 192)]
     if machine_model == 2:
-        show_PC_state(color_use, BLACK)
+        show_PC_time(color_use)  # 展示时钟
     elif machine_model == 3:
-        show_Photo()
+        show_Photo()  # 展示单张相册图像
     elif machine_model == 4:
-        show_PC_time(color_use)
+        show_PC_Screen()  # 屏幕串流
     elif machine_model == 5:
-        show_PC_Screen()
+        show_PC_state(color_use, BLACK)  # 展示CPU/内存/磁盘/电池 使用率
     elif machine_model == 6:
         show_netspeed(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
     elif machine_model == 7:
@@ -2887,7 +2887,7 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     elif machine_model == 8:
         show_full_custom()
     else:  # default 1
-        show_gif()
+        show_gif()  # 展示36张动图
 
 
 def get_formatted_time_string(time):
