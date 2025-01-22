@@ -848,7 +848,7 @@ def LCD_State(LCD_S):
 
     recv = SER_rw(hex_use)  # 发出指令
     if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        print("LCD towards change to: %s" % LCD_S)
+        # print("LCD towards change to: %s" % LCD_S)
         return 1
     else:
         print("LCD towards change failed: %s" % recv)
@@ -1828,7 +1828,7 @@ def load_hardware_monitor():
             pass
 
     def format_sensor_name(hardware, sensor):
-        return "%s: %s - %s" % (hardware.Name, str(sensor.SensorType), sensor.Name)
+        return "%s: %s - %s" % (hardware.Name, sensor.SensorType, sensor.Name)
 
     class HardwareMonitorManager:
         def __init__(self):
@@ -1852,7 +1852,8 @@ def load_hardware_monitor():
 
         def get_hardware(self, sensor_name):
             if sensor_name in self.sensors:
-                return self.sensors[sensor_name][0]
+                hardware, _ = self.sensors[sensor_name]
+                return hardware
             else:
                 return None
 
@@ -1863,14 +1864,14 @@ def load_hardware_monitor():
 
         def get_value(self, sensor_name):
             if sensor_name in self.sensors:
-                hardware, sensor = self.sensors[sensor_name]
+                _, sensor = self.sensors[sensor_name]
                 return sensor.Value
             else:
                 return None
 
         def get_value_formatted(self, sensor_name):
             if sensor_name in self.sensors:
-                hardware, sensor = self.sensors[sensor_name]
+                _, sensor = self.sensors[sensor_name]
                 return sensor.Value, FormatSensor(sensor.Value, sensor.SensorType)
             else:
                 return None, "--"
