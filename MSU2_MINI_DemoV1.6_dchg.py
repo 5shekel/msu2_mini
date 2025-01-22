@@ -2992,7 +2992,7 @@ def manage_task():
     key_on = 0  # 按键是否按下
     check_limit = timedelta(milliseconds=2000)  # 持续检测阈值
     key_on_limit = timedelta(milliseconds=500)  # 长按阈值
-    double_key_limit = timedelta(milliseconds=500)  # 双击间隔时长
+    double_key_limit = timedelta(milliseconds=700)  # 双击间隔时长，同时影响单击反应时间
     last_check_time = now - check_limit
     first_press_time = 0  # 按下起始时间，未按下0，按下且已触发事件1
     while MG_daemon_running:
