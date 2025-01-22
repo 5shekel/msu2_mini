@@ -690,7 +690,7 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
         if Data_Remain != 0:  # 还存在没写完的数据
             Fdata = binfile.read(Data_Remain)  # 将剩下的数据读完
             for i in range(Data_Remain, 256):
-                Fdata = Fdata + b'\xff'  # 不足位置补充0xFF
+                Fdata.append(0xFF)  # 不足位置补充0xFF
             Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
         u_time = time.time() - u_time
         insert_text_message("烧写完成，耗时%.3f秒\n" % u_time, False)
@@ -724,7 +724,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
     if Data_Remain != 0:  # 还存在没写完的数据
         Fdata = img_use[Page_Count * 256:]  # 将剩下的数据读完
         for i in range(Data_Remain, 256):
-            Fdata = Fdata + b'\xff'  # 不足位置补充0xFF
+            Fdata.append(0xFF)  # 不足位置补充0xFF
         Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
     insert_text_message("烧写完成，耗时%.3f秒\n" % (time.time() - u_time), False)
     return 1
@@ -755,7 +755,7 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
         if Data_Remain != 0:  # 还存在没写完的数据
             Fdata = binfile.read(Data_Remain)  # 将剩下的数据读完
             for i in range(Data_Remain, 256):
-                Fdata = Fdata + b'\xff'  # 不足位置补充0xFF
+                Fdata.append(0xFF)  # 不足位置补充0xFF
             Write_Flash_Page(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
         print("%s 烧写完成" % filepath)
         return 1
@@ -896,7 +896,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
         if Fsize % 256 != 0:  # 还存在没写完的数据
             Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
             for i in range(Fsize % 256, 256):
-                Fdata = Fdata + b'\xff'  # 不足位置补充0xFF
+                Fdata.append(0xFF)  # 不足位置补充0xFF
             LCD_DATA(Fdata, Fsize % 256)  # (page,数据，大小)
         u_time = time.time() - u_time
         insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time), False)
@@ -944,8 +944,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
         if Fsize % 256 != 0:  # 还存在没写完的数据
             data_w = binfile.read(Fsize % 256)  # 将剩下的数据读完
             for i in range(Fsize % 256, 256):
-                # 不足位置补充0xFF
-                data_w = data_w + b'\xff'
+                data_w.append(0xFF)  # 不足位置补充0xFF
             for i in range(0, 64):  # 256字节数据分为64个指令
                 hex_use.append(4)
                 hex_use.append(i)
@@ -1437,7 +1436,7 @@ def Screen_Date_Process(Photo_data):  # 对数据进行转换处理
     if remaining_data_size != 0:  # 还存在没写完的数据
         data_w = Photo_data[-remaining_data_size:]  # 取最后的没有写的
         # 补全128个 uint16
-        data_w = np.append(data_w, np.full(data_per_page - remaining_data_size, 0xffff, dtype=np.uint32))
+        data_w = np.append(data_w, np.full(data_per_page - remaining_data_size, 0xFF, dtype=np.uint32))
         cmp_use = data_w[::2] << 16 | data_w[1::2]
         for i, cmp_value in enumerate(cmp_use):
             hex_use.extend([4, i])
