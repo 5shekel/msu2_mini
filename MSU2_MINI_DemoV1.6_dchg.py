@@ -1717,11 +1717,11 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
 
     # 因为刷新间隔刚好是1秒，所以不需要除时间
     sent_per_second = (current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent) / seconds_elapsed
-    netspeed_plot_data["sent"].append(sent_per_second)
     netspeed_plot_data["sent"].pop(0)
+    netspeed_plot_data["sent"].append(sent_per_second)
     recv_per_second = (current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv) / seconds_elapsed
-    netspeed_plot_data["recv"].append(recv_per_second)
     netspeed_plot_data["recv"].pop(0)
+    netspeed_plot_data["recv"].append(recv_per_second)
 
     last_refresh_time = current_time
     netspeed_last_refresh_snetio = current_snetio
@@ -1923,10 +1923,10 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
     if recv is None:
         recv = 0
 
-    custom_plot_data["sent"].append(sent)
     custom_plot_data["sent"].pop(0)
-    custom_plot_data["recv"].append(recv)
+    custom_plot_data["sent"].append(sent)
     custom_plot_data["recv"].pop(0)
+    custom_plot_data["recv"].append(recv)
 
     seconds_elapsed = (current_time - last_refresh_time) / time_second
     last_refresh_time = current_time
