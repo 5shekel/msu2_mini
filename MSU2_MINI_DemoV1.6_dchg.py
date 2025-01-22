@@ -2984,10 +2984,7 @@ def daemon_task():
 # 双击：上一页
 # 长按：切换方向
 def manage_task():
-    global ser, ADC_det
-    while ser is None and MG_daemon_running:
-        time.sleep(0.3)
-
+    global ADC_det
     now = datetime.now()
     key_on = 0  # 按键是否按下
     check_limit = timedelta(milliseconds=2000)  # 持续检测阈值
