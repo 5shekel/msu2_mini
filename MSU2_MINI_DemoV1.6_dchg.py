@@ -1736,7 +1736,7 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
     draw.text((0, SHOW_HEIGHT // 2), text, fill=text_color, font=default_font)
 
     # 绘图
-    min_draw = 1024  # 最小范围 1KB/s
+    min_draw = 1  # 最小范围
     for start_y, key, color in zip([19, 59], ["sent", "recv"], [bar1_color, bar2_color]):
         sent_values = netspeed_plot_data[key]
         max_value = max(min_draw, max(sent_values))
