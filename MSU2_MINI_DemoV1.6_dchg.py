@@ -2819,7 +2819,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                 print(get_formatted_time_string(current_time), end=' ')
                 locations = port.location
                 if locations is None:
-                    locations = ""
+                    locations = port.name
                 insert_text_message("端口%s连接成功" % locations)
                 # 对MSN设备进行登记
                 My_MSN_Device = MSN_Device(port.name, msn_version)
