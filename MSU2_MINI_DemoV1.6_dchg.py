@@ -1539,8 +1539,6 @@ cropped_monitor = {"left": 0, "top": 0, "width": SHOW_WIDTH, "height": SHOW_HEIG
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
     global MG_screen_thread_running, machine_model, screen_shot_queue, cropped_monitor, screenshot_limit_fps
-    print("截图线程创建成功")
-
     with mss() as sct:
         while MG_screen_thread_running:
             if machine_model != 4:
@@ -2819,7 +2817,10 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             # 确保为MSN设备
             if recv[-6:] == hex_use:
                 print(get_formatted_time_string(current_time), end=' ')
-                insert_text_message("端口%s连接成功" % port.location)
+                locations = port.location
+                if locations is None:
+                    locations = ""
+                insert_text_message("端口%s连接成功" % locations)
                 # 对MSN设备进行登记
                 My_MSN_Device = MSN_Device(port.name, msn_version)
                 break  # 退出当前for循环
