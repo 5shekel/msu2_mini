@@ -1680,12 +1680,14 @@ time_second = timedelta(seconds=1)
 
 def sizeof_fmt(num, suffix="B", base=1024.0):
     num = abs(num)
-    if 0 < num < 0.5:  # 小于0.5才显示mA/mV/mW/mWh/mL
-        return "%3.1fm%s" % (num * base, suffix)
-    for unit in ("", "K", "M", "G", "T", "P", "E", "Z"):
+    if num < base:
+        if 0 < num < 0.5:  # 小于0.5才显示mA/mV/mW/mWh/mL
+            return "%3.1fm%s" % (num * base, suffix)
+        return "%3.1f%s" % (num, suffix)
+    for unit in ("K", "M", "G", "T", "P", "E", "Z"):
+        num /= base
         if num < base:
             return "%3.1f%s%s" % (num, unit, suffix)
-        num /= base
     return "%3.1fY%s" % (num, suffix)
 
 
