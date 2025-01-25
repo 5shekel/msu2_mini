@@ -2094,6 +2094,13 @@ def load_config():
         return {}
 
 
+def not_english(str):
+    for char in str:
+        if char > '\u00ff':
+            return True
+    return False
+
+
 def UI_Page():  # 进行图像界面显示
     global Text1, rgb_tuple, Device_State_Labelen, full_custom_template
     global machine_model, State_change, LCD_Change_use, Label1, Label3, Label4, Label5, Label6
@@ -2278,13 +2285,13 @@ def UI_Page():  # 进行图像界面显示
                 netspeed_font.getlength(custom_selected_displayname[1][:8])):
             longer = 1
         names = custom_selected_displayname[0][:8] + custom_selected_displayname[1][:8]
-        if len(names) == 0 or names.encode('utf-8').isalpha():
+        if not_english(names):
+            netspeed_font = default_font  # 因Orbitron不支持汉字，有汉字使用默认字体
+        else:
             for index in range(4, 14, 2):
                 netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - index)
                 if netspeed_font.getlength(custom_selected_displayname[longer][:8]) < SHOW_WIDTH // 2:
                     break
-        else:
-            netspeed_font = default_font  # 因Orbitron不支持汉字，有汉字使用默认字体
 
     change_netspeed_font()
 
