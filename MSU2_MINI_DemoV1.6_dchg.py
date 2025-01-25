@@ -2280,17 +2280,17 @@ def UI_Page():  # 进行图像界面显示
 
     def change_netspeed_font():
         global netspeed_font, netspeed_font_size, custom_selected_displayname
-        longer = 0
-        if (netspeed_font.getlength(custom_selected_displayname[0][:8]) <
-                netspeed_font.getlength(custom_selected_displayname[1][:8])):
-            longer = 1
-        names = custom_selected_displayname[0][:8] + custom_selected_displayname[1][:8]
-        if not_english(names):
+        name0 = custom_selected_displayname[0][:8]
+        name1 = custom_selected_displayname[1][:8]
+        longer = name0
+        if (netspeed_font.getlength(name0) < netspeed_font.getlength(name1)):
+            longer = name1
+        if not_english(name0 + name1):
             netspeed_font = default_font  # 因Orbitron不支持汉字，有汉字使用默认字体
         else:
             for index in range(4, 14, 2):
                 netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - index)
-                if netspeed_font.getlength(custom_selected_displayname[longer][:8]) < SHOW_WIDTH // 2:
+                if netspeed_font.getlength(longer) < SHOW_WIDTH // 2:
                     break
 
     change_netspeed_font()
