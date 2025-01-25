@@ -2811,7 +2811,6 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             version1 = recv[n + 4] - 48
             version2 = recv[n + 5] - 48
             if recv[n: n + 4] != b'\x00MSN' or not (0 <= version1 < 10 and 0 <= version1 < 10):
-                print("连接失败，设备版本号校验失败：%s" % recv)
                 continue
             msn_version = version1 * 10 + version2
             hex_use = b"\x00MSNCN"
