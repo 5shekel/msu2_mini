@@ -2959,21 +2959,22 @@ def daemon_task():
 
             if Device_State == 1:  # 已检测到设备
                 MSN_Device_1_State_machine()
-            else:
-                # 尝试获取MSN设备
-                port_list = list(serial.tools.list_ports.comports())  # 查询所有串口
-                # geezmo: 如果有 VID = 0x1a86 （沁恒）的，优先考虑这些设备，防止访问其他串口出错
-                # 如果没有这些设备，或者 pyserial 没有提供信息，则不管
-                wch_port_list = [x for x in port_list if x.vid == 0x1a86]
-                Get_MSN_Device(wch_port_list)
-                if Device_State != 0:
-                    continue
-                not_wch_port_list = [x for x in port_list if x.vid != 0x1a86]
-                Get_MSN_Device(not_wch_port_list)
-                if Device_State == 0:
-                    print(get_formatted_time_string(current_time), end=' ')
-                    insert_text_message("没有找到可用的设备，请确认设备是否正确连接")
-                    sleep_event.wait(1)  # 防止频繁重试
+                continue
+
+            # 尝试获取MSN设备
+            port_list = list(serial.tools.list_ports.comports())  # 查询所有串口
+            # geezmo: 如果有 VID = 0x1a86 （沁恒）的，优先考虑这些设备，防止访问其他串口出错
+            # 如果没有这些设备，或者 pyserial 没有提供信息，则不管
+            wch_port_list = [x for x in port_list if x.vid == 0x1a86]
+            Get_MSN_Device(wch_port_list)
+            if Device_State != 0:
+                continue
+            not_wch_port_list = [x for x in port_list if x.vid != 0x1a86]
+            Get_MSN_Device(not_wch_port_list)
+            if Device_State == 0:
+                print(get_formatted_time_string(current_time), end=' ')
+                insert_text_message("没有找到可用的设备，请确认设备是否正确连接")
+                sleep_event.wait(1)  # 防止频繁重试
         except Exception as e:  # 出现非预期异常
             print("Exception in daemon_task, %s" % traceback.format_exc())
             sleep_event.wait(1)  # 防止频繁重试
