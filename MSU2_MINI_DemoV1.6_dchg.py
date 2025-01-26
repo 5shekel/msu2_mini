@@ -2986,9 +2986,13 @@ def daemon_task():
             if Device_State == 0:
                 print(get_formatted_time_string(current_time), end=' ')
                 insert_text_message("没有找到可用的设备，请确认设备是否正确连接")
+                if sleep_event.isSet():
+                    sleep_event.clear()
                 sleep_event.wait(1)  # 防止频繁重试
         except Exception as e:  # 出现非预期异常
             print("Exception in daemon_task, %s" % traceback.format_exc())
+            if sleep_event.isSet():
+                sleep_event.clear()
             sleep_event.wait(1)  # 防止频繁重试
 
     # stop
