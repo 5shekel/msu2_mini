@@ -69,7 +69,7 @@ class MiniMarkParser:
         self.color = (0, 0, 0)  # Default color (black)
         self.anchor = "la"
 
-    def parse_line(self, line, draw, img, record_dict=None, record_dict_value=None):
+    def parse_line(self, line, draw, img, record_dict=None):
         parts = line.split()
         if len(parts) == 0:
             return
@@ -125,17 +125,17 @@ class MiniMarkParser:
             img.paste(image, self.position, image)  # Use image as mask for transparency
 
         elif command == 'v' and record_dict is not None:
-            if len(parts) <= 2 or record_dict_value is None:
-                key = parts[1]
-                text = record_dict.get(key, "<%s>" % key)
+            key = parts[1]
+            pairs = record_dict.get(key, None)
+            if pairs is None:
+                text = "<%s>" % key
+            elif len(parts) <= 2:
+                text = pairs[0]
+            elif pairs[1] is None:
+                text = "<%s>" % key
             else:
-                key = parts[1]
                 formatting = parts[2]
-                value = record_dict_value.get(key)
-                if value is not None:
-                    text = formatting.format(value)
-                else:
-                    text = "<%s>" % key
+                text = formatting.format(pairs[1])
             draw.text(self.position, text, fill=self.color, font=self.font, anchor=self.anchor)
             # Calculate the width of the drawn text
             text_width = round(draw.textlength(text, font=self.font))
@@ -147,14 +147,14 @@ class MiniMarkParser:
             if "r" in self.anchor:
                 self.position = (self.position[0] - text_width, self.position[1])
 
-    def parse(self, size, lines, record_dict=None, record_dict_value=None):
+    def parse(self, size, lines, record_dict=None):
         # Create a new image and draw context
         # Use RGBA to support transparency
         img = Image.new("RGBA", size, color=(255, 255, 255, 0))
         draw = ImageDraw.Draw(img)
 
         for line in lines:
-            self.parse_line(line, draw, img, record_dict, record_dict_value)
+            self.parse_line(line, draw, img, record_dict)
 
         return img
 
@@ -165,9 +165,9 @@ if __name__ == "__main__":
 
     # Sample dictionary for the 'v' command
     sample_dict = {
-        "name": "Alice",
-        "age": "30",
-        "city": "Wonderland"
+        "name": ("Alice"),
+        "age": ("30"),
+        "city": ("Wonderland")
     }
 
     commands = [

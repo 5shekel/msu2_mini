@@ -2000,7 +2000,8 @@ def get_full_custom_im():
             hardwares.add(hardware)
     hardware_monitor_manager.update_hardwares(hardwares)
 
-    custom_values = []
+    record_dict = {}
+    index = 1
     for name in custom_selected_names_tech:
         value = None
         value_formatted = "--"  # 不能为None，否则解析时可能会有异常
@@ -2008,7 +2009,9 @@ def get_full_custom_im():
             value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
             if value is None:
                 full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序。\n" % name
-        custom_values.append((value, value_formatted))  # 没有数据也要放入列表，因为脚本是用序号来读数据的
+        # 没有数据也要放入列表，因为脚本是用序号来读数据的
+        record_dict[str(index)] = (value_formatted, value)
+        index += 1
 
     # 绘制图片
 
@@ -2016,15 +2019,12 @@ def get_full_custom_im():
 
     draw = ImageDraw.Draw(im1)
     error_line = ""
-    record_dict = {str(i + 1): v for i, (_, v) in enumerate(custom_values)}
-    record_dict_value = {str(i + 1): v for i, (v, _) in enumerate(custom_values)}
     try:
         mini_mark_parser.reset_state()
         for line in full_custom_template.split('\n'):
             line = line.rstrip('\r')  # possible
             error_line = line
-            mini_mark_parser.parse_line(
-                line, draw, im1, record_dict=record_dict, record_dict_value=record_dict_value)
+            mini_mark_parser.parse_line(line, draw, im1, record_dict=record_dict)
         if full_custom_error_tmp != "":
             if full_custom_error != full_custom_error_tmp:
                 full_custom_error = full_custom_error_tmp
@@ -2817,7 +2817,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             # 当前字节为0时进行解析，确保为MSN设备，确保版本号为数字ASC码
             version1 = recv[n + 4] - 48
             version2 = recv[n + 5] - 48
-            if recv[n: n + 4] != b'\x00MSN' or not (0 <= version1 < 10 and 0 <= version1 < 10):
+            if recv[n: n + 4] != b'\x00MSN' or not (0 <= version1 < 10 and 0 <= version2 < 10):
                 continue
             msn_version = version1 * 10 + version2
             hex_use = b"\x00MSNCN"
