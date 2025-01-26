@@ -2321,16 +2321,22 @@ def UI_Page():  # 进行图像界面显示
             x = x1
 
         # Check if the child window exceeds the bottom boundary of the screen
-        y1 = screen_height - child_height - 50
+        y1 = screen_height - child_height - 200
         if y > y1:
             y = y1
 
         # Ensure the child window is not positioned outside of the left or top borders of the screen
         if x < 50:
-            x = 50
+            if x1 >= 50:
+                x = 50
+            elif x < 0:
+                x = 0
 
         if y < 50:
-            y = 50
+            if y1 >= 50:
+                y = 50
+            elif y < 0:
+                y = 0
 
         # Set the position of the child window
         top_window.geometry("+%d+%d" % (x, y))
