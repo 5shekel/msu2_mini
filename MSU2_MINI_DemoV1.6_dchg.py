@@ -2830,13 +2830,13 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             recv = SER_rw(hex_use)  # 发出指令
             # 确保为MSN设备
             if recv[-6:] == hex_use:
-                print(get_formatted_time_string(current_time), end=' ')
-                locations = port.location
-                if locations is None:
-                    locations = port.name
-                insert_text_message("端口%s连接成功" % locations)
                 # 对MSN设备进行登记
                 My_MSN_Device = MSN_Device(port.name, msn_version)
+                print(get_formatted_time_string(current_time), end=' ')
+                if port.location is None:
+                    insert_text_message("%s连接成功" % port.name)
+                else:
+                    insert_text_message("%s@%s连接成功" % (port.name, port.location))
                 break  # 退出当前for循环
             else:
                 print("设备无法连接，请检查连接是否正常：%s" % recv)
