@@ -311,7 +311,6 @@ def SER_Write(Data_U0):
     except Exception as e:  # 出现异常
         print("发送异常, %s" % e)
         set_device_state(0)  # 出现异常，串口需要重连
-        ser.close()  # 先将异常的串口连接关闭，防止无法打开
 
 
 # 由于设备不支持多线程访问，请不要直接使用SER_Read，应使用SER_rw方法
@@ -329,13 +328,11 @@ def SER_Read():
         if trytimes == 0:
             print("SER_Read timeout")
             # set_device_state(0)
-            # ser.close()  # 先将异常的串口连接关闭，防止无法打开
             return 0
         return recv
     except Exception as e:  # 出现异常
         print("接收异常, %s" % e)
         set_device_state(0)
-        ser.close()  # 先将异常的串口连接关闭，防止无法打开
         return 0
 
 
@@ -2774,9 +2771,11 @@ class MSN_Data:
 
 # Device_State_Labelen: 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
 def set_device_state(state):
-    global Label1, Device_State, Device_State_Labelen
+    global ser, Label1, Device_State, Device_State_Labelen
     if Device_State != state:
         Device_State = state
+        if Device_State == 0:
+            ser.close()  # 先将异常的串口连接关闭，防止无法打开
     if Device_State_Labelen == 2:
         Device_State_Labelen = 0
     if Device_State_Labelen == 0:
