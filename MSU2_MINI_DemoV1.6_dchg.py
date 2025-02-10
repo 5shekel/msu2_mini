@@ -2094,8 +2094,8 @@ def load_config():
         return {}
 
 
-def not_english(str):
-    for char in str:
+def not_english(strings):
+    for char in strings:
         if char > '\u00ff':
             return True
     return False
@@ -2282,8 +2282,9 @@ def UI_Page():  # 进行图像界面显示
         global netspeed_font, netspeed_font_size, custom_selected_displayname
         name0 = custom_selected_displayname[0][:8]
         name1 = custom_selected_displayname[1][:8]
-        longer = name0
-        if (netspeed_font.getlength(name0) < netspeed_font.getlength(name1)):
+        if netspeed_font.getlength(name0) > netspeed_font.getlength(name1):
+            longer = name0
+        else:
             longer = name1
         if not_english(name0 + name1):
             netspeed_font = default_font  # 因Orbitron不支持汉字，有汉字使用默认字体
