@@ -685,7 +685,7 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
             Fdata = binfile.read(256)
             Write_Flash_Page_fast(Page_add + i, Fdata, 1)  # (page,数据，大小)
         if Data_Remain != 0:  # 还存在没写完的数据
-            Fdata = binfile.read(Data_Remain)  # 将剩下的数据读完
+            Fdata = bytearray(binfile.read(Data_Remain))  # 将剩下的数据读完
             for i in range(Data_Remain, 256):
                 Fdata.append(0xFF)  # 不足位置补充0xFF
             Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
@@ -719,7 +719,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
         Fdata = img_use[i * 256:(i + 1) * 256]  # 取256字节
         Write_Flash_Page_fast(Page_add + i, Fdata, 1)  # (page,数据，大小)
     if Data_Remain != 0:  # 还存在没写完的数据
-        Fdata = img_use[Page_Count * 256:]  # 将剩下的数据读完
+        Fdata = bytearray(img_use[Page_Count * 256:])  # 将剩下的数据读完
         for i in range(Data_Remain, 256):
             Fdata.append(0xFF)  # 不足位置补充0xFF
         Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
@@ -750,7 +750,7 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
             Fdata = binfile.read(256)
             Write_Flash_Page(Page_add + i, Fdata, 1)  # (page,数据，大小)
         if Data_Remain != 0:  # 还存在没写完的数据
-            Fdata = binfile.read(Data_Remain)  # 将剩下的数据读完
+            Fdata = bytearray(binfile.read(Data_Remain))  # 将剩下的数据读完
             for i in range(Data_Remain, 256):
                 Fdata.append(0xFF)  # 不足位置补充0xFF
             Write_Flash_Page(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
@@ -891,7 +891,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
             Fdata = binfile.read(256)
             LCD_DATA(Fdata, 256)  # (page,数据，大小)
         if Fsize % 256 != 0:  # 还存在没写完的数据
-            Fdata = binfile.read(Fsize % 256)  # 将剩下的数据读完
+            Fdata = bytearray(binfile.read(Fsize % 256))  # 将剩下的数据读完
             for i in range(Fsize % 256, 256):
                 Fdata.append(0xFF)  # 不足位置补充0xFF
             LCD_DATA(Fdata, Fsize % 256)  # (page,数据，大小)
@@ -939,7 +939,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
             hex_use.append(0)
             hex_use.append(0)
         if Fsize % 256 != 0:  # 还存在没写完的数据
-            data_w = binfile.read(Fsize % 256)  # 将剩下的数据读完
+            data_w = bytearray(binfile.read(Fsize % 256))  # 将剩下的数据读完
             for i in range(Fsize % 256, 256):
                 data_w.append(0xFF)  # 不足位置补充0xFF
             for i in range(0, 64):  # 256字节数据分为64个指令
@@ -1019,7 +1019,7 @@ def Write_LCD_Screen_fast(x_star, y_star, x_size, y_size, Photo_data):
         hex_use.append(0)
         hex_use.append(0)
     if (x_size * y_size * 2) % 256 != 0:  # 还存在没写完的数据
-        data_w = Photo_data_use  # 将剩下的数据读完
+        data_w = bytearray(Photo_data_use)  # 将剩下的数据读完
         for i in range(x_size * y_size * 2 % 256, 256):
             data_w.append(0xFF)  # 不足位置补充0xFF
         for i in range(0, 64):  # 256字节数据分为64个指令
@@ -1061,7 +1061,7 @@ def Write_LCD_Screen_fast1(x_star, y_star, x_size, y_size, Photo_data):
         hex_use.append(0)
         hex_use.append(0)
     if (x_size * y_size * 2) % 256 != 0:  # 还存在没写完的数据
-        data_w = Photo_data_use  # 将剩下的数据读完
+        data_w = bytearray(Photo_data_use)  # 将剩下的数据读完
         for i in range(x_size * y_size * 2 % 256, 256):
             data_w.append(0xFF)  # 不足位置补充0xFF
         for i in range(0, 64):  # 256字节数据分为64个指令
