@@ -226,8 +226,7 @@ def Write_Photo_Path4():  # 写入文件
     Path_use = Path_use1[:index - 1]
 
     u_time = time.time()
-    Img_data_use = bytearray()
-    file_path = "%s1%s" % (Path_use, path_file_type)
+    file_path = "%s35%s" % (Path_use, path_file_type)
     if os.path.exists(file_path):  # 文件名是 A0、A1、…… A35 排列
         Img_data_use = bytearray()
         for i in range(0, 36):  # 依次转换36张图片
@@ -248,6 +247,7 @@ def Write_Photo_Path4():  # 写入文件
         if len(files) < 36:
             insert_text_message("转换失败, 图片不够36张\n", False)
             return  # 转换失败，取消写入
+        Img_data_use = bytearray()
         for i in range(0, 36):  # 依次转换36张图片
             converted = convertImageFileToRGB(files[i])
             if len(converted) == 0:
