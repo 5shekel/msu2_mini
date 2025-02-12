@@ -5,6 +5,7 @@ import glob
 import json  # 用于保存json格式配置
 import os  # 用于读取文件
 import queue  # geezmo: 流水线同步和交换数据用
+import string
 import sys
 import threading  # 引入多线程支持
 import time  # 引入延时库
@@ -223,7 +224,7 @@ def Write_Photo_Path4():  # 写入文件
         insert_text_message("动图名称不符合要求！%s\n" % e, False)
         return  # 如果文件名不符合要求，直接返回
     path_file_type = Path_use1[index:]
-    Path_use = Path_use1[:index - 1]
+    Path_use = Path_use1[:index].rstrip(string.digits)
 
     u_time = time.time()
     file_path = "%s35%s" % (Path_use, path_file_type)
