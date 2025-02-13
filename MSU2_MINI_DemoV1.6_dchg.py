@@ -1372,8 +1372,8 @@ def show_PC_time(FC):
         State_change = 0
         sleep_event.clear()  # 使sleep_event.wait生效
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
-        LCD_Set_Color(FC, photo_add)
         LCD_Photo(photo_add)  # 放置背景
+        LCD_Set_Color(FC, photo_add)
         hex_use = LCD_ASCII_32X64_MIX(56 + 8, 0, ":", num_add)
         recv = SER_rw(hex_use)  # 发出指令
         if len(recv) == 0 or recv[0] != 2 or recv[1] != 3:
@@ -2873,11 +2873,6 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     global machine_model, State_change, LCD_Change_now, LCD_Change_use, photo_path2
     global write_path_index, Img_data_use, color_use, rgb_tuple
 
-    if LCD_Change_now != LCD_Change_use:  # 显示方向与设置不符合
-        LCD_Change_now = LCD_Change_use
-        LCD_State(LCD_Change_now)  # 配置显示方向
-        State_change = 1
-
     if write_path_index != 0:
         if write_path_index == 1:
             Write_Flash_hex_fast(3826, Img_data_use)
@@ -2888,6 +2883,11 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         elif write_path_index == 4:
             Write_Flash_hex_fast(0, Img_data_use)
         write_path_index = 0
+        State_change = 1
+
+    if LCD_Change_now != LCD_Change_use:  # 显示方向与设置不符合
+        LCD_Change_now = LCD_Change_use
+        LCD_State(LCD_Change_now)  # 配置显示方向
         State_change = 1
 
     bar_colors = [(235, 139, 139), (146, 212, 217)]
