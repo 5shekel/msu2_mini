@@ -85,6 +85,8 @@ imagefiletypes = [
     ("Image file", "*.tiff"),
     ("Image file", "*.tif"),
     ("Image file", "*.dib"),
+
+    ("gif file", "*.gif"),
 ]
 
 
@@ -108,33 +110,37 @@ def insert_text_message(text, clean=True, item=None):
 
 
 def convertImageFileToRGB(file_path):
-    img_data = bytearray()
     if not os.path.exists(file_path):  # 检查文件是否存在
         insert_text_message("文件不存在：%s\n" % file_path, False)
-        return img_data  # 如果文件不存在，直接返回，不执行后续代码
+        return bytearray()  # 如果文件不存在，直接返回，不执行后续代码
 
     im1 = None
     try:
         im1 = Image.open(file_path)
-        if im1.width > (im1.height * 2):  # 图片长宽比例超过2:1
-            im2 = im1.resize((SHOW_HEIGHT * im1.width // im1.height, SHOW_HEIGHT))
-            # 定义需要裁剪的空间
-            box = ((im2.width - SHOW_WIDTH) // 2, 0, (im2.width + SHOW_WIDTH) // 2, SHOW_HEIGHT)
-            im2 = im2.crop(box)
-        else:
-            im2 = im1.resize((SHOW_WIDTH, SHOW_WIDTH * im1.height // im1.width))
-            # 定义需要裁剪的空间
-            box = (0, (im2.height - SHOW_HEIGHT) // 2, SHOW_WIDTH, (im2.height + SHOW_HEIGHT) // 2)
-            im2 = im2.crop(box)
+        return convertImageToRGB(im1)
     except Exception as e:
         errstr = "图片\"%s\"打开失败：%s\n" % (file_path, e)
         insert_text_message(errstr, False)
-        return img_data
+        return bytearray()
     finally:
         if im1 is not None:
             im1.close()
 
+
+def convertImageToRGB(image):
+    if image.width > (image.height * 2):  # 图片长宽比例超过2:1
+        im2 = image.resize((SHOW_HEIGHT * image.width // image.height, SHOW_HEIGHT))
+        # 定义需要裁剪的空间
+        box = ((im2.width - SHOW_WIDTH) // 2, 0, (im2.width + SHOW_WIDTH) // 2, SHOW_HEIGHT)
+        im2 = im2.crop(box)
+    else:
+        im2 = image.resize((SHOW_WIDTH, SHOW_WIDTH * image.height // image.width))
+        # 定义需要裁剪的空间
+        box = (0, (im2.height - SHOW_HEIGHT) // 2, SHOW_WIDTH, (im2.height + SHOW_HEIGHT) // 2)
+        im2 = im2.crop(box)
+
     im2 = im2.convert("RGB")  # 转换为RGB格式
+    img_data = bytearray()
     for y in range(0, SHOW_HEIGHT):  # 逐字解析编码
         for x in range(0, SHOW_WIDTH):  # 逐字解析编码
             r, g, b = im2.getpixel((x, y))
@@ -218,7 +224,7 @@ def Write_Photo_Path3():  # 写入文件
 
 
 def Write_Photo_Path4():  # 写入文件
-    global photo_path4, write_path_index, Img_data_use
+    global photo_path4, write_path_index, Img_data_use, interval_var
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index)
         return
@@ -226,6 +232,7 @@ def Write_Photo_Path4():  # 写入文件
         insert_text_message("Path4 is None\n")
         return
 
+    Img_data_use = bytearray()
     insert_text_message("动图格式转换中...\n")
     Path_use1 = photo_path4
     try:
@@ -235,42 +242,70 @@ def Write_Photo_Path4():  # 写入文件
         return  # 如果文件名不符合要求，直接返回
     path_file_type = Path_use1[index:]
 
-    Path_use = Path_use1[:index - 1]
-    file_path = "%s35%s" % (Path_use, path_file_type)
-    if not os.path.exists(file_path):
-        Path_use = Path_use1[:index - 2]
+    u_time = time.time()
+
+    if path_file_type == ".gif":
+        try:
+            gif = Image.open(Path_use1)
+            if gif.n_frames > 1000:
+                insert_text_message("动图过大，无能为力", False)
+                return
+            duration = gif.n_frames * gif.info['duration'] / 36000
+            if duration >= 0.02:
+                massage = "建议设置动图间隔：%.3f\n" % duration
+            else:
+                massage = "动图太短，不建议使用此动图\n"
+            interval_var.set(duration)
+            insert_text_message(massage, False)
+            mult = gif.n_frames / 36.0
+
+            for i in range(0, 36):  # 依次转换36张图片
+                gif.seek(int(i * mult))
+                converted = convertImageToRGB(gif)
+                if len(converted) == 0:
+                    insert_text_message("转换失败\n", False)
+                    return  # 转换失败，取消写入
+                Img_data_use = Img_data_use + converted
+        except Exception as e:
+            errstr = "图片\"%s\"打开失败：%s\n" % (Path_use1, e)
+            insert_text_message(errstr, False)
+            return
+        finally:
+            gif.close()
+    else:
+        Path_use = Path_use1[:index - 1]
         file_path = "%s35%s" % (Path_use, path_file_type)
         if not os.path.exists(file_path):
-            file_path = None
+            Path_use = Path_use1[:index - 2]
+            file_path = "%s35%s" % (Path_use, path_file_type)
+            if not os.path.exists(file_path):
+                file_path = None
 
-    u_time = time.time()
-    if file_path:  # 文件名是 A0、A1、…… A35 排列
-        Img_data_use = bytearray()
-        for i in range(0, 36):  # 依次转换36张图片
-            file_path = "%s%d%s" % (Path_use, i, path_file_type)
-            converted = convertImageFileToRGB(file_path)
-            if len(converted) == 0:
-                insert_text_message("转换失败\n", False)
+        if file_path:  # 文件名是 A0、A1、…… A35 排列
+            for i in range(0, 36):  # 依次转换36张图片
+                file_path = "%s%d%s" % (Path_use, i, path_file_type)
+                converted = convertImageFileToRGB(file_path)
+                if len(converted) == 0:
+                    insert_text_message("转换失败\n", False)
+                    return  # 转换失败，取消写入
+                Img_data_use = Img_data_use + converted
+        else:  # 不是规则命名，只按文件类型查找文件
+            file_path = os.path.join(os.path.dirname(Path_use1), "*%s" % path_file_type)
+            files = []
+            try:
+                files = glob.glob(file_path)  # 按类型列出所有文件
+            except Exception as e:
+                insert_text_message("转换失败: %s\n" % e, False)
                 return  # 转换失败，取消写入
-            Img_data_use = Img_data_use + converted
-    else:  # 不是规则命名，只按文件类型查找文件
-        file_path = os.path.join(os.path.dirname(Path_use1), "*%s" % path_file_type)
-        files = []
-        try:
-            files = glob.glob(file_path)  # 按类型列出所有文件
-        except Exception as e:
-            insert_text_message("转换失败: %s\n" % e, False)
-            return  # 转换失败，取消写入
-        if len(files) < 36:
-            insert_text_message("转换失败, 图片不够36张\n", False)
-            return  # 转换失败，取消写入
-        Img_data_use = bytearray()
-        for i in range(0, 36):  # 依次转换36张图片
-            converted = convertImageFileToRGB(files[i])
-            if len(converted) == 0:
-                insert_text_message("转换失败\n", False)
+            if len(files) < 36:
+                insert_text_message("转换失败, 图片不够36张\n", False)
                 return  # 转换失败，取消写入
-            Img_data_use = Img_data_use + converted
+            for i in range(0, 36):  # 依次转换36张图片
+                converted = convertImageFileToRGB(files[i])
+                if len(converted) == 0:
+                    insert_text_message("转换失败\n", False)
+                    return  # 转换失败，取消写入
+                Img_data_use = Img_data_use + converted
 
     insert_text_message("转换完成，耗时%.3f秒\n" % (time.time() - u_time), False)
     write_path_index = 4
@@ -2116,7 +2151,7 @@ def not_english(strings):
 
 
 def UI_Page():  # 进行图像界面显示
-    global Text1, rgb_tuple, Device_State_Labelen, full_custom_template
+    global Text1, rgb_tuple, Device_State_Labelen, full_custom_template, interval_var
     global machine_model, State_change, LCD_Change_use, Label1, Label3, Label4, Label5, Label6
     global custom_selected_names, custom_selected_displayname, custom_selected_names_tech
 
@@ -2605,7 +2640,7 @@ def UI_Page():  # 进行图像界面显示
             if len(interval_var.get()) > 0:
                 insert_text_message("Invalid number entered: %s" % e)
             return
-        insert_text_message("")
+        # insert_text_message("")
         if photo_interval_tmp >= 0 and photo_interval + second_times * 2 != photo_interval_tmp:
             second_times = int(photo_interval_tmp)  # 舍去小数部分
             photo_interval = photo_interval_tmp - second_times
@@ -2696,10 +2731,10 @@ def UI_Page():  # 进行图像界面显示
             t = tuple((0 if x.strip() == "" else int(x)) for x in screen_region_var.get().split(","))
         except ValueError as e:
             if len(screen_region_var.get()) > 0:
-                insert_text_message("投屏区域设置无效: %s\n示例: 0,0,%s,%s" % (e, SHOW_WIDTH, SHOW_HEIGHT))
+                insert_text_message("屏幕镜像区域设置无效: %s\n示例: 0,0,%s,%s" % (e, SHOW_WIDTH, SHOW_HEIGHT))
             return
         if len(t) != 4:
-            insert_text_message("投屏区域设置无效，示例: 0,0,%s,%s" % (SHOW_WIDTH, SHOW_HEIGHT))
+            insert_text_message("屏幕镜像区域设置无效，示例: 0,0,%s,%s" % (SHOW_WIDTH, SHOW_HEIGHT))
             return
         insert_text_message("")
         if screenshot_region == t:
@@ -2725,7 +2760,7 @@ def UI_Page():  # 进行图像界面显示
     screen_region_var.trace_add("write", change_screen_region)
     screen_region_var.set(config_obj.get("screen_region_var", "0,0,,"))
 
-    label = ttk.Label(root, text="投屏区域(左,上,宽,高):")
+    label = ttk.Label(root, text="屏幕镜像区域(左,上,宽,高):")
     label.grid(row=7, column=1, columnspan=2, sticky=tk.E, padx=5, pady=5)
 
     screen_region_entry = ttk.Entry(root, textvariable=screen_region_var, width=8)
@@ -2960,6 +2995,7 @@ Label4 = None  # 闪存固件路径显示框
 Label5 = None  # 相册图像路径显示框
 Label6 = None  # 动图文件路径显示框
 Text1 = None  # 信息显示文本框
+interval_var = None
 ser = None  # 设备连接句柄
 ADC_det = 0  # 按键阈值
 sub_window = None  # 子窗口，设置为全局变量用于重新打开时不需要重复创建
