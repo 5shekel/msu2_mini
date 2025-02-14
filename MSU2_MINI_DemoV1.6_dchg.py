@@ -255,7 +255,7 @@ def Write_Photo_Path4():  # 写入文件
                 massage = "建议设置动图间隔：%.3f\n" % duration
             else:
                 massage = "动图太短，不建议使用此动图\n"
-            interval_var.set(duration)
+            interval_var.set("%.3f" % duration)
             insert_text_message(massage, False)
             mult = gif.n_frames / 36.0
 
