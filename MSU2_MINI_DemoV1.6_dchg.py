@@ -253,17 +253,18 @@ def Write_Photo_Path4():  # 写入文件
             if not "duration" in gif.info:
                 insert_text_message("非动图文件：%s" % Path_use1, False)
                 return
-            duration = gif.n_frames * gif.info["duration"] / 36000
+            mult = gif.n_frames / 36.0
+            duration = mult * gif.info["duration"] / 1000
             if duration >= 0.01:
                 massage = "建议设置动图间隔：%.3f\n" % duration
                 interval_var.set("%.3f" % duration)
             else:
                 massage = "动图太短，不建议使用此动图\n"
+                interval_var.set("0.1")
             insert_text_message(massage, False)
-            mult = gif.n_frames / 36.0
 
             for i in range(0, 36):  # 依次转换36张图片
-                gif.seek(int(i * mult))
+                gif.seek(int(i * mult))  # 只取整数部分，不能四舍五入
                 converted = convertImageToRGB(gif)
                 if len(converted) == 0:
                     insert_text_message("转换失败\n", False)
