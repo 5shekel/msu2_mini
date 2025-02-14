@@ -62,6 +62,17 @@ exit_code = 0
 current_time = datetime.now()
 Img_data_use = bytearray()
 
+pagedescription = [
+    "页面1：动图",
+    "页面2：时间",
+    "页面3：单个相册图片",
+    "页面4：屏幕镜像",
+    "页面5：电脑CPU/内存/磁盘/电池使用率监控",
+    "页面6：网络流量监控",
+    "页面7：自定义显示两项图表",
+    "页面8：自定义显示多项数值"
+]
+
 imagefiletypes = [
     ("Image file", "*.jpg"),
     ("Image file", "*.jpeg"),
@@ -270,24 +281,24 @@ sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
 
 def Page_UP():  # 上一页
     global State_change, machine_model, sleep_event
-    if machine_model >= 8:
-        machine_model = 1
+    if machine_model >= len(pagedescription) - 1:
+        machine_model = 0
     else:
         machine_model = machine_model + 1
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
     State_change = 1
-    insert_text_message("页面%s" % machine_model)
+    insert_text_message(pagedescription[machine_model])
 
 
 def Page_Down():  # 下一页
     global State_change, machine_model, sleep_event
-    if machine_model <= 1:
-        machine_model = 8
+    if machine_model <= 0:
+        machine_model = len(pagedescription) - 1
     else:
         machine_model = machine_model - 1
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
     State_change = 1
-    insert_text_message("页面%s" % machine_model)
+    insert_text_message(pagedescription[machine_model])
 
 
 def LCD_Change():  # 切换显示方向
@@ -1544,7 +1555,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
     global MG_screen_thread_running, machine_model, screen_shot_queue, cropped_monitor, screenshot_limit_fps
     with mss() as sct:
         while MG_screen_thread_running:
-            if machine_model != 4:
+            if machine_model != 3:
                 if not screen_shot_queue.empty():  # 清空缓存，防止显示旧的窗口
                     screen_shot_queue.get()
                 time.sleep(0.5)  # 不需要截图时
@@ -1570,7 +1581,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 def screen_process_task():
     global MG_screen_thread_running, machine_model, screen_process_queue, screenshot_limit_fps, screen_shot_queue
     while MG_screen_thread_running:
-        if machine_model != 4:
+        if machine_model != 3:
             if not screen_process_queue.empty():  # 清空缓存，防止显示旧的窗口
                 screen_process_queue.get()
             time.sleep(0.5)  # 不需要截图时
@@ -2114,7 +2125,7 @@ def UI_Page():  # 进行图像界面显示
     load_thread.start()
 
     config_obj = load_config()
-    machine_model = config_obj.get("state_machine", 1)
+    machine_model = config_obj.get("state_machine", 0)
     LCD_Change_use = config_obj.get("lcd_change", 0)
 
     # 创建主窗口
@@ -2243,7 +2254,7 @@ def UI_Page():  # 进行图像界面显示
     update_label_color(config_red, config_green, config_blue)
 
     color_frame = ttk.Frame(root, padding="0")
-    color_frame.grid(row=1, column=3, rowspan=3, columnspan=2, padx=5, pady=5, sticky=tk.NSEW)
+    color_frame.grid(row=1, column=3, rowspan=3, columnspan=2, padx=5, pady=0, sticky=tk.NSEW)
     color_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
     color_frame.grid_propagate(0)  # 禁止被内部控件撑大
 
@@ -2893,21 +2904,21 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     bar_colors = [(235, 139, 139), (146, 212, 217)]
     # bar_colors = [(128, 255, 128), (255, 128, 255)]
     # bar_colors = [(128, 128, 255), (0, 128, 192)]
-    if machine_model == 2:
+    if machine_model == 1:
         show_PC_time(color_use)  # 展示时钟
-    elif machine_model == 3:
+    elif machine_model == 2:
         show_Photo()  # 展示单张相册图像
-    elif machine_model == 4:
+    elif machine_model == 3:
         show_PC_Screen()  # 屏幕串流
-    elif machine_model == 5:
+    elif machine_model == 4:
         show_PC_state(color_use, BLACK)  # 展示CPU/内存/磁盘/电池 使用率
-    elif machine_model == 6:
+    elif machine_model == 5:
         show_netspeed(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
-    elif machine_model == 7:
+    elif machine_model == 6:
         show_custom_two_rows(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
-    elif machine_model == 8:
+    elif machine_model == 7:
         show_full_custom()
-    else:  # default 1
+    else:  # default 0
         show_gif()  # 展示36张动图
 
 
@@ -2930,7 +2941,7 @@ def get_formatted_time_string(time):
 State_change = 1  # 状态发生变化
 Screen_Error = 0
 gif_num = 0
-machine_model = 1  # 定义初始状态
+machine_model = 0  # 定义初始状态
 Device_State = 0  # 初始为未连接
 Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
 LCD_Change_use = 0  # 设置显示方向
