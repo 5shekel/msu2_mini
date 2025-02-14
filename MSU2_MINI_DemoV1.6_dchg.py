@@ -244,18 +244,21 @@ def Write_Photo_Path4():  # 写入文件
 
     u_time = time.time()
 
-    if path_file_type == ".gif":
+    if path_file_type.lower() == ".gif":
         try:
             gif = Image.open(Path_use1)
             if gif.n_frames > 1000:
                 insert_text_message("动图过大，无能为力", False)
                 return
-            duration = gif.n_frames * gif.info['duration'] / 36000
-            if duration >= 0.02:
+            if not "duration" in gif.info:
+                insert_text_message("非动图文件：%s" % Path_use1, False)
+                return
+            duration = gif.n_frames * gif.info["duration"] / 36000
+            if duration >= 0.01:
                 massage = "建议设置动图间隔：%.3f\n" % duration
+                interval_var.set("%.3f" % duration)
             else:
                 massage = "动图太短，不建议使用此动图\n"
-            interval_var.set("%.3f" % duration)
             insert_text_message(massage, False)
             mult = gif.n_frames / 36.0
 
