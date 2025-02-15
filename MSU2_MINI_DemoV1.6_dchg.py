@@ -89,13 +89,27 @@ imagefiletypes = [
     ("gif file", "*.gif"),
 ]
 
+cleanNextTime = False
 
-def insert_text_message(text, clean=True, item=None):
-    global Text1
+
+def insert_text_message(text, cleanNext=True, item=None):
+    global Text1, cleanNextTime
     if text:
         print(text.rstrip('\n'))
     if item is None:
         item = Text1
+
+    if item == Text1:
+        clean = False
+        if cleanNextTime:
+            clean = True
+            if not cleanNext:
+                cleanNextTime = False
+        elif cleanNext:
+            cleanNextTime = True
+    else:
+        clean = True
+
     try:
         if not hasattr(item, "winfo_viewable") or item.winfo_viewable() == False:
             return
@@ -111,7 +125,7 @@ def insert_text_message(text, clean=True, item=None):
 
 def convertImageFileToRGB(file_path):
     if not os.path.exists(file_path):  # 检查文件是否存在
-        insert_text_message("文件不存在：%s\n" % file_path, False)
+        insert_text_message("文件不存在：%s\n" % file_path)
         return bytearray()  # 如果文件不存在，直接返回，不执行后续代码
 
     im1 = None
@@ -120,7 +134,7 @@ def convertImageFileToRGB(file_path):
         return convertImageToRGB(im1)
     except Exception as e:
         errstr = "图片\"%s\"打开失败：%s\n" % (file_path, e)
-        insert_text_message(errstr, False)
+        insert_text_message(errstr)
         return bytearray()
     finally:
         if im1 is not None:
@@ -191,7 +205,7 @@ def Write_Photo_Path1():  # 写入文件
         insert_text_message("Path1 is None\n")
         return
 
-    insert_text_message("图像格式转换...\n")
+    insert_text_message("图像格式转换...\n", cleanNext=False)
     Img_data_use = convertImageFileToRGB(photo_path1)
     write_path_index = 1
 
@@ -205,7 +219,7 @@ def Write_Photo_Path2():  # 写入文件
         insert_text_message("Path2 is None\n")
         return
 
-    insert_text_message("准备烧写Flash固件...\n")
+    insert_text_message("准备烧写Flash固件...\n", cleanNext=False)
     write_path_index = 2
 
 
@@ -218,7 +232,7 @@ def Write_Photo_Path3():  # 写入文件
         insert_text_message("Path3 is None\n")
         return
 
-    insert_text_message("图像格式转换...\n")
+    insert_text_message("图像格式转换...\n", cleanNext=False)
     Img_data_use = convertImageFileToRGB(photo_path3)
     write_path_index = 3
 
@@ -233,12 +247,12 @@ def Write_Photo_Path4():  # 写入文件
         return
 
     Img_data_use = bytearray()
-    insert_text_message("动图格式转换中...\n")
+    insert_text_message("动图格式转换中...\n", cleanNext=False)
     Path_use1 = photo_path4
     try:
         index = Path_use1.rindex(".")
     except ValueError as e:
-        insert_text_message("动图名称不符合要求！%s\n" % e, False)
+        insert_text_message("动图名称不符合要求！%s\n" % e)
         return  # 如果文件名不符合要求，直接返回
     path_file_type = Path_use1[index:]
 
@@ -248,10 +262,10 @@ def Write_Photo_Path4():  # 写入文件
         try:
             gif = Image.open(Path_use1)
             if gif.n_frames > 1000:
-                insert_text_message("动图过大，无能为力", False)
+                insert_text_message("动图过大，无能为力")
                 return
             if not "duration" in gif.info:
-                insert_text_message("非动图文件：%s" % Path_use1, False)
+                insert_text_message("非动图文件：%s" % Path_use1)
                 return
             mult = gif.n_frames / 36.0
             duration = mult * gif.info["duration"] / 1000
@@ -261,18 +275,18 @@ def Write_Photo_Path4():  # 写入文件
             else:
                 massage = "动图太短，不建议使用此动图\n"
                 interval_var.set("0.1")
-            insert_text_message(massage, False)
+            insert_text_message(massage, cleanNext=False)
 
             for i in range(0, 36):  # 依次转换36张图片
                 gif.seek(int(i * mult))  # 只取整数部分，不能四舍五入
                 converted = convertImageToRGB(gif)
                 if len(converted) == 0:
-                    insert_text_message("转换失败\n", False)
+                    insert_text_message("转换失败\n")
                     return  # 转换失败，取消写入
                 Img_data_use = Img_data_use + converted
         except Exception as e:
             errstr = "图片\"%s\"打开失败：%s\n" % (Path_use1, e)
-            insert_text_message(errstr, False)
+            insert_text_message(errstr)
             return
         finally:
             gif.close()
@@ -290,7 +304,7 @@ def Write_Photo_Path4():  # 写入文件
                 file_path = "%s%d%s" % (Path_use, i, path_file_type)
                 converted = convertImageFileToRGB(file_path)
                 if len(converted) == 0:
-                    insert_text_message("转换失败\n", False)
+                    insert_text_message("转换失败\n")
                     return  # 转换失败，取消写入
                 Img_data_use = Img_data_use + converted
         else:  # 不是规则命名，只按文件类型查找文件
@@ -299,19 +313,19 @@ def Write_Photo_Path4():  # 写入文件
             try:
                 files = glob.glob(file_path)  # 按类型列出所有文件
             except Exception as e:
-                insert_text_message("转换失败: %s\n" % e, False)
+                insert_text_message("转换失败: %s\n" % e)
                 return  # 转换失败，取消写入
             if len(files) < 36:
-                insert_text_message("转换失败, 图片不够36张\n", False)
+                insert_text_message("转换失败, 图片不够36张\n")
                 return  # 转换失败，取消写入
             for i in range(0, 36):  # 依次转换36张图片
                 converted = convertImageFileToRGB(files[i])
                 if len(converted) == 0:
-                    insert_text_message("转换失败\n", False)
+                    insert_text_message("转换失败\n")
                     return  # 转换失败，取消写入
                 Img_data_use = Img_data_use + converted
 
-    insert_text_message("转换完成，耗时%.3f秒\n" % (time.time() - u_time), False)
+    insert_text_message("转换完成，耗时%.3f秒\n" % (time.time() - u_time), cleanNext=False)
     write_path_index = 4
 
 
@@ -723,11 +737,11 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
-            insert_text_message("未读到数据，取消烧录。\n", False)
+            insert_text_message("未读到数据，取消烧录。\n")
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        insert_text_message("找到\"%s\"文件,大小%dB,烧录中...\n" % (filepath, Fsize), False)
+        insert_text_message("找到\"%s\"文件,大小%dB,烧录中...\n" % (filepath, Fsize), cleanNext=False)
         u_time = time.time()
         Page_Count = Fsize // 256
         Data_Remain = Fsize % 256
@@ -746,10 +760,10 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
                 Fdata.append(0xFF)  # 不足位置补充0xFF
             Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
         u_time = time.time() - u_time
-        insert_text_message("烧写完成，耗时%.3f秒\n" % u_time, False)
+        insert_text_message("烧写完成，耗时%.3f秒\n" % u_time)
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("文件路径或格式出错\"%s\", %s\n" % (filepath, e), False)
+        insert_text_message("文件路径或格式出错\"%s\", %s\n" % (filepath, e))
         return 0
     finally:
         if binfile is not None:
@@ -759,9 +773,9 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
 def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
     Fsize = len(img_use)
     if Fsize == 0:
-        insert_text_message("未读到数据，取消烧录。\n", False)
+        insert_text_message("未读到数据，取消烧录。\n")
         return 0
-    insert_text_message("大小%dB,烧录中...\n" % Fsize, False)
+    insert_text_message("大小%dB,烧录中...\n" % Fsize, cleanNext=False)
     u_time = time.time()
     Page_Count = Fsize // 256
     Data_Remain = Fsize % 256
@@ -779,7 +793,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
         for i in range(Data_Remain, 256):
             Fdata.append(0xFF)  # 不足位置补充0xFF
         Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
-    insert_text_message("烧写完成，耗时%.3f秒\n" % (time.time() - u_time), False)
+    insert_text_message("烧写完成，耗时%.3f秒\n" % (time.time() - u_time))
     return 1
 
 
@@ -789,10 +803,10 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath) - 6  # 字库文件的最后六个字节不是点阵信息
         if Fsize <= 0:
-            insert_text_message("未读到数据，取消烧录。\n", False)
+            insert_text_message("未读到数据，取消烧录。\n")
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
-        print("找到\"%s\"文件,大小：%dB" % (filepath, Fsize))
+        insert_text_message("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), cleanNext=False)
 
         Page_Count = Fsize // 256
         Data_Remain = Fsize % 256
@@ -810,10 +824,10 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
             for i in range(Data_Remain, 256):
                 Fdata.append(0xFF)  # 不足位置补充0xFF
             Write_Flash_Page(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
-        print("%s 烧写完成" % filepath)
+        insert_text_message("%s 烧写完成" % filepath)
         return 1
     except Exception as e:  # 出现异常
-        print("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
+        insert_text_message("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         return 0
     finally:
         if binfile is not None:
@@ -935,11 +949,11 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
-            insert_text_message("未读到数据，取消烧录。\n", False)
+            insert_text_message("未读到数据，取消烧录。\n")
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        insert_text_message("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), False)
+        insert_text_message("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), cleanNext=False)
         u_time = time.time()
         # 进行地址写入
         LCD_ADD(x_star, y_star, x_size, y_size)
@@ -952,10 +966,10 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
                 Fdata.append(0xFF)  # 不足位置补充0xFF
             LCD_DATA(Fdata, Fsize % 256)  # (page,数据，大小)
         u_time = time.time() - u_time
-        insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time), False)
+        insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()), False)
+        insert_text_message("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         return 0
     finally:
         if binfile is not None:
@@ -969,11 +983,11 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
-            insert_text_message("未读到数据，取消烧录。\n", False)
+            insert_text_message("未读到数据，取消烧录。\n")
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        insert_text_message("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), False)
+        insert_text_message("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), cleanNext=False)
         u_time = time.time()
         # 进行地址写入
         LCD_ADD(x_star, y_star, x_size, y_size)
@@ -1019,10 +1033,10 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
         hex_use.append(0)
         SER_rw(hex_use, read=False)  # 发出指令
         u_time = time.time() - u_time
-        insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time), False)
+        insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()), False)
+        insert_text_message("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
         return 0
     finally:
         if binfile is not None:
@@ -2644,7 +2658,7 @@ def UI_Page():  # 进行图像界面显示
             if len(interval_var.get()) > 0:
                 insert_text_message("Invalid number entered: %s" % e)
             return
-        # insert_text_message("")
+        insert_text_message("", cleanNext=False)
         if photo_interval_tmp >= 0 and photo_interval + second_times * 2 != photo_interval_tmp:
             second_times = int(photo_interval_tmp)  # 舍去小数部分
             photo_interval = photo_interval_tmp - second_times
@@ -2673,7 +2687,7 @@ def UI_Page():  # 进行图像界面显示
             if len(number_var.get()) > 0:
                 insert_text_message("Invalid number entered: %s" % e)
             return
-        insert_text_message("")
+        insert_text_message("", cleanNext=False)
         if screenshot_monitor_id == screenshot_monitor_id_tmp or screenshot_monitor_id_tmp <= 0:
             return
 
@@ -2713,7 +2727,7 @@ def UI_Page():  # 进行图像界面显示
             if len(fps_var.get()) > 0:
                 insert_text_message("Invalid number entered: %s" % e)
             return
-        insert_text_message("")
+        insert_text_message("", cleanNext=False)
         if 0 < screenshot_limit_fps_tmp != screenshot_limit_fps:
             screenshot_limit_fps = screenshot_limit_fps_tmp
 
@@ -2740,7 +2754,7 @@ def UI_Page():  # 进行图像界面显示
         if len(t) != 4:
             insert_text_message("屏幕镜像区域设置无效，示例: 0,0,%s,%s" % (SHOW_WIDTH, SHOW_HEIGHT))
             return
-        insert_text_message("")
+        insert_text_message("", cleanNext=False)
         if screenshot_region == t:
             return
 
