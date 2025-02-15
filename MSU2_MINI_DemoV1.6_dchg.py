@@ -267,25 +267,42 @@ def Write_Photo_Path4():  # 写入文件
             if not "duration" in gif.info:
                 insert_text_message("非动图文件：%s" % Path_use1)
                 return
-            mult = gif.n_frames / 36.0
-            duration = mult * gif.info["duration"] / 1000
-            if duration >= 0.01:
-                massage = "建议设置动图间隔：%.3f\n" % duration
-                interval_var.set("%.3f" % duration)
+
+            durations = []
+            longs = 0
+            for i in range(0, gif.n_frames):
+                gif.seek(i)
+                if "duration" in gif.info:
+                    duration = gif.info["duration"]
+                durations.append(duration)
+                longs += duration
+
+            realduration = longs / 36.0
+            if realduration >= 10:
+                massage = "建议设置动图间隔：%.4f\n" % (realduration / 1000.0)
+                interval_var.set("%.4f" % (realduration / 1000.0))
             else:
                 massage = "动图太短，不建议使用此动图\n"
                 interval_var.set("0.1")
             insert_text_message(massage, cleanNext=False)
 
+            gifseek = 0
+            curtime = 0
+            giftime = durations[gifseek]
             for i in range(0, 36):  # 依次转换36张图片
-                gif.seek(int(i * mult))  # 只取整数部分，不能四舍五入
+                while giftime < int(curtime):
+                    gifseek += 1
+                    giftime += durations[gifseek]
+                curtime += realduration
+
+                gif.seek(gifseek)
                 converted = convertImageToRGB(gif)
                 if len(converted) == 0:
                     insert_text_message("转换失败\n")
                     return  # 转换失败，取消写入
                 Img_data_use = Img_data_use + converted
         except Exception as e:
-            errstr = "图片\"%s\"打开失败：%s\n" % (Path_use1, e)
+            errstr = "图片\"%s\"打开失败：%s\n" % (Path_use1, traceback.format_exc())
             insert_text_message(errstr)
             return
         finally:
