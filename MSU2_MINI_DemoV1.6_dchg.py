@@ -1780,7 +1780,7 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
     global default_font, State_change, wait_time, current_time, sleep_event
 
     bar_width = 2  # 每个点宽度
-    image_height = SHOW_HEIGHT // 4 - 1  # 高度
+    image_height = SHOW_HEIGHT // 4  # 高度
 
     current_snetio = psutil.net_io_counters()
     # geezmo: 预渲染图片，显示网速
@@ -1821,7 +1821,7 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
 
     # 绘图
     min_draw = 1  # 最小范围
-    for start_y, key, color in zip([SHOW_HEIGHT // 4, SHOW_HEIGHT - SHOW_HEIGHT // 4],
+    for start_y, key, color in zip([SHOW_HEIGHT // 4 - 1, SHOW_HEIGHT - SHOW_HEIGHT // 4 - 1],
                                    ["sent", "recv"], [bar1_color, bar2_color]):
         sent_values = netspeed_plot_data[key]
         max_value = max(min_draw, max(sent_values))
@@ -1979,7 +1979,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
         return
 
     bar_width = 2  # 每个点宽度
-    image_height = SHOW_HEIGHT // 4 - 1  # 高度
+    image_height = SHOW_HEIGHT // 4  # 高度
 
     if State_change == 1:
         if custom_plot_data is None:
@@ -2032,7 +2032,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
     # 绘图
     # 决定最小范围, 需大于0
     min_max = [0.001, 0.001]
-    for start_y, key, color, minmax_it in zip([SHOW_HEIGHT // 4, SHOW_HEIGHT - SHOW_HEIGHT // 4],
+    for start_y, key, color, minmax_it in zip([SHOW_HEIGHT // 4 - 1, SHOW_HEIGHT - SHOW_HEIGHT // 4 - 1],
                                               ["sent", "recv"], [bar1_color, bar2_color], min_max):
         sent_values = custom_plot_data[key]
 
