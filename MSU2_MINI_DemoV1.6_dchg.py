@@ -274,6 +274,8 @@ def Write_Photo_Path4():  # 写入文件
                 gif.seek(i)
                 if "duration" in gif.info:
                     duration = gif.info["duration"]
+                    if duration <= 0:
+                        duration = 100  # 默认0.1s
                 durations.append(duration)
                 longs += duration
 
