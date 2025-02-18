@@ -2871,15 +2871,18 @@ def set_device_state(state):
     if Device_State_Labelen == 2:
         Device_State_Labelen = 0
     if Device_State_Labelen == 0:
-        while not hasattr(Label1, "config"):  # 页面未加载完
-            time.sleep(0.1)
         try:
+            if not hasattr(Label1, "winfo_viewable") or not Label1.winfo_viewable():
+                # 页面未加载完
+                Device_State_Labelen = 2
+                return
             if Device_State == 1:
                 Label1.config(text="设备已连接", fg="white", bg="green")
             else:
                 Label1.config(text="设备未连接", fg="white", bg="red")
         except Exception as e:
-            print(e)
+            Device_State_Labelen = 2
+            print("config error: %s" % e)
     elif Device_State_Labelen == 1:
         Device_State_Labelen = 3
 
