@@ -97,6 +97,8 @@ def insert_text_message(text, cleanNext=True, item=None):
     if text:
         print(text.rstrip('\n'))
     if item is None:
+        if Text1 is None:
+            return
         item = Text1
 
     if item == Text1:
@@ -111,8 +113,6 @@ def insert_text_message(text, cleanNext=True, item=None):
         clean = True
 
     try:
-        if not hasattr(item, "winfo_viewable") or item.winfo_viewable() == False:
-            return
         item.config(state=tk.NORMAL)
         if clean:
             item.delete("1.0", tk.END)  # 清除文本框
