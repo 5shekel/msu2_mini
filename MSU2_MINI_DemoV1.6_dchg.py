@@ -2190,7 +2190,7 @@ def not_english(strings):
 
 
 def UI_Page():  # 进行图像界面显示
-    global Text1, rgb_tuple, Device_State_Labelen, full_custom_template, interval_var
+    global Text1, rgb_tuple, full_custom_template, interval_var
     global machine_model, State_change, LCD_Change_use, Label1, Label3, Label4, Label5, Label6
     global custom_selected_names, custom_selected_displayname, custom_selected_names_tech
 
@@ -2228,19 +2228,11 @@ def UI_Page():  # 进行图像界面显示
         threading.Thread(target=on_closing, daemon=True).start()
 
     def show_window(icon, item):
-        global Device_State, Device_State_Labelen
         icon.stop()
         window.deiconify()  # 恢复窗口
         hide_btn.focus_set()  # 恢复后设置默认焦点
 
-        if Device_State_Labelen == 1:
-            Device_State_Labelen = 0
-        elif Device_State_Labelen == 3:
-            Device_State_Labelen = 2
-            set_device_state(Device_State)
-
     def hide_to_tray(event=None):
-        global Device_State_Labelen
         try:
             menu = (
                 pystray.MenuItem("显示", show_window, default=True),
@@ -2251,7 +2243,6 @@ def UI_Page():  # 进行图像界面显示
             threading.Thread(target=icon.run, daemon=True).start()
 
             window.withdraw()  # 隐藏主窗口
-            Device_State_Labelen = 1
         except Exception as e:
             insert_text_message("failed to use pystray to hide to tray, %s" % e)
 
@@ -2878,7 +2869,6 @@ def set_device_state(state):
                 Label1.config(text="设备未连接", fg="white", bg="red")
         except Exception as e:
             Device_State_Labelen = 2
-            print("config error: %s" % e)
     elif Device_State_Labelen == 1:
         Device_State_Labelen = 3
 
