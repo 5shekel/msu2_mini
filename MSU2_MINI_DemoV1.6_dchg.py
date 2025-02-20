@@ -2824,7 +2824,7 @@ def UI_Page():  # 进行图像界面显示
     window.protocol("WM_DELETE_WINDOW", on_closing)
     window.resizable(0, 0)  # 锁定窗口大小不能改变
     # 点击最小化按钮时隐藏窗口
-    window.bind("<Unmap>", lambda event: hide_to_tray() if window.state() == "iconic" else False)
+    # window.bind("<Unmap>", lambda event: hide_to_tray() if window.state() == "iconic" else False)
     if len(sys.argv) > 1 and sys.argv[1] == "hide":
         hide_to_tray()  # 命令行启动时设置隐藏
 
@@ -3063,14 +3063,16 @@ def daemon_task():
             Get_MSN_Device(wch_port_list)
             if Device_State != 0:
                 continue
-            not_wch_port_list = [x for x in port_list if x.vid != 0x1a86]
-            Get_MSN_Device(not_wch_port_list)
-            if Device_State == 0:
-                print(get_formatted_time_string(current_time), end=' ')
-                insert_text_message("没有找到可用的设备，请确认设备是否正确连接")
-                if sleep_event.isSet():
-                    sleep_event.clear()
-                sleep_event.wait(1)  # 防止频繁重试
+            # 这儿去掉对VID非0x1a86的检测，因为很多反馈对蓝牙有影响
+            # not_wch_port_list = [x for x in port_list if x.vid != 0x1a86]
+            # Get_MSN_Device(not_wch_port_list)
+            # if Device_State != 0:
+            #     continue
+            print(get_formatted_time_string(current_time), end=' ')
+            insert_text_message("没有找到可用的设备，请确认设备是否正确连接")
+            if sleep_event.isSet():
+                sleep_event.clear()
+            sleep_event.wait(1)  # 防止频繁重试
         except Exception as e:  # 出现非预期异常
             print("Exception in daemon_task, %s" % traceback.format_exc())
             if sleep_event.isSet():
