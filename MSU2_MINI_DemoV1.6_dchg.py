@@ -62,7 +62,7 @@ exit_code = 0
 current_time = datetime.now()
 Img_data_use = bytearray()
 
-pagedescription = [
+PAGE_DESSCRIPTION = [
     "页面1：动图",
     "页面2：时间",
     "页面3：单个相册图片",
@@ -71,6 +71,11 @@ pagedescription = [
     "页面6：网络流量监控",
     "页面7：自定义显示两项图表",
     "页面8：自定义显示多项数值"
+]
+
+LCD_STATE_MESSAGE = [
+    "正向",
+    "反向"
 ]
 
 imagefiletypes = [
@@ -353,24 +358,24 @@ sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
 
 def Page_UP():  # 上一页
     global State_change, machine_model, sleep_event
-    if machine_model >= len(pagedescription) - 1:
+    if machine_model >= len(PAGE_DESSCRIPTION) - 1:
         machine_model = 0
     else:
         machine_model = machine_model + 1
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
     State_change = 1
-    insert_text_message(pagedescription[machine_model])
+    insert_text_message(PAGE_DESSCRIPTION[machine_model])
 
 
 def Page_Down():  # 下一页
     global State_change, machine_model, sleep_event
     if machine_model <= 0:
-        machine_model = len(pagedescription) - 1
+        machine_model = len(PAGE_DESSCRIPTION) - 1
     else:
         machine_model = machine_model - 1
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
     State_change = 1
-    insert_text_message(pagedescription[machine_model])
+    insert_text_message(PAGE_DESSCRIPTION[machine_model])
 
 
 def LCD_Change():  # 切换显示方向
@@ -378,12 +383,8 @@ def LCD_Change():  # 切换显示方向
     if Device_State == 0:
         insert_text_message("设备未连接，切换失败")
         return
-    if LCD_Change_use == 0:  # 0
-        LCD_Change_use = 1
-        insert_text_message("反向")
-    else:  # 1
-        LCD_Change_use = 0
-        insert_text_message("正向")
+    LCD_Change_use ^= 1
+    insert_text_message(LCD_STATE_MESSAGE[LCD_Change_use])
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
 
