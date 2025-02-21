@@ -169,91 +169,90 @@ def convertImageToRGB(image):
 
 
 # 按键功能定义
-def Get_Photo_Path1():  # 获取文件路径
-    global photo_path1, Label3
-    photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
-    if photo_path and photo_path != photo_path1:
-        photo_path1 = photo_path
-        insert_text_message(photo_path1, item=Label3)
+def Get_Photo_Path(index):  # 获取文件路径
+    global Label3, Label4, Label5, Label6
+    if index == 1:
+        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
+        insert_text_message(photo_path, item=Label3)
+    elif index == 2:
+        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("Bin file", "*.bin")])
+        insert_text_message(photo_path, item=Label4)
+    elif index == 3:
+        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
+        insert_text_message(photo_path, item=Label5)
+    elif index == 4:
+        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
+        insert_text_message(photo_path, item=Label6)
 
 
-def Get_Photo_Path2():  # 获取文件路径
-    global photo_path2, Label4
-    photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("Bin file", "*.bin")])
-    if photo_path and photo_path != photo_path2:
-        photo_path2 = photo_path
-        insert_text_message(photo_path2, item=Label4)
-
-
-def Get_Photo_Path3():  # 获取文件路径
-    global photo_path3, Label5  # 支持JPG、PNG、BMP图像格式
-    photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
-    if photo_path and photo_path != photo_path3:
-        photo_path3 = photo_path
-        insert_text_message(photo_path3, item=Label5)
-
-
-def Get_Photo_Path4():  # 获取文件路径
-    global photo_path4, Label6
-    photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
-    if photo_path and photo_path != photo_path4:
-        photo_path4 = photo_path
-        insert_text_message(photo_path4, item=Label6)
+def Start_Write_Photo_Path(index):  # 写入文件
+    if index == 1:
+        target = Write_Photo_Path1
+    elif index == 2:
+        target = Write_Photo_Path2
+    elif index == 3:
+        target = Write_Photo_Path3
+    elif index == 4:
+        target = Write_Photo_Path4
+    threading.Thread(target=target, daemon=True).start()
 
 
 def Write_Photo_Path1():  # 写入文件
-    global photo_path1, write_path_index, Img_data_use
-    if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index)
-        return
-    if not photo_path1:
-        insert_text_message("Path1 is None\n")
+    global Label3, write_path_index, Img_data_use
+    photo_path = Label3.get("1.0", tk.END).rstrip()
+    if not photo_path:
+        insert_text_message("Path2 is None\n")
         return
 
     insert_text_message("图像格式转换...\n", cleanNext=False)
-    Img_data_use = convertImageFileToRGB(photo_path1)
+    Img_data_use = convertImageFileToRGB(photo_path)
+
+    if write_path_index != 0:  # 确保上次执行写入完毕
+        insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index)
+        return
     write_path_index = 1
 
 
 def Write_Photo_Path2():  # 写入文件
-    global photo_path2, write_path_index
+    global Label4, write_path_index
+    photo_path = Label4.get("1.0", tk.END).rstrip()
+    if not photo_path:
+        insert_text_message("Path2 is None\n")
+        return
+    insert_text_message("准备烧写Flash固件...\n", cleanNext=False)
+
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index)
         return
-    if not photo_path2:
-        insert_text_message("Path2 is None\n")
-        return
-
-    insert_text_message("准备烧写Flash固件...\n", cleanNext=False)
     write_path_index = 2
 
 
 def Write_Photo_Path3():  # 写入文件
-    global photo_path3, write_path_index, Img_data_use
-    if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index)
-        return
-    if not photo_path3:
+    global Label5, write_path_index, Img_data_use
+    photo_path = Label5.get("1.0", tk.END).rstrip()
+    if not photo_path:
         insert_text_message("Path3 is None\n")
         return
 
     insert_text_message("图像格式转换...\n", cleanNext=False)
-    Img_data_use = convertImageFileToRGB(photo_path3)
+    Img_data_use = convertImageFileToRGB(photo_path)
+
+    if write_path_index != 0:  # 确保上次执行写入完毕
+        insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index)
+        return
     write_path_index = 3
 
 
 def Write_Photo_Path4():  # 写入文件
-    global photo_path4, write_path_index, Img_data_use, interval_var
-    if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，转换失败\n" % write_path_index)
-        return
-    if not photo_path4:
+    global Label6, interval_var, write_path_index, Img_data_use
+    photo_path = Label6.get("1.0", tk.END).rstrip()
+    if not photo_path:
         insert_text_message("Path4 is None\n")
         return
 
     Img_data_use = bytearray()
     insert_text_message("动图格式转换中...\n", cleanNext=False)
-    Path_use1 = photo_path4
+    Path_use1 = photo_path
     try:
         index = Path_use1.rindex(".")
     except ValueError as e:
@@ -351,6 +350,10 @@ def Write_Photo_Path4():  # 写入文件
                 Img_data_use.extend(converted)
 
     insert_text_message("转换完成，耗时%.3f秒\n" % (time.time() - u_time), cleanNext=False)
+
+    if write_path_index != 0:  # 确保上次执行写入完毕
+        insert_text_message("有正在执行的任务%d，写入失败\n" % write_path_index)
+        return
     write_path_index = 4
 
 
@@ -2256,30 +2259,30 @@ def UI_Page():  # 进行图像界面显示
 
     Label3 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label3.grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
-    btn3 = ttk.Button(root, text="选择背景图像", width=12, command=Get_Photo_Path1)
+    btn3 = ttk.Button(root, text="选择背景图像", width=12, command=lambda: Get_Photo_Path(1))
     btn3.grid(row=1, column=1, padx=5, pady=5)
-    btn5 = ttk.Button(root, text="烧写", width=8, command=Write_Photo_Path1)
+    btn5 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(1))
     btn5.grid(row=1, column=2, padx=5, pady=5)
 
     Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label4.grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
-    btn4 = ttk.Button(root, text="选择闪存固件", width=12, command=Get_Photo_Path2)
+    btn4 = ttk.Button(root, text="选择闪存固件", width=12, command=lambda: Get_Photo_Path(2))
     btn4.grid(row=2, column=1, padx=5, pady=5)
-    btn6 = ttk.Button(root, text="烧写", width=8, command=Write_Photo_Path2)
+    btn6 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(2))
     btn6.grid(row=2, column=2, padx=5, pady=5)
 
     Label5 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label5.grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
-    btn10 = ttk.Button(root, text="选择相册图像", width=12, command=Get_Photo_Path3)
+    btn10 = ttk.Button(root, text="选择相册图像", width=12, command=lambda: Get_Photo_Path(3))
     btn10.grid(row=3, column=1, padx=5, pady=5)
-    btn8 = ttk.Button(root, text="烧写", width=8, command=Write_Photo_Path3)
+    btn8 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(3))
     btn8.grid(row=3, column=2, padx=5, pady=5)
 
     Label6 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label6.grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
-    btn11 = ttk.Button(root, text="选择动图文件", width=12, command=Get_Photo_Path4)
+    btn11 = ttk.Button(root, text="选择动图文件", width=12, command=lambda: Get_Photo_Path(4))
     btn11.grid(row=4, column=1, padx=5, pady=5)
-    btn9 = ttk.Button(root, text="烧写", width=8, command=Write_Photo_Path4)
+    btn9 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(4))
     btn9.grid(row=4, column=2, padx=5, pady=5)
 
     # 创建颜色滑块
@@ -2946,14 +2949,15 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
-    global machine_model, State_change, LCD_Change_now, LCD_Change_use, photo_path2
+    global machine_model, State_change, LCD_Change_now, LCD_Change_use, Label4
     global write_path_index, Img_data_use, color_use, rgb_tuple
 
     if write_path_index != 0:
         if write_path_index == 1:
             Write_Flash_hex_fast(3826, Img_data_use)
         elif write_path_index == 2:
-            Write_Flash_Photo_fast(0, photo_path2)
+            photo_path = Label4.get("1.0", tk.END).rstrip()
+            Write_Flash_Photo_fast(0, photo_path)
         elif write_path_index == 3:
             Write_Flash_hex_fast(3926, Img_data_use)
         elif write_path_index == 4:
@@ -3014,10 +3018,6 @@ LCD_Change_now = 0  # 实际显示方向
 color_use = RED  # 彩色图片点阵算法 5R6G5B
 rgb_tuple = (0, 0, 0)  # RGB颜色
 write_path_index = 0
-photo_path1 = ""  # 背景图像路径
-photo_path2 = ""  # 闪存固件路径
-photo_path3 = ""  # 相册图像路径
-photo_path4 = ""  # 动图文件路径
 
 Label1 = None  # 设备状态显示框
 Label3 = None  # 背景图像路径显示框
