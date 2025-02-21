@@ -308,7 +308,7 @@ def Write_Photo_Path4():  # 写入文件
                 if len(converted) == 0:
                     insert_text_message("转换失败\n")
                     return  # 转换失败，取消写入
-                Img_data_use = Img_data_use + converted
+                Img_data_use.extend(converted)
         except Exception as e:
             errstr = "图片\"%s\"打开失败：%s\n" % (Path_use1, traceback.format_exc())
             insert_text_message(errstr)
@@ -331,7 +331,7 @@ def Write_Photo_Path4():  # 写入文件
                 if len(converted) == 0:
                     insert_text_message("转换失败\n")
                     return  # 转换失败，取消写入
-                Img_data_use = Img_data_use + converted
+                Img_data_use.extend(converted)
         else:  # 不是规则命名，只按文件类型查找文件
             file_path = os.path.join(os.path.dirname(Path_use1), "*%s" % path_file_type)
             files = []
@@ -348,7 +348,7 @@ def Write_Photo_Path4():  # 写入文件
                 if len(converted) == 0:
                     insert_text_message("转换失败\n")
                     return  # 转换失败，取消写入
-                Img_data_use = Img_data_use + converted
+                Img_data_use.extend(converted)
 
     insert_text_message("转换完成，耗时%.3f秒\n" % (time.time() - u_time), cleanNext=False)
     write_path_index = 4
