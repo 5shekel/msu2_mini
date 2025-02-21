@@ -89,9 +89,7 @@ imagefiletypes = [
     ("Image file", "*.jpe"),
     ("Image file", "*.tiff"),
     ("Image file", "*.tif"),
-    ("Image file", "*.dib"),
-
-    ("gif file", "*.gif"),
+    ("Image file", "*.dib")
 ]
 
 cleanNextTime = False
@@ -181,7 +179,7 @@ def Get_Photo_Path(index):  # 获取文件路径
         photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
         insert_text_message(photo_path, item=Label5)
     elif index == 4:
-        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
+        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("gif file", "*.gif")] + imagefiletypes)
         insert_text_message(photo_path, item=Label6)
 
 
