@@ -83,6 +83,7 @@ imagefiletypes = [
     ("Image file", "*.jpeg"),
     ("Image file", "*.png"),
     ("Image file", "*.bmp"),
+    ("Image file", "*.gif"),
     ("Image file", "*.ico"),
     ("Image file", "*.webp"),
     ("Image file", "*.jfif"),
