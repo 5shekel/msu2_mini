@@ -179,7 +179,7 @@ def Get_Photo_Path(index):  # 获取文件路径
         photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
         insert_text_message(photo_path, item=Label5)
     elif index == 4:
-        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("gif file", "*.gif")] + imagefiletypes)
+        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("Gif file", "*.gif")] + imagefiletypes)
         insert_text_message(photo_path, item=Label6)
 
 
@@ -284,7 +284,7 @@ def Write_Photo_Path4():  # 写入文件
             realduration = longs / 36.0
             if realduration >= 10:
                 duration_string = "%.4f" % (realduration / 1000.0)
-                massage = "建议设置动图间隔：%s\n" % duration_string
+                massage = "建议动图间隔：%s\n" % duration_string
                 interval_var.set(duration_string)
             else:
                 massage = "动图太短，不建议使用此动图\n"
@@ -338,7 +338,7 @@ def Write_Photo_Path4():  # 写入文件
                 insert_text_message("转换失败: %s\n" % e)
                 return  # 转换失败，取消写入
             if len(files) < 36:
-                insert_text_message("转换失败, 图片不够36张\n")
+                insert_text_message("转换失败，图片不够36张\n")
                 return  # 转换失败，取消写入
             for i in range(0, 36):  # 依次转换36张图片
                 converted = convertImageFileToRGB(files[i])
@@ -401,7 +401,7 @@ def SER_Write(Data_U0):
         ser.write(Data_U0)
         ser.flush()
     except Exception as e:  # 出现异常
-        print("发送异常, %s" % e)
+        print("发送异常，%s" % e)
         set_device_state(0)  # 出现异常，串口需要重连
 
 
@@ -423,7 +423,7 @@ def SER_Read():
             return 0
         return recv
     except Exception as e:  # 出现异常
-        print("接收异常, %s" % e)
+        print("接收异常，%s" % e)
         set_device_state(0)
         return 0
 
@@ -647,7 +647,7 @@ def Write_MSN_Data(My_MSN_Data, name_use, data_w):  # 在MSN_data写入数据
             return 1
         else:
             print("data_type error in Write_MSN_Data: %d" % data_type)
-    print("\"%s\"不存在,请检查名称是否正确" % name_use)
+    print("\"%s\"不存在，请检查名称是否正确" % name_use)
     return 0
 
 
@@ -763,7 +763,7 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        insert_text_message("找到\"%s\"文件,大小%dB,烧录中...\n" % (filepath, Fsize), cleanNext=False)
+        insert_text_message("找到\"%s\"文件，大小%dB，烧录中...\n" % (filepath, Fsize), cleanNext=False)
         u_time = time.time()
         Page_Count = Fsize // 256
         Data_Remain = Fsize % 256
@@ -785,7 +785,7 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
         insert_text_message("烧写完成，耗时%.3f秒\n" % u_time)
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("文件路径或格式出错\"%s\", %s\n" % (filepath, e))
+        insert_text_message("文件路径或格式出错\"%s\"，%s\n" % (filepath, e))
         return 0
     finally:
         if binfile is not None:
@@ -797,7 +797,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
     if Fsize == 0:
         insert_text_message("未读到数据，取消烧录。\n")
         return 0
-    insert_text_message("大小%dB,烧录中...\n" % Fsize, cleanNext=False)
+    insert_text_message("大小%dB，烧录中...\n" % Fsize, cleanNext=False)
     u_time = time.time()
     Page_Count = Fsize // 256
     Data_Remain = Fsize % 256
@@ -828,7 +828,7 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
             insert_text_message("未读到数据，取消烧录。\n")
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
-        insert_text_message("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), cleanNext=False)
+        insert_text_message("找到\"%s\"文件，大小：%dB" % (filepath, Fsize), cleanNext=False)
 
         Page_Count = Fsize // 256
         Data_Remain = Fsize % 256
@@ -849,7 +849,7 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
         insert_text_message("%s 烧写完成" % filepath)
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
+        insert_text_message("找不到文件\"%s\"，%s" % (filepath, traceback.format_exc()))
         return 0
     finally:
         if binfile is not None:
@@ -975,7 +975,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        insert_text_message("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), cleanNext=False)
+        insert_text_message("找到\"%s\"文件，大小：%dB" % (filepath, Fsize), cleanNext=False)
         u_time = time.time()
         # 进行地址写入
         LCD_ADD(x_star, y_star, x_size, y_size)
@@ -991,7 +991,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
         insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
+        insert_text_message("找不到文件\"%s\"，%s" % (filepath, traceback.format_exc()))
         return 0
     finally:
         if binfile is not None:
@@ -1009,7 +1009,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        insert_text_message("找到\"%s\"文件,大小：%dB" % (filepath, Fsize), cleanNext=False)
+        insert_text_message("找到\"%s\"文件，大小：%dB" % (filepath, Fsize), cleanNext=False)
         u_time = time.time()
         # 进行地址写入
         LCD_ADD(x_star, y_star, x_size, y_size)
@@ -1058,7 +1058,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
         insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("找不到文件\"%s\", %s" % (filepath, traceback.format_exc()))
+        insert_text_message("找不到文件\"%s\"，%s" % (filepath, traceback.format_exc()))
         return 0
     finally:
         if binfile is not None:
@@ -2890,7 +2890,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             ser = serial.Serial(port.name, 115200, timeout=5.0,
                                 write_timeout=5.0, inter_byte_timeout=0.1)
         except Exception as e:  # 出现异常
-            print("%s 无法打开,请检查是否被其他程序占用: %s" % (port.name, e))
+            print("%s 无法打开，请检查是否被其他程序占用: %s" % (port.name, e))
             if ser is not None and ser.is_open:
                 ser.close()  # 将串口关闭，防止下次无法打开
             time.sleep(0.1)  # 防止频繁重试
@@ -3036,7 +3036,7 @@ def load_task():
         HardwareMonitorManager = load_hardware_monitor()
         hardware_monitor_manager = HardwareMonitorManager()
     except Exception as e:
-        print("Libre hardware monitor 加载失败, %s" % traceback.format_exc())
+        print("Libre hardware monitor 加载失败，%s" % traceback.format_exc())
         hardware_monitor_manager = 1
     print("Libre hardware monitor load finished")
 
