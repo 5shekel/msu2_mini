@@ -113,6 +113,8 @@ def insert_text_message(text, cleanNext=True, item=None):
                 cleanNextTime = False
         elif cleanNext:
             cleanNextTime = True
+        if not cleanNextTime and text:
+            text = text + '\n'
     else:
         clean = True
 
@@ -120,8 +122,6 @@ def insert_text_message(text, cleanNext=True, item=None):
         item.config(state=tk.NORMAL)
         if clean:
             item.delete("1.0", tk.END)  # 清除文本框
-        if not cleanNextTime and text:
-            text = text + '\n'
         item.insert(tk.END, text)
         item.see(tk.END)
         item.config(state=tk.DISABLED)
