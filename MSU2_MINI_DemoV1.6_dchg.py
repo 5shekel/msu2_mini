@@ -202,7 +202,7 @@ def Write_Photo_Path1():  # 写入文件
     global Label3, write_path_index, Img_data_use
     photo_path = Label3.get("1.0", tk.END).rstrip()
     if not photo_path:
-        insert_text_message("Path2 is None")
+        insert_text_message("Path1 is None")
         return
 
     insert_text_message("图像格式转换...", cleanNext=False)
@@ -1652,7 +1652,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 time.sleep(0.2)
 
     # stop
-    print("stop screenshot")
+    print("Stop screenshot")
 
 
 # geezmo: 流水线 第二步 处理图像
@@ -1696,7 +1696,7 @@ def screen_process_task():
             time.sleep(0.2)
 
     # stop
-    print("stop screen process")
+    print("Stop screen process")
 
 
 screenshot_test_time = current_time
@@ -2250,7 +2250,7 @@ def UI_Page():  # 进行图像界面显示
 
             window.withdraw()  # 隐藏主窗口
         except Exception as e:
-            insert_text_message("failed to use pystray to hide to tray, %s" % e)
+            insert_text_message("Failed to use pystray to hide to tray, %s" % e)
 
     hide_btn = ttk.Button(root, text="隐藏", width=12, command=hide_to_tray)
     hide_btn.grid(row=0, column=1, padx=5, pady=5)
@@ -3082,7 +3082,7 @@ def daemon_task():
             sleep_event.wait(1)  # 防止频繁重试
 
     # stop
-    print("stop daemon")
+    print("Stop daemon")
 
 
 # 检测按键是否被按下，兼具心跳功能
@@ -3156,7 +3156,7 @@ def manage_task():
         except Exception as e:
             print("Exception in manage_task, %s" % traceback.format_exc())
 
-    print("stop manager")
+    print("Stop manager")
 
 
 MG_daemon_running = True
@@ -3176,7 +3176,7 @@ except Exception as e:
     exit_code = 1
 finally:
     # reap threads
-    print("closing")
+    print("Closing")
     MG_screen_thread_running = False
     MG_daemon_running = False
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
