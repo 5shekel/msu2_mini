@@ -131,7 +131,7 @@ def insert_text_message(text, cleanNext=True, item=None):
 
 def convertImageFileToRGB(file_path):
     if not os.path.exists(file_path):  # 检查文件是否存在
-        insert_text_message("文件不存在：%s" % file_path)
+        insert_text_message("文件不存在：%s" % file_path, cleanNext=False)
         return bytearray()  # 如果文件不存在，直接返回，不执行后续代码
 
     im1 = None
@@ -140,7 +140,7 @@ def convertImageFileToRGB(file_path):
         return convertImageToRGB(im1)
     except Exception as e:
         errstr = "图片\"%s\"打开失败：%s" % (file_path, e)
-        insert_text_message(errstr)
+        insert_text_message(errstr, cleanNext=False)
         return bytearray()
     finally:
         if im1 is not None:
@@ -2436,8 +2436,6 @@ def UI_Page():  # 进行图像界面显示
             tk.messagebox.showwarning(title="提示", message="Libre Hardware Monitor 正在加载，请稍候……", parent=window)
             return
 
-        window.attributes("-disabled", True)  # 禁用主窗口
-
         def sub_on_closing():
             window.attributes("-disabled", False)  # 启用主窗口
             sub_window.destroy()
@@ -2447,13 +2445,15 @@ def UI_Page():  # 进行图像界面显示
         #
         # if sub_window is not None:
         #     sub_window.deiconify()  # 如果已经创建过子窗口直接显示
+        #     window.attributes("-disabled", True)  # 禁用主窗口
         #     return
 
         sub_window = tk.Toplevel(window)  # 创建一个子窗口
         sub_window.title("自定义显示内容")
-        sub_window.transient(window)  # 置于主窗口前面
         sub_window.resizable(0, 0)  # 锁定窗口大小不能改变
         sub_window.protocol("WM_DELETE_WINDOW", sub_on_closing)
+        window.attributes("-disabled", True)  # 禁用主窗口
+        sub_window.transient(window)  # 置于主窗口前面
 
         sensor_vars = []
         sensor_displayname_vars = []
