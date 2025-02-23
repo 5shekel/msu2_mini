@@ -123,8 +123,8 @@ def insert_text_message(text, cleanNext=True, item=None):
         if clean:
             item.delete("1.0", tk.END)  # 清除文本框
         item.insert(tk.END, text)
-        item.see(tk.END)
         item.config(state=tk.DISABLED)
+        item.see(tk.END)
     except Exception as e:
         print(e)
 
@@ -2436,23 +2436,24 @@ def UI_Page():  # 进行图像界面显示
             tk.messagebox.showwarning(title="提示", message="Libre Hardware Monitor 正在加载，请稍候……", parent=window)
             return
 
-        if sub_window is not None:
-            sub_window.deiconify()  # 如果已经创建过子窗口直接显示
-            window.attributes("-disabled", True)  # 禁用主窗口
-            return
+        window.attributes("-disabled", True)  # 禁用主窗口
+
+        def sub_on_closing():
+            window.attributes("-disabled", False)  # 启用主窗口
+            sub_window.destroy()
+
+        #     # 点击关闭时仅隐藏子窗口，不真正关闭
+        #     sub_window.withdraw()
+        #
+        # if sub_window is not None:
+        #     sub_window.deiconify()  # 如果已经创建过子窗口直接显示
+        #     return
 
         sub_window = tk.Toplevel(window)  # 创建一个子窗口
         sub_window.title("自定义显示内容")
         sub_window.transient(window)  # 置于主窗口前面
         sub_window.resizable(0, 0)  # 锁定窗口大小不能改变
-
-        def sub_on_closing():
-            window.attributes("-disabled", False)  # 启用主窗口
-            # 点击关闭时仅隐藏子窗口，不真正关闭
-            sub_window.withdraw()
-
         sub_window.protocol("WM_DELETE_WINDOW", sub_on_closing)
-        window.attributes("-disabled", True)  # 禁用主窗口
 
         sensor_vars = []
         sensor_displayname_vars = []
