@@ -83,7 +83,6 @@ imagefiletypes = [
     ("Image file", "*.jpeg"),
     ("Image file", "*.png"),
     ("Image file", "*.bmp"),
-    ("Image file", "*.gif"),
     ("Image file", "*.ico"),
     ("Image file", "*.webp"),
     ("Image file", "*.jfif"),
@@ -173,16 +172,20 @@ def convertImageToRGB(image):
 def Get_Photo_Path(index):  # 获取文件路径
     global Label3, Label4, Label5, Label6
     if index == 1:
-        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
+        photo_path = tk.filedialog.askopenfilename(
+            title="选择文件", filetypes=imagefiletypes + [("Image file", "*.gif")])
         insert_text_message(photo_path, item=Label3)
     elif index == 2:
-        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("Bin file", "*.bin")])
+        photo_path = tk.filedialog.askopenfilename(
+            title="选择文件", filetypes=[("Bin file", "*.bin")])
         insert_text_message(photo_path, item=Label4)
     elif index == 3:
-        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=imagefiletypes)
+        photo_path = tk.filedialog.askopenfilename(
+            title="选择文件", filetypes=imagefiletypes + [("Image file", "*.gif")])
         insert_text_message(photo_path, item=Label5)
     elif index == 4:
-        photo_path = tk.filedialog.askopenfilename(title="选择文件", filetypes=[("Gif file", "*.gif")] + imagefiletypes)
+        photo_path = tk.filedialog.askopenfilename(
+            title="选择文件", filetypes=[("Gif file", "*.gif")] + imagefiletypes)
         insert_text_message(photo_path, item=Label6)
 
 
