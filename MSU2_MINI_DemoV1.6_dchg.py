@@ -310,8 +310,8 @@ def Write_Photo_Path4():  # 写入文件
                     return  # 转换失败，取消写入
                 Img_data_use.extend(converted)
         except Exception as e:
-            errstr = "图片\"%s\"打开失败：%s" % (Path_use1, traceback.format_exc())
-            insert_text_message(errstr)
+            insert_text_message("图片\"%s\"打开失败：%s" % (Path_use1, e))
+            print(traceback.format_exc())
             return
         finally:
             gif.close()
@@ -852,7 +852,8 @@ def Write_Flash_ZK(Page_add, ZK_name):  # 往Flash里面写入Bin格式的字库
         insert_text_message("%s 烧写完成" % filepath)
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("找不到文件\"%s\"，%s" % (filepath, traceback.format_exc()))
+        insert_text_message("找不到文件\"%s\"，%s" % (filepath, e))
+        print(traceback.format_exc())
         return 0
     finally:
         if binfile is not None:
@@ -994,7 +995,8 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
         insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("找不到文件\"%s\"，%s" % (filepath, traceback.format_exc()))
+        insert_text_message("找不到文件\"%s\"，%s" % (filepath, e))
+        print(traceback.format_exc())
         return 0
     finally:
         if binfile is not None:
@@ -1061,7 +1063,8 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
         insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("找不到文件\"%s\"，%s" % (filepath, traceback.format_exc()))
+        insert_text_message("找不到文件\"%s\"，%s" % (filepath, e))
+        print(traceback.format_exc())
         return 0
     finally:
         if binfile is not None:
