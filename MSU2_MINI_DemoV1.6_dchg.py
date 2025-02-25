@@ -202,7 +202,7 @@ def Start_Write_Photo_Path(index):  # 写入文件
 
 
 def Write_Photo_Path1():  # 写入文件
-    global Label3, write_path_index, Img_data_use
+    global Label3, write_path_index, Img_data_use, sleep_event
     photo_path = Label3.get("1.0", tk.END).rstrip()
     if not photo_path:
         insert_text_message("Path1 is None")
@@ -215,10 +215,11 @@ def Write_Photo_Path1():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 1
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
 
 def Write_Photo_Path2():  # 写入文件
-    global Label4, write_path_index
+    global Label4, write_path_index, sleep_event
     photo_path = Label4.get("1.0", tk.END).rstrip()
     if not photo_path:
         insert_text_message("Path2 is None")
@@ -229,10 +230,11 @@ def Write_Photo_Path2():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 2
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
 
 def Write_Photo_Path3():  # 写入文件
-    global Label5, write_path_index, Img_data_use
+    global Label5, write_path_index, Img_data_use, sleep_event
     photo_path = Label5.get("1.0", tk.END).rstrip()
     if not photo_path:
         insert_text_message("Path3 is None")
@@ -245,10 +247,11 @@ def Write_Photo_Path3():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 3
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
 
 def Write_Photo_Path4():  # 写入文件
-    global Label6, interval_var, write_path_index, Img_data_use
+    global Label6, interval_var, write_path_index, Img_data_use, sleep_event
     photo_path = Label6.get("1.0", tk.END).rstrip()
     if not photo_path:
         insert_text_message("Path4 is None")
@@ -359,6 +362,7 @@ def Write_Photo_Path4():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 4
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
 
 sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
