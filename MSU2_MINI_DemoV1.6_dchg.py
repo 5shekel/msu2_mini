@@ -289,7 +289,7 @@ def Write_Photo_Path4():  # 写入文件
 
             realduration = longs / 36.0
             if realduration >= 10:
-                duration_string = "%.4f" % (realduration / 1000.0)
+                duration_string = "%.3f" % (realduration / 1000.0)
                 massage = "建议动图间隔：%s" % duration_string
                 interval_var.set(duration_string)
             else:
@@ -353,7 +353,7 @@ def Write_Photo_Path4():  # 写入文件
                     return  # 转换失败，取消写入
                 Img_data_use.extend(converted)
 
-    insert_text_message("转换完成，耗时%.3f秒" % (time.time() - u_time), cleanNext=False)
+    insert_text_message("转换完成，耗时%.1f秒" % (time.time() - u_time), cleanNext=False)
 
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
@@ -788,7 +788,7 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
                 Fdata.append(0xFF)  # 不足位置补充0xFF
             Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
         u_time = time.time() - u_time
-        insert_text_message("烧写完成，耗时%.3f秒" % u_time)
+        insert_text_message("烧写完成，耗时%.1f秒" % u_time)
         return 1
     except Exception as e:  # 出现异常
         insert_text_message("文件路径或格式出错\"%s\"，%s" % (filepath, e))
@@ -821,7 +821,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
         for i in range(Data_Remain, 256):
             Fdata.append(0xFF)  # 不足位置补充0xFF
         Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
-    insert_text_message("烧写完成，耗时%.3f秒" % (time.time() - u_time))
+    insert_text_message("烧写完成，耗时%.1f秒" % (time.time() - u_time))
     return 1
 
 
@@ -995,7 +995,7 @@ def Write_LCD_Photo_fast(x_star, y_star, x_size, y_size, Photo_name):
                 Fdata.append(0xFF)  # 不足位置补充0xFF
             LCD_DATA(Fdata, Fsize % 256)  # (page,数据，大小)
         u_time = time.time() - u_time
-        insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
+        insert_text_message("%s 显示完成，耗时%.1f秒" % (filepath, u_time))
         return 1
     except Exception as e:  # 出现异常
         insert_text_message("找不到文件\"%s\"，%s" % (filepath, e))
@@ -1063,7 +1063,7 @@ def Write_LCD_Photo_fast1(x_star, y_star, x_size, y_size, Photo_name):
         hex_use.append(0)
         SER_rw(hex_use, read=False)  # 发出指令
         u_time = time.time() - u_time
-        insert_text_message("%s 显示完成，耗时%.3f秒" % (filepath, u_time))
+        insert_text_message("%s 显示完成，耗时%.1f秒" % (filepath, u_time))
         return 1
     except Exception as e:  # 出现异常
         insert_text_message("找不到文件\"%s\"，%s" % (filepath, e))
