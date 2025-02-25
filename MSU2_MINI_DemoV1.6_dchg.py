@@ -31,7 +31,10 @@ from MSU2_MINI_MG_minimark import MiniMarkParser
 try:  # >= win 8.1
     windll.shcore.SetProcessDpiAwareness(2)
 except:  # win 8.0 or less
-    windll.user32.SetProcessDPIAware()
+    try:
+        windll.user32.SetProcessDPIAware()
+    except:
+        pass
 try:
     # 取消命令行窗口快速编辑模式，防止鼠标误触导致阻塞
     windll.kernel32.SetConsoleMode(windll.kernel32.GetStdHandle(-10), 128)
@@ -59,8 +62,8 @@ SHOW_WIDTH = 160  # 画布宽度
 SHOW_HEIGHT = 80  # 画布高度
 
 exit_code = 0
-current_time = datetime.now()
-Img_data_use = bytearray()
+current_time = 0
+Img_data_use = None
 
 PAGE_DESSCRIPTION = [
     "页面1：动图",
@@ -365,7 +368,7 @@ def Write_Photo_Path4():  # 写入文件
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
 
-sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
+sleep_event = None  # 用event代替time.sleep，加快切换速度
 
 
 def Page_UP():  # 上一页
@@ -438,7 +441,7 @@ def SER_Read():
         return 0
 
 
-SER_lock = threading.Lock()
+SER_lock = None
 
 
 def SER_rw(data, read=True, size=0):
@@ -1311,7 +1314,7 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
         return 0
 
 
-last_refresh_time = current_time
+last_refresh_time = 0
 photo_interval = 0.1
 second_times = 0  # 设备超过5秒收不到消息就会断开连接，所以每隔1秒发送一次消息
 gif_wait_time = 0.0
@@ -1351,10 +1354,6 @@ def show_gif():  # 显示GIF动图
         gif_wait_time += photo_interval - elapse_time + second_times
     if gif_wait_time > 0:
         sleep_event.wait(gif_wait_time)
-
-
-# disk_io_counter = psutil.disk_io_counters()
-# net_io_counter = psutil.net_io_counters()
 
 
 def show_PC_state(FC, BC):  # 显示PC状态
@@ -1632,8 +1631,8 @@ def shrink_image_block_average(image, shrink_factor):
     # return shrunk_image
 
 
-screen_shot_queue = queue.Queue(2)
-screen_process_queue = queue.Queue(2)
+screen_shot_queue = None
+screen_process_queue = None
 screenshot_monitor_id = 1
 screenshot_region = (0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 cropped_monitor = {"left": 0, "top": 0, "width": SHOW_WIDTH, "height": SHOW_HEIGHT, "mon": 1}
@@ -1709,8 +1708,8 @@ def screen_process_task():
     print("Stop screen process")
 
 
-screenshot_test_time = current_time
-screenshot_last_limit_time = screenshot_test_time
+screenshot_test_time = 0
+screenshot_last_limit_time = 0
 screenshot_test_frame = 0
 screenshot_limit_fps = 10
 wait_time = 0.0
@@ -1777,7 +1776,7 @@ def show_PC_Screen():  # 显示照片
 
 netspeed_last_refresh_snetio = None
 netspeed_plot_data = None
-time_second = timedelta(seconds=1)
+time_second = None
 
 
 def sizeof_fmt(num, suffix="B", base=1024.0):
@@ -2083,7 +2082,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
         sleep_event.wait(wait_time)
 
 
-mini_mark_parser = MiniMarkParser()
+mini_mark_parser = None
 
 full_custom_template = "p Hello world"
 full_custom_error = "OK"
@@ -2176,8 +2175,8 @@ def show_full_custom():
 
 
 netspeed_font_size = 20
-default_font = MiniMark.load_font("simhei.ttf", netspeed_font_size)
-netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 4)
+default_font = None
+netspeed_font = None
 config_file = "MSU2_MINI.json"
 
 
@@ -3170,39 +3169,56 @@ def manage_task():
     print("Stop manager")
 
 
-MG_daemon_running = True
-MG_screen_thread_running = True
-daemon_thread = threading.Thread(target=daemon_task, daemon=True)
-load_thread = threading.Thread(target=load_task, daemon=True)
-manager_thread = threading.Thread(target=manage_task, daemon=True)
-screen_shot_thread = threading.Thread(target=screen_shot_task, daemon=True)
-screen_process_thread = threading.Thread(target=screen_process_task, daemon=True)
+if __name__ == "__main__":
+    try:
+        current_time = datetime.now()
+        last_refresh_time = current_time
+        screenshot_test_time = current_time
+        screenshot_last_limit_time = current_time
+        time_second = timedelta(seconds=1)
+        sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
+        SER_lock = threading.Lock()
+        screen_shot_queue = queue.Queue(2)
+        screen_process_queue = queue.Queue(2)
 
-# tkinter requires the main thread
-try:
-    # 打开主页面
-    UI_Page()
-except Exception as e:
-    print("UI_Page error: %s" % traceback.format_exc())
-    exit_code = 1
-finally:
-    # reap threads
-    print("Closing")
-    MG_screen_thread_running = False
-    MG_daemon_running = False
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+        mini_mark_parser = MiniMarkParser()
+        default_font = MiniMark.load_font("simhei.ttf", netspeed_font_size)
+        netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 4)
 
-    if load_thread.is_alive():
-        load_thread.join(timeout=5.0)
-    if manager_thread.is_alive():
-        manager_thread.join(timeout=5.0)
-    if screen_process_thread.is_alive():
-        screen_process_thread.join(timeout=5.0)
-    if screen_shot_thread.is_alive():
-        screen_shot_thread.join(timeout=5.0)
-    if daemon_thread.is_alive():
-        daemon_thread.join(timeout=5.0)
-    if ser is not None and ser.is_open:
-        print("%s close" % ser.name)
-        ser.close()  # 正常关闭串口
-sys.exit(exit_code)
+        MG_daemon_running = True
+        MG_screen_thread_running = True
+        daemon_thread = threading.Thread(target=daemon_task, daemon=True)
+        load_thread = threading.Thread(target=load_task, daemon=True)
+        manager_thread = threading.Thread(target=manage_task, daemon=True)
+        screen_shot_thread = threading.Thread(target=screen_shot_task, daemon=True)
+        screen_process_thread = threading.Thread(target=screen_process_task, daemon=True)
+
+        # 打开主页面
+        UI_Page()
+    except Exception as e:
+        exit_code = 1
+        message = "Error: %s" % traceback.format_exc()
+        print(message)
+        tk.messagebox.showerror(title="错误", message=message)
+    finally:
+        # reap threads
+        print("Closing")
+        MG_screen_thread_running = False
+        MG_daemon_running = False
+        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+
+        if load_thread.is_alive():
+            load_thread.join(timeout=5.0)
+        if manager_thread.is_alive():
+            manager_thread.join(timeout=5.0)
+        if screen_process_thread.is_alive():
+            screen_process_thread.join(timeout=5.0)
+        if screen_shot_thread.is_alive():
+            screen_shot_thread.join(timeout=5.0)
+        if daemon_thread.is_alive():
+            daemon_thread.join(timeout=5.0)
+        if ser is not None and ser.is_open:
+            print("%s close" % ser.name)
+            ser.close()  # 正常关闭串口
+
+        sys.exit(exit_code)
