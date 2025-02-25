@@ -289,7 +289,7 @@ def Write_Photo_Path4():  # 写入文件
 
             realduration = longs / 36.0
             if realduration >= 10:
-                duration_string = "%.3f" % (realduration / 1000.0)
+                duration_string = "%.4f" % (realduration / 1000.0)
                 massage = "建议动图间隔：%s" % duration_string
                 interval_var.set(duration_string)
             else:
