@@ -149,6 +149,7 @@ def convertImageFileToRGB(file_path):
 
 
 def convertImageToRGB(image):
+    image = image.convert("RGB")  # 转换为RGB格式。虽然转换再缩放会降低效率，但是能够提升缩小后的图片质量
     if image.width > (image.height * 2):  # 图片长宽比例超过2:1
         im2 = image.resize((SHOW_HEIGHT * image.width // image.height, SHOW_HEIGHT))
         # 定义需要裁剪的空间
@@ -160,7 +161,7 @@ def convertImageToRGB(image):
         box = (0, (im2.height - SHOW_HEIGHT) // 2, SHOW_WIDTH, (im2.height + SHOW_HEIGHT) // 2)
         im2 = im2.crop(box)
 
-    im2 = im2.convert("RGB")  # 转换为RGB格式
+    # im2 = im2.convert("RGB")  # 转换为RGB格式
     img_data = bytearray()
     for y in range(0, SHOW_HEIGHT):  # 逐字解析编码
         for x in range(0, SHOW_WIDTH):  # 逐字解析编码
