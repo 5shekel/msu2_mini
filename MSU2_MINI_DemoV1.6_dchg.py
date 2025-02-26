@@ -61,7 +61,6 @@ GRAY2 = 0x4208
 SHOW_WIDTH = 160  # 画布宽度
 SHOW_HEIGHT = 80  # 画布高度
 
-exit_code = 0
 current_time = 0
 Img_data_use = None
 
@@ -1633,7 +1632,6 @@ def shrink_image_block_average(image, shrink_factor):
 
 screen_shot_queue = None
 screen_process_queue = None
-screenshot_monitor_id = 1
 screenshot_region = (0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 cropped_monitor = {"left": 0, "top": 0, "width": SHOW_WIDTH, "height": SHOW_HEIGHT, "mon": 1}
 
@@ -2708,7 +2706,7 @@ def UI_Page():  # 进行图像界面显示
     # 屏幕编号
 
     def change_screenshot_monitor(*args):
-        global screenshot_monitor_id, screenshot_region, cropped_monitor
+        global screenshot_region, cropped_monitor
         try:
             screenshot_monitor_id_tmp = int(number_var.get())
         except ValueError as e:
@@ -2716,23 +2714,27 @@ def UI_Page():  # 进行图像界面显示
                 insert_text_message("Invalid number entered: %s" % e)
             return
         insert_text_message("", cleanNext=False)
-        if screenshot_monitor_id == screenshot_monitor_id_tmp or screenshot_monitor_id_tmp <= 0:
+        if cropped_monitor["mon"] == screenshot_monitor_id_tmp or screenshot_monitor_id_tmp <= 0:
             return
 
         with mss() as sct:
             monitors = sct.monitors
             # 序号为0的monitor是总体，所以len比实际数量多1个
             if screenshot_monitor_id_tmp < len(monitors):
-                screenshot_monitor_id = screenshot_monitor_id_tmp
-                monitor = monitors[screenshot_monitor_id]
+                monitor = monitors[screenshot_monitor_id_tmp]
                 cropped_monitor = {
                     "left": screenshot_region[0] + monitor["left"],
                     "top": screenshot_region[1] + monitor["top"],
                     "width": screenshot_region[2] or monitor["width"],
                     "height": screenshot_region[3] or monitor["height"],
-                    "mon": screenshot_monitor_id,
+                    "mon": screenshot_monitor_id_tmp,
                 }
                 State_change = 1  # 刷新屏幕
+            else:
+                message = "编号为%s的屏幕不存在！" % screenshot_monitor_id_tmp
+                insert_text_message(message)
+                tk.messagebox.showerror(title="错误", message=message)
+                number_var.set(cropped_monitor["mon"])
 
     number_var = tk.StringVar(root, "1")
     number_var.trace_add("write", change_screenshot_monitor)
@@ -2772,7 +2774,7 @@ def UI_Page():  # 进行图像界面显示
     # 区域
 
     def change_screen_region(*args):
-        global screenshot_region, cropped_monitor, screenshot_monitor_id, State_change
+        global screenshot_region, cropped_monitor, State_change
         try:
             t = tuple((0 if x.strip() == "" else int(x)) for x in screen_region_var.get().split(","))
         except ValueError as e:
@@ -2789,6 +2791,7 @@ def UI_Page():  # 进行图像界面显示
         screenshot_region = t
         with mss() as sct:
             monitors = sct.monitors
+            screenshot_monitor_id = cropped_monitor["mon"]
             if screenshot_monitor_id > len(monitors):
                 monitor = sct.monitors[screenshot_monitor_id]
             else:
@@ -2825,7 +2828,7 @@ def UI_Page():  # 进行图像界面显示
             "state_machine": machine_model,
             "lcd_change": LCD_Change_use,
             "photo_interval_var": photo_interval + second_times,
-            "number_var": screenshot_monitor_id,
+            "number_var": cropped_monitor["mon"],
             "fps_var": screenshot_limit_fps,
             "screen_region_var": screen_region_var.get(),
             "custom_selected_names": custom_selected_names,
@@ -3170,6 +3173,7 @@ def manage_task():
 
 
 if __name__ == "__main__":
+    exit_code = 0
     try:
         current_time = datetime.now()
         last_refresh_time = current_time
