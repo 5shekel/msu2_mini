@@ -81,7 +81,7 @@ LCD_STATE_MESSAGE = [
     "反向"
 ]
 
-imagefiletypes = [
+IMAGE_FILE_TYPES = [
     ("Image file", "*.jpg"),
     ("Image file", "*.jpeg"),
     ("Image file", "*.png"),
@@ -176,7 +176,7 @@ def Get_Photo_Path(index):  # 获取文件路径
     global Label3, Label4, Label5, Label6
     if index == 1:
         photo_path = tk.filedialog.askopenfilename(
-            title="选择文件", filetypes=imagefiletypes + [("Image file", "*.gif")])
+            title="选择文件", filetypes=IMAGE_FILE_TYPES + [("Image file", "*.gif")])
         insert_text_message(photo_path, item=Label3)
     elif index == 2:
         photo_path = tk.filedialog.askopenfilename(
@@ -184,11 +184,11 @@ def Get_Photo_Path(index):  # 获取文件路径
         insert_text_message(photo_path, item=Label4)
     elif index == 3:
         photo_path = tk.filedialog.askopenfilename(
-            title="选择文件", filetypes=imagefiletypes + [("Image file", "*.gif")])
+            title="选择文件", filetypes=IMAGE_FILE_TYPES + [("Image file", "*.gif")])
         insert_text_message(photo_path, item=Label5)
     elif index == 4:
         photo_path = tk.filedialog.askopenfilename(
-            title="选择文件", filetypes=[("Gif file", "*.gif")] + imagefiletypes)
+            title="选择文件", filetypes=[("Gif file", "*.gif")] + IMAGE_FILE_TYPES)
         insert_text_message(photo_path, item=Label6)
 
 
