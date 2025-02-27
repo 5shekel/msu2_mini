@@ -149,7 +149,8 @@ def convertImageFileToRGB(file_path):
 
 
 def convertImageToRGB(image):
-    image = image.convert("RGB")  # 转换为RGB格式。虽然转换再缩放会降低效率，但是能够提升缩小后的图片质量
+    if image.mode != "RGB":
+        image = image.convert("RGB")  # 转换为RGB格式。虽然转换再缩放会降低效率，但是能够提升缩小后的图片质量
     if image.width > (image.height * 2):  # 图片长宽比例超过2:1
         im2 = image.resize((SHOW_HEIGHT * image.width // image.height, SHOW_HEIGHT))
         # 定义需要裁剪的空间
