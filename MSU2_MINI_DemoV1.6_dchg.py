@@ -10,6 +10,7 @@ import threading  # 引入多线程支持
 import time  # 引入延时库
 import tkinter as tk  # 引入UI库
 import tkinter.filedialog  # 用于获取文件路径
+import tkinter.font as tkfont
 import tkinter.messagebox
 import traceback
 from ctypes import windll
@@ -21,6 +22,8 @@ import psutil  # 引入psutil获取设备信息（需要额外安装）
 import pystray
 import serial  # 引入串口库（需要额外安装）
 import serial.tools.list_ports
+import win32gui
+import win32ui
 from mss import mss  # geezmo: 快速截图
 from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
 
@@ -95,6 +98,107 @@ IMAGE_FILE_TYPES = [
 ]
 
 cleanNextTime = False
+
+
+def get_all_windows():
+    def get_all_hwnd(hwnd, hwnd_title):
+        if win32gui.IsWindowVisible(hwnd):
+            # window_class = win32gui.GetClassName(hwnd)
+            window_title = win32gui.GetWindowText(hwnd)
+            if window_title != "":
+                hwnd_title.update({"%s - %s" % (hwnd, window_title): hwnd})
+
+    hwnd_titles = dict()
+    try:
+        desk = win32gui.GetDesktopWindow()
+        hwnd_titles.update({"%s - 整个屏幕" % desk: desk})
+        win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
+    except Exception as e:
+        print(e)
+
+    return hwnd_titles
+
+
+class Win32_Image:
+    def __init__(self, bgra, size):
+        self.bgra = bgra
+        self.size = size
+
+
+def get_window_image(hWnd=None):
+    hWndDC = None
+    mfcDC = None
+    saveDC = None
+    saveBitMap = None
+    try:
+        # if win32gui.IsIconic(hWnd):  # 判断窗口是否最小化
+        #     print("最小化")
+        #     return
+        if not win32gui.IsWindow(hWnd):
+            hWnd = win32gui.GetDesktopWindow()
+            return hWnd
+        # 将窗口置于最前端
+        # win32gui.SetForegroundWindow(hWnd)
+
+        # 获取句柄窗口的大小信息 GetClientRect
+        left, top, right, bot = win32gui.GetWindowRect(hWnd)
+        width = right - left
+        height = bot - top
+        if width > height * 2:
+            height = width // 2
+        else:
+            width = height * 2
+
+        # 返回句柄窗口的设备环境，覆盖整个窗口，包括非客户区，标题栏，菜单，边框
+        hWndDC = win32gui.GetWindowDC(hWnd)
+        # 创建设备描述表
+        mfcDC = win32ui.CreateDCFromHandle(hWndDC)
+        # 创建内存设备描述表
+        saveDC = mfcDC.CreateCompatibleDC()
+        # 创建位图对象准备保存图片
+        saveBitMap = win32ui.CreateBitmap()
+        # 为bitmap开辟存储空间
+        saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
+        # 将截图保存到saveBitMap中
+        saveDC.SelectObject(saveBitMap)
+        # 保存bitmap到内存设备描述表
+        # import win32con
+        # saveDC.BitBlt((0, 0), (width, height), mfcDC, (0, 0), win32con.SRCCOPY)
+        # 使用PrintWindow代替BitBlt, 但是PrintWindow不能截取桌面
+        result = windll.user32.PrintWindow(hWnd, saveDC.GetSafeHdc(), 0x02)
+        if not result:
+            print("PrintWindow failed: %s" % result)
+
+        ###获取位图信息
+        bmpinfo = saveBitMap.GetInfo()
+        bmpstr = saveBitMap.GetBitmapBits(True)
+        # # 生成图像
+        # im_PIL = Image.frombuffer('RGB', (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+        #                           bmpstr, 'raw', 'BGRX', 0, 1)
+        # im_PIL.save("im_PIL.png")  # 保存
+        # rgb = np.frombuffer(bmpstr, dtype=np.uint8).reshape((bmpinfo['bmWidth'], bmpinfo['bmHeight'], 4))
+        image = Win32_Image(bmpstr, (bmpinfo['bmWidth'], bmpinfo['bmHeight']))
+        return image
+    except Exception as e:
+        print(e)
+    finally:
+        # 内存释放
+        try:
+            if saveBitMap: win32gui.DeleteObject(saveBitMap.GetHandle())
+        except Exception as e:
+            print(traceback.format_exc())
+        try:
+            if saveDC: saveDC.DeleteDC()
+        except Exception as e:
+            print(traceback.format_exc())
+        try:
+            if mfcDC: mfcDC.DeleteDC()
+        except Exception as e:
+            print(traceback.format_exc())
+        try:
+            if hWndDC: win32gui.ReleaseDC(hWnd, hWndDC)
+        except Exception as e:
+            print(traceback.format_exc())
 
 
 def insert_text_message(text, cleanNext=True, item=None):
@@ -1636,10 +1740,13 @@ screen_shot_queue = None
 screen_process_queue = None
 screenshot_region = (0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 cropped_monitor = {"left": 0, "top": 0, "width": SHOW_WIDTH, "height": SHOW_HEIGHT, "mon": 1}
+select_hwnd = 0
+all_windows = None
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
     global MG_screen_thread_running, machine_model, screen_shot_queue, cropped_monitor, screenshot_limit_fps
+    global select_hwnd, all_windows
     with mss() as sct:
         while MG_screen_thread_running:
             if machine_model != 3:
@@ -1652,8 +1759,16 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 continue
 
             try:
-                sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
-                screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
+                if select_hwnd == list(all_windows.values())[0]:
+                    sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
+                    screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
+                else:
+                    sct_img = get_window_image(select_hwnd)
+                    if isinstance(sct_img, int):
+                        select_hwnd = sct_img
+                        windows_combobox.set(get_descr(select_hwnd))
+                        continue
+                    screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
             except queue.Full:
                 continue
             except Exception as e:
@@ -2204,8 +2319,18 @@ def not_english(strings):
     return False
 
 
+def get_descr(hwnd):
+    global all_windows
+    all_windows = get_all_windows()
+    try:
+        index = list(all_windows.values()).index(int(hwnd))
+    except:
+        index = 0
+    return list(all_windows.keys())[index]
+
+
 def UI_Page():  # 进行图像界面显示
-    global Text1, rgb_tuple, full_custom_template, interval_var
+    global Text1, rgb_tuple, full_custom_template, interval_var, select_hwnd, all_windows, windows_combobox
     global machine_model, State_change, LCD_Change_use, Label1, Label3, Label4, Label5, Label6
     global custom_selected_names, custom_selected_displayname, custom_selected_names_tech
 
@@ -2500,11 +2625,10 @@ def UI_Page():  # 进行图像界面显示
             sensor_label = tk.Label(tech_frame, text=rowtype, width=8, anchor=tk.W)
             sensor_label.grid(row=row1 + 2, column=0, sticky=tk.EW, padx=5, pady=5)
 
-            sensor_var = tk.StringVar(tech_frame, "")
+            sensor_var = tk.StringVar(tech_frame, custom_selected_names_tech[row1])
             sensor_vars_tech.append(sensor_var)
             sensor_combobox = ttk.Combobox(tech_frame, textvariable=sensor_var, width=60,
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
-            sensor_combobox.set(custom_selected_names_tech[row1])
             sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row1: update_sensor_value_tech(ii))
             sensor_combobox.grid(row=row1 + 2, column=1, sticky=tk.EW, padx=5, pady=5)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
@@ -2644,18 +2768,16 @@ def UI_Page():  # 进行图像界面显示
 
         # "简单"模式显示2项
         for row in range(2):
-            sensor_displayname_var = tk.StringVar(simple_frame, "")
+            sensor_displayname_var = tk.StringVar(simple_frame, custom_selected_displayname[row])
             sensor_displayname_vars.append(sensor_displayname_var)
-            sensor_displayname_var.set(custom_selected_displayname[row])
             sensor_entry = ttk.Entry(simple_frame, textvariable=sensor_displayname_var, width=8)
             sensor_entry.bind("<KeyRelease>", lambda event, ii=row: change_sensor_displayname(ii))
             sensor_entry.grid(row=row + 2, column=0, sticky=tk.EW, padx=5, pady=5)
 
-            sensor_var = tk.StringVar(simple_frame, "")
+            sensor_var = tk.StringVar(simple_frame, custom_selected_names[row])
             sensor_vars.append(sensor_var)
             sensor_combobox = ttk.Combobox(simple_frame, textvariable=sensor_var, width=60,
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
-            sensor_combobox.set(custom_selected_names[row])
             sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value(ii))
             sensor_combobox.grid(row=row + 2, column=1, sticky=tk.EW, padx=5, pady=5)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
@@ -2763,9 +2885,9 @@ def UI_Page():  # 进行图像界面显示
         if 0 < screenshot_limit_fps_tmp != screenshot_limit_fps:
             screenshot_limit_fps = screenshot_limit_fps_tmp
 
-    fps_var = tk.StringVar(root, "10")
+    fps_var = tk.StringVar(root, "5")
     fps_var.trace_add("write", change_fps)
-    fps_var.set(config_obj.get("fps_var", "10"))
+    fps_var.set(config_obj.get("fps_var", "5"))
 
     label = ttk.Label(root, text="最大 FPS")
     label.grid(row=6, column=3, sticky=tk.E, padx=5, pady=5)
@@ -2809,13 +2931,52 @@ def UI_Page():  # 进行图像界面显示
 
     screen_region_var = tk.StringVar(root)
     screen_region_var.trace_add("write", change_screen_region)
-    screen_region_var.set(config_obj.get("screen_region_var", "0,0,,"))
+    # screen_region_var.set(config_obj.get("screen_region_var", "0,0,,"))
+    screen_region_var.set("0,0,,")
 
-    label = ttk.Label(root, text="屏幕镜像区域(左,上,宽,高):")
-    label.grid(row=7, column=1, columnspan=2, sticky=tk.E, padx=5, pady=5)
+    # label = ttk.Label(root, text="屏幕镜像区域(左,上,宽,高):")
+    # label.grid(row=7, column=1, columnspan=2, sticky=tk.E, padx=5, pady=5)
+    # screen_region_entry = ttk.Entry(root, textvariable=screen_region_var, width=8)
+    # screen_region_entry.grid(row=7, column=3, columnspan=2, sticky=tk.EW, padx=5, pady=5)
 
-    screen_region_entry = ttk.Entry(root, textvariable=screen_region_var, width=8)
-    screen_region_entry.grid(row=7, column=3, columnspan=2, sticky=tk.EW, padx=5, pady=5)
+    def combo_configure(event):
+        combo = event.widget
+        long = max(combo.cget('values'), key=len)
+        font = tkfont.nametofont(str(combo.cget('font')))
+        width = max(0, font.measure(long.strip() + '0') - combo.winfo_width())
+        # create an unique style name using widget's id
+        style_name = combo.cget('style') or "TCombobox"
+        # the new style must inherit from curret widget style (unless it's our custom style!)
+        if str(combo.winfo_id()) not in style_name:
+            style_name = "Combobox%s.%s" % (combo.winfo_id(), style_name)
+        style = ttk.Style()
+        style.configure(style_name, postoffset=(0, 0, width, 0))
+        combo.configure(style=style_name)
+
+    def update_windows_list(event):
+        global all_windows
+        all_windows = get_all_windows()
+        event.widget["value"] = list(all_windows.keys())
+        combo_configure(event)
+
+    def update_select_hwnd(event):
+        global all_windows, select_hwnd
+        select_str = win32_windows_var.get()
+        select_hwnd = all_windows.get(select_str)
+
+    label = ttk.Label(root, text="屏幕镜像窗口:")
+    label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
+
+    select_hwnd = config_obj.get("select_window_hwnd", "0")
+    win32_windows_var = tk.StringVar(root, get_descr(select_hwnd))
+    windows_combobox = ttk.Combobox(root, textvariable=win32_windows_var, width=10,
+                                    values=list(get_all_windows().keys()))
+    windows_combobox.bind('<Configure>', combo_configure)
+    windows_combobox.bind('<ButtonPress>', combo_configure)
+    windows_combobox.bind('<ButtonPress>', update_windows_list)
+    windows_combobox.bind("<<ComboboxSelected>>", update_select_hwnd)
+    windows_combobox.grid(row=7, column=2, columnspan=3, sticky=tk.EW, padx=5, pady=5)
+    windows_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
     # 创建信息显示文本框
     Text1 = tk.Text(root, state=tk.DISABLED, width=22, height=4, padx=5, pady=5)
@@ -2831,6 +2992,7 @@ def UI_Page():  # 进行图像界面显示
             "lcd_change": LCD_Change_use,
             "photo_interval_var": photo_interval + second_times,
             "number_var": cropped_monitor["mon"],
+            "select_window_hwnd": select_hwnd,
             "fps_var": screenshot_limit_fps,
             "screen_region_var": screen_region_var.get(),
             "custom_selected_names": custom_selected_names,
@@ -3041,6 +3203,7 @@ Label4 = None  # 闪存固件路径显示框
 Label5 = None  # 相册图像路径显示框
 Label6 = None  # 动图文件路径显示框
 Text1 = None  # 信息显示文本框
+windows_combobox = None
 interval_var = None
 ser = None  # 设备连接句柄
 ADC_det = 0  # 按键阈值

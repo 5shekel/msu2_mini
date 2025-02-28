@@ -9,4 +9,5 @@ pip install pillow
 pip install numpy
 pip install pystray
 pip install HardwareMonitor
+pip install pywin32
 
