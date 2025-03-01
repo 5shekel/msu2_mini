@@ -1756,7 +1756,10 @@ all_windows = None
 def set_select_hwnd(hwnd):
     global select_hwnd, windows_combobox
     select_hwnd = hwnd
-    windows_combobox.set(get_descr(hwnd))
+    desc = get_descr(hwnd)
+    if not desc:
+        desc = hwnd
+    windows_combobox.set(desc)
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
@@ -2365,7 +2368,7 @@ def get_descr(hwnd):
     try:
         index = all_values.index(int(hwnd))
     except:
-        index = 0
+        return ""
     return list(all_windows.keys())[index]
 
 
@@ -2995,7 +2998,9 @@ def UI_Page():  # 进行图像界面显示
 
     def update_windows_list(event):
         global all_windows, select_hwnd
-        event.widget.set(get_descr(select_hwnd))
+        desc = get_descr(select_hwnd)
+        if desc:
+            event.widget.set(get_descr(select_hwnd))
         event.widget["value"] = list(all_windows.keys())
         combo_configure(event)
 
