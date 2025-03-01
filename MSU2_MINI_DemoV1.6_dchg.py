@@ -119,7 +119,7 @@ def get_all_windows():
             # window_class = win32gui.GetClassName(hwnd)
             window_title = win32gui.GetWindowText(hwnd)
             if window_title != "":
-                hwnd_title.update({"%s - %s" % (hwnd, window_title): hwnd})
+                hwnd_title["%s - %s" % (hwnd, window_title)] = hwnd
                 # hwnd_title.update(get_children_windows(hwnd, window_title))
 
     hwnd_titles = dict()
