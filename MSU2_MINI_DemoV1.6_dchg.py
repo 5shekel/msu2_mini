@@ -104,12 +104,23 @@ cleanNextTime = False
 def get_all_windows():
     global desktop_hwnd
 
+    # def children(hwnd, param, parent_title):
+    #     window_title = win32gui.GetWindowText(hwnd)
+    #     if window_title != "":
+    #         param.update({"%s - %s - %s" % (hwnd, parent_title, window_title): hwnd})
+    #
+    # def get_children_windows(parent, parent_title):
+    #     hwndChildList = dict()
+    #     win32gui.EnumChildWindows(parent, lambda hwnd, param: children(hwnd, param, parent_title), hwndChildList)
+    #     return hwndChildList
+
     def get_all_hwnd(hwnd, hwnd_title):
         if win32gui.IsWindowVisible(hwnd):
             # window_class = win32gui.GetClassName(hwnd)
             window_title = win32gui.GetWindowText(hwnd)
             if window_title != "":
                 hwnd_title.update({"%s - %s" % (hwnd, window_title): hwnd})
+                # hwnd_title.update(get_children_windows(hwnd, window_title))
 
     hwnd_titles = dict()
     try:
@@ -2368,7 +2379,7 @@ def get_descr(hwnd):
     try:
         index = all_values.index(int(hwnd))
     except:
-        return ""
+        return None
     return list(all_windows.keys())[index]
 
 
@@ -3000,7 +3011,7 @@ def UI_Page():  # 进行图像界面显示
         global all_windows, select_hwnd
         desc = get_descr(select_hwnd)
         if desc:
-            event.widget.set(get_descr(select_hwnd))
+            event.widget.set(desc)
         event.widget["value"] = list(all_windows.keys())
         combo_configure(event)
 
@@ -3013,7 +3024,7 @@ def UI_Page():  # 进行图像界面显示
     label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
     select_hwnd = config_obj.get("select_window_hwnd", "0")
-    win32_windows_var = tk.StringVar(root, get_descr(select_hwnd))
+    win32_windows_var = tk.StringVar(root, get_descr(select_hwnd) or select_hwnd)
     windows_combobox = ttk.Combobox(root, textvariable=win32_windows_var, width=10,
                                     values=list(all_windows.keys()))
     windows_combobox.bind('<Configure>', combo_configure)
