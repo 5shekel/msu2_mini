@@ -11,7 +11,7 @@ set "dllpath=%pypath%..\Lib\site-packages\HardwareMonitor\lib\*.dll"
 :: -F one file
 :: -D one dir
 :: -w no console
-pyinstaller -D -w -y --distpath=dist ^
+pyinstaller -F -w -y --distpath=dist ^
     --add-data "resource;resource" ^
     --add-binary="%dllpath%;HardwareMonitor\lib" ^
     --icon "resource/icon.ico" ^
