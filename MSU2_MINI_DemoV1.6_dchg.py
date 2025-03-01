@@ -114,7 +114,7 @@ def get_all_windows():
     hwnd_titles = dict()
     try:
         desktop_hwnd = win32gui.GetDesktopWindow()
-        hwnd_titles.update({"%s - 整个屏幕" % desktop_hwnd: desktop_hwnd})
+        hwnd_titles.update({"%s - 桌面" % desktop_hwnd: desktop_hwnd})
         win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
     except Exception as e:
         print(e)
