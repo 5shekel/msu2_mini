@@ -22,6 +22,7 @@ import psutil  # 引入psutil获取设备信息（需要额外安装）
 import pystray
 import serial  # 引入串口库（需要额外安装）
 import serial.tools.list_ports
+import win32con
 import win32gui
 import win32ui
 from mss import mss  # geezmo: 快速截图
@@ -101,6 +102,8 @@ cleanNextTime = False
 
 
 def get_all_windows():
+    global desktop_hwnd
+
     def get_all_hwnd(hwnd, hwnd_title):
         if win32gui.IsWindowVisible(hwnd):
             # window_class = win32gui.GetClassName(hwnd)
@@ -110,8 +113,8 @@ def get_all_windows():
 
     hwnd_titles = dict()
     try:
-        desk = win32gui.GetDesktopWindow()
-        hwnd_titles.update({"%s - 整个屏幕" % desk: desk})
+        desktop_hwnd = win32gui.GetDesktopWindow()
+        hwnd_titles.update({"%s - 整个屏幕" % desktop_hwnd: desktop_hwnd})
         win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
     except Exception as e:
         print(e)
@@ -126,6 +129,7 @@ class Win32_Image:
 
 
 def get_window_image(hWnd=None):
+    global desktop_hwnd
     hWndDC = None
     mfcDC = None
     saveDC = None
@@ -135,19 +139,20 @@ def get_window_image(hWnd=None):
         #     print("最小化")
         #     return
         if not win32gui.IsWindow(hWnd):
-            hWnd = win32gui.GetDesktopWindow()
-            return hWnd
+            hWnd = desktop_hwnd
+            set_select_hwnd(hWnd)
         # 将窗口置于最前端
         # win32gui.SetForegroundWindow(hWnd)
 
-        # 获取句柄窗口的大小信息 GetClientRect
-        left, top, right, bot = win32gui.GetWindowRect(hWnd)
+        # 获取句柄窗口的大小信息
+        # 包含标题栏和工具栏
+        # left, top, right, bot = win32gui.GetWindowRect(hWnd)
+        # print_mode = 0b10
+        # 不包含标题栏和工具栏
+        left, top, right, bot = win32gui.GetClientRect(hWnd)
+        print_mode = 0b11
         width = right - left
         height = bot - top
-        if width > height * 2:
-            height = width // 2
-        else:
-            width = height * 2
 
         # 返回句柄窗口的设备环境，覆盖整个窗口，包括非客户区，标题栏，菜单，边框
         hWndDC = win32gui.GetWindowDC(hWnd)
@@ -161,13 +166,15 @@ def get_window_image(hWnd=None):
         saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
         # 将截图保存到saveBitMap中
         saveDC.SelectObject(saveBitMap)
-        # 保存bitmap到内存设备描述表
-        # import win32con
-        # saveDC.BitBlt((0, 0), (width, height), mfcDC, (0, 0), win32con.SRCCOPY)
-        # 使用PrintWindow代替BitBlt, 但是PrintWindow不能截取桌面
-        result = windll.user32.PrintWindow(hWnd, saveDC.GetSafeHdc(), 0x02)
-        if not result:
-            print("PrintWindow failed: %s" % result)
+        if hWnd == desktop_hwnd:
+            # 保存bitmap到内存设备描述表
+            saveDC.BitBlt((0, 0), (width, height), mfcDC, (0, 0), win32con.SRCCOPY)
+        else:
+            # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
+            result = windll.user32.PrintWindow(hWnd, saveDC.GetSafeHdc(), print_mode)
+            # if not result:
+            #     print("PrintWindow failed: %s" % result)
+            #     return Win32_Image(bytearray.fromhex("ff00ff00ff00ff00"), (2, 1))  # 异常时初始化为粉色背景
 
         ###获取位图信息
         bmpinfo = saveBitMap.GetInfo()
@@ -181,24 +188,25 @@ def get_window_image(hWnd=None):
         return image
     except Exception as e:
         print(e)
+        return Win32_Image(bytearray.fromhex("ff00ff00ff00ff00"), (2, 1))  # 异常时初始化为粉色背景
     finally:
         # 内存释放
         try:
             if saveBitMap: win32gui.DeleteObject(saveBitMap.GetHandle())
-        except Exception as e:
-            print(traceback.format_exc())
+        except:
+            pass
         try:
             if saveDC: saveDC.DeleteDC()
-        except Exception as e:
-            print(traceback.format_exc())
+        except:
+            pass
         try:
             if mfcDC: mfcDC.DeleteDC()
-        except Exception as e:
-            print(traceback.format_exc())
+        except:
+            pass
         try:
             if hWndDC: win32gui.ReleaseDC(hWnd, hWndDC)
-        except Exception as e:
-            print(traceback.format_exc())
+        except:
+            pass
 
 
 def insert_text_message(text, cleanNext=True, item=None):
@@ -1741,12 +1749,19 @@ screen_process_queue = None
 screenshot_region = (0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 cropped_monitor = {"left": 0, "top": 0, "width": SHOW_WIDTH, "height": SHOW_HEIGHT, "mon": 1}
 select_hwnd = 0
+desktop_hwnd = 0
 all_windows = None
+
+
+def set_select_hwnd(hwnd):
+    global select_hwnd, windows_combobox
+    select_hwnd = hwnd
+    windows_combobox.set(get_descr(hwnd))
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
     global MG_screen_thread_running, machine_model, screen_shot_queue, cropped_monitor, screenshot_limit_fps
-    global select_hwnd, all_windows
+    global select_hwnd, desktop_hwnd
     with mss() as sct:
         while MG_screen_thread_running:
             if machine_model != 3:
@@ -1759,15 +1774,11 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 continue
 
             try:
-                if select_hwnd == list(all_windows.values())[0]:
+                if select_hwnd == desktop_hwnd:
                     sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
                     screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
                 else:
                     sct_img = get_window_image(select_hwnd)
-                    if isinstance(sct_img, int):
-                        select_hwnd = sct_img
-                        windows_combobox.set(get_descr(select_hwnd))
-                        continue
                     screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
             except queue.Full:
                 continue
@@ -1777,6 +1788,10 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 
     # stop
     print("Stop screenshot")
+
+
+row_np_zero = np.zeros([1, SHOW_WIDTH, 3], dtype=np.uint8)
+column_np_zero = np.zeros([SHOW_HEIGHT, 1, 3], dtype=np.uint8)
 
 
 # geezmo: 流水线 第二步 处理图像
@@ -1794,18 +1809,42 @@ def screen_process_task():
 
         try:
             sct_img, monitor = screen_shot_queue.get(timeout=3)
-
-            bgra = np.frombuffer(sct_img.bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
+            bgra = sct_img.bgra
+            remain = len(bgra) % (sct_img.size[1] * sct_img.size[0] * 4)
+            if remain != 0:
+                bgra += bytearray(np.zeros(remain, dtype=bytes))
+            # rgb = np.frombuffer(sct_img.rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
+            bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
             # rgb = bgra[:, :, :3]
             # rgb = rgb[:, :, ::-1]
             rgb = bgra[:, :, [2, 1, 0]]
 
+            # 方法1：裁剪
+            # if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
+            #     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
+            #     im1 = im1[:, 0: SHOW_WIDTH]
+            # else:  # 纵向裁剪
+            #     im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
+            #     im1 = im1[0: SHOW_HEIGHT, :]
+
+            # 方法2：填充
             if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
-                im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
-                im1 = im1[:, 0: SHOW_WIDTH]
-            else:  # 纵向充满
                 im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
-                im1 = im1[0: SHOW_HEIGHT, :]
+                total = SHOW_HEIGHT - len(im1)
+                np_zero = row_np_zero.repeat(total // 2, axis=0)
+                if total % 2:
+                    im1 = np.row_stack((np_zero, im1, np_zero, row_np_zero))
+                else:
+                    im1 = np.row_stack((np_zero, im1, np_zero))
+            else:  # 纵向充满
+                im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
+                if monitor["width"] != monitor["height"] * 2:
+                    total = SHOW_WIDTH - len(im1[0])
+                    np_zero = column_np_zero.repeat(total // 2, axis=1)
+                    if total % 2:
+                        im1 = np.column_stack((np_zero, im1, np_zero, column_np_zero))
+                    else:
+                        im1 = np.column_stack((np_zero, im1, np_zero))
 
             # rgb888 = np.asarray(im1)
             rgb565 = rgb888_to_rgb565(im1)
@@ -2322,8 +2361,9 @@ def not_english(strings):
 def get_descr(hwnd):
     global all_windows
     all_windows = get_all_windows()
+    all_values = list(all_windows.values())
     try:
-        index = list(all_windows.values()).index(int(hwnd))
+        index = all_values.index(int(hwnd))
     except:
         index = 0
     return list(all_windows.keys())[index]
@@ -2972,7 +3012,6 @@ def UI_Page():  # 进行图像界面显示
     windows_combobox = ttk.Combobox(root, textvariable=win32_windows_var, width=10,
                                     values=list(get_all_windows().keys()))
     windows_combobox.bind('<Configure>', combo_configure)
-    windows_combobox.bind('<ButtonPress>', combo_configure)
     windows_combobox.bind('<ButtonPress>', update_windows_list)
     windows_combobox.bind("<<ComboboxSelected>>", update_select_hwnd)
     windows_combobox.grid(row=7, column=2, columnspan=3, sticky=tk.EW, padx=5, pady=5)
