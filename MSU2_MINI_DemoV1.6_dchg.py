@@ -104,28 +104,18 @@ cleanNextTime = False
 def get_all_windows():
     global desktop_hwnd
 
-    # def children(hwnd, param, parent_title):
-    #     window_title = win32gui.GetWindowText(hwnd)
-    #     if window_title != "":
-    #         param.update({"%s - %s - %s" % (hwnd, parent_title, window_title): hwnd})
-    #
-    # def get_children_windows(parent, parent_title):
-    #     hwndChildList = dict()
-    #     win32gui.EnumChildWindows(parent, lambda hwnd, param: children(hwnd, param, parent_title), hwndChildList)
-    #     return hwndChildList
-
     def get_all_hwnd(hwnd, hwnd_title):
         if win32gui.IsWindowVisible(hwnd):
             # window_class = win32gui.GetClassName(hwnd)
             window_title = win32gui.GetWindowText(hwnd)
             if window_title != "":
-                hwnd_title["%s - %s" % (hwnd, window_title)] = hwnd
-                # hwnd_title.update(get_children_windows(hwnd, window_title))
+                parent = win32gui.GetParent(hwnd)
+                hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
 
     hwnd_titles = dict()
     try:
         desktop_hwnd = win32gui.GetDesktopWindow()
-        hwnd_titles.update({"%s - 桌面" % desktop_hwnd: desktop_hwnd})
+        hwnd_titles.update({"%s - 桌面" % desktop_hwnd: (desktop_hwnd, 0)})
         win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
     except Exception as e:
         print(e)
@@ -150,7 +140,9 @@ def get_window_image(hWnd=None):
         #     print("最小化")
         #     return
         if not win32gui.IsWindow(hWnd):
-            hWnd = desktop_hwnd
+            hWnd = get_parent(hWnd)
+            if not hWnd:
+                hWnd = desktop_hwnd
             set_select_hwnd(hWnd)
         # 将窗口置于最前端
         # win32gui.SetForegroundWindow(hWnd)
@@ -2372,15 +2364,21 @@ def not_english(strings):
     return False
 
 
+def get_parent(hwnd):
+    global all_windows, desktop_hwnd
+    for key, value in all_windows.items():
+        if value[0] == hwnd:
+            return value[1]
+    return desktop_hwnd
+
+
 def get_descr(hwnd):
     global all_windows
     all_windows = get_all_windows()
-    all_values = list(all_windows.values())
-    try:
-        index = all_values.index(int(hwnd))
-    except:
-        return None
-    return list(all_windows.keys())[index]
+    for key, value in all_windows.items():
+        if value[0] == hwnd:
+            return key
+    return None
 
 
 def UI_Page():  # 进行图像界面显示
@@ -3018,7 +3016,7 @@ def UI_Page():  # 进行图像界面显示
     def update_select_hwnd(event):
         global all_windows, select_hwnd
         select_str = win32_windows_var.get()
-        select_hwnd = all_windows.get(select_str)
+        select_hwnd, _ = all_windows.get(select_str)
 
     label = ttk.Label(root, text="屏幕镜像窗口:")
     label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
