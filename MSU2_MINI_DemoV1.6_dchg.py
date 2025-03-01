@@ -2994,8 +2994,8 @@ def UI_Page():  # 进行图像界面显示
         combo.configure(style=style_name)
 
     def update_windows_list(event):
-        global all_windows
-        all_windows = get_all_windows()
+        global all_windows, select_hwnd
+        event.widget.set(get_descr(select_hwnd))
         event.widget["value"] = list(all_windows.keys())
         combo_configure(event)
 
@@ -3010,7 +3010,7 @@ def UI_Page():  # 进行图像界面显示
     select_hwnd = config_obj.get("select_window_hwnd", "0")
     win32_windows_var = tk.StringVar(root, get_descr(select_hwnd))
     windows_combobox = ttk.Combobox(root, textvariable=win32_windows_var, width=10,
-                                    values=list(get_all_windows().keys()))
+                                    values=list(all_windows.keys()))
     windows_combobox.bind('<Configure>', combo_configure)
     windows_combobox.bind('<ButtonPress>', update_windows_list)
     windows_combobox.bind("<<ComboboxSelected>>", update_select_hwnd)
