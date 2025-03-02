@@ -155,6 +155,7 @@ def get_window_image(hWnd=None):
         # 不包含标题栏和工具栏
         left, top, right, bot = win32gui.GetClientRect(hWnd)
         print_mode = 0b11
+
         width = right - left
         height = bot - top
 
@@ -172,7 +173,7 @@ def get_window_image(hWnd=None):
         saveDC.SelectObject(saveBitMap)
         if hWnd == desktop_hwnd:
             # 保存bitmap到内存设备描述表
-            saveDC.BitBlt((0, 0), (width, height), mfcDC, (0, 0), win32con.SRCCOPY)
+            saveDC.BitBlt((0, 0), (width, height), mfcDC, (left, top), win32con.SRCCOPY)
         else:
             # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
             result = windll.user32.PrintWindow(hWnd, saveDC.GetSafeHdc(), print_mode)
