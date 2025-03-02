@@ -177,7 +177,7 @@ def get_window_image(hWnd=None):
             result = windll.user32.PrintWindow(hWnd, saveDC.GetSafeHdc(), print_mode)
             # if not result:
             #     print("PrintWindow failed: %s" % result)
-            #     return Win32_Image(bytearray.fromhex("ff00ff00ff00ff00"), (2, 1))  # 异常时初始化为粉色背景
+            #     return Win32_Image(bytes(8), (2, 1))  # 异常时初始化为黑色背景
 
         ###获取位图信息
         bmpinfo = saveBitMap.GetInfo()
@@ -191,7 +191,7 @@ def get_window_image(hWnd=None):
         return image
     except Exception as e:
         print(e)
-        return Win32_Image(bytearray.fromhex("ff00ff00ff00ff00"), (2, 1))  # 异常时初始化为粉色背景
+        return Win32_Image(bytes(8), (2, 1))  # 异常时初始化为黑色背景
     finally:
         # 内存释放
         try:
@@ -1759,7 +1759,7 @@ all_windows = None
 def set_select_hwnd(hwnd):
     global select_hwnd, windows_combobox
     select_hwnd = hwnd
-    desc = get_descr(hwnd)
+    desc = get_hwnd_desc(hwnd)
     if not desc:
         desc = hwnd
     windows_combobox.set(desc)
@@ -1818,7 +1818,7 @@ def screen_process_task():
             bgra = sct_img.bgra
             remain = len(bgra) % (sct_img.size[1] * sct_img.size[0] * 4)
             if remain != 0:
-                bgra += bytearray(np.zeros(remain, dtype=bytes))
+                bgra += bytes(remain)
             # rgb = np.frombuffer(sct_img.rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
             bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
             # rgb = bgra[:, :, :3]
@@ -1837,20 +1837,20 @@ def screen_process_task():
             if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                 im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
                 total = SHOW_HEIGHT - len(im1)
-                np_zero = row_np_zero.repeat(total // 2, axis=0)
+                np_fill_zero = row_np_zero.repeat(total // 2, axis=0)
                 if total % 2:
-                    im1 = np.row_stack((np_zero, im1, np_zero, row_np_zero))
+                    im1 = np.row_stack((np_fill_zero, im1, np_fill_zero, row_np_zero))
                 else:
-                    im1 = np.row_stack((np_zero, im1, np_zero))
+                    im1 = np.row_stack((np_fill_zero, im1, np_fill_zero))
             else:  # 纵向充满
                 im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
                 if monitor["width"] != monitor["height"] * 2:
                     total = SHOW_WIDTH - len(im1[0])
-                    np_zero = column_np_zero.repeat(total // 2, axis=1)
+                    np_fill_zero = column_np_zero.repeat(total // 2, axis=1)
                     if total % 2:
-                        im1 = np.column_stack((np_zero, im1, np_zero, column_np_zero))
+                        im1 = np.column_stack((np_fill_zero, im1, np_fill_zero, column_np_zero))
                     else:
-                        im1 = np.column_stack((np_zero, im1, np_zero))
+                        im1 = np.column_stack((np_fill_zero, im1, np_fill_zero))
 
             # rgb888 = np.asarray(im1)
             rgb565 = rgb888_to_rgb565(im1)
@@ -2372,7 +2372,7 @@ def get_parent(hwnd):
     return desktop_hwnd
 
 
-def get_descr(hwnd):
+def get_hwnd_desc(hwnd):
     global all_windows
     all_windows = get_all_windows()
     for key, value in all_windows.items():
@@ -3007,7 +3007,7 @@ def UI_Page():  # 进行图像界面显示
 
     def update_windows_list(event):
         global all_windows, select_hwnd
-        desc = get_descr(select_hwnd)
+        desc = get_hwnd_desc(select_hwnd)
         if desc:
             event.widget.set(desc)
         event.widget["value"] = list(all_windows.keys())
@@ -3022,7 +3022,7 @@ def UI_Page():  # 进行图像界面显示
     label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
     select_hwnd = config_obj.get("select_window_hwnd", "0")
-    win32_windows_var = tk.StringVar(root, get_descr(select_hwnd) or select_hwnd)
+    win32_windows_var = tk.StringVar(root, get_hwnd_desc(select_hwnd) or select_hwnd)
     windows_combobox = ttk.Combobox(root, textvariable=win32_windows_var, width=10,
                                     values=list(all_windows.keys()))
     windows_combobox.bind('<Configure>', combo_configure)
