@@ -2369,9 +2369,11 @@ def load_config():
     try:
         with open(config_file, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (OSError, json.JSONDecodeError) as e:
+    except FileNotFoundError:
+        pass
+    except Exception as e:
         print("读取配置失败，使用默认配置：%s" % e)
-        return {}
+    return {}
 
 
 def not_english(strings):
