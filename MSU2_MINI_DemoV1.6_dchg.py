@@ -31,14 +31,19 @@ from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
 import MSU2_MINI_MG_minimark as MiniMark
 from MSU2_MINI_MG_minimark import MiniMarkParser
 
-# 使用高dpi缩放适配高分屏
+# 使用高dpi缩放适配高分屏。0：不使用缩放 1：所有屏幕 2：当前屏幕
 try:  # >= win 8.1
-    windll.shcore.SetProcessDpiAwareness(2)
+    windll.shcore.SetProcessDpiAwareness(1)
 except:  # win 8.0 or less
     try:
         windll.user32.SetProcessDPIAware()
     except:
         pass
+try:
+    system_dpi = windll.user32.GetDpiForSystem()
+except:
+    system_dpi = 1
+
 try:
     # 取消命令行窗口快速编辑模式，防止鼠标误触导致阻塞
     windll.kernel32.SetConsoleMode(windll.kernel32.GetStdHandle(-10), 128)
@@ -150,14 +155,20 @@ def get_window_image(hWnd=None):
 
         # 获取句柄窗口的大小信息
         # 包含标题栏和工具栏
-        # left, top, right, bot = win32gui.GetWindowRect(hWnd)
+        # get_rect = win32gui.GetWindowRect(hWnd)
         # print_mode = 0b10
         # 不包含标题栏和工具栏
-        left, top, right, bot = win32gui.GetClientRect(hWnd)
+        get_rect = win32gui.GetClientRect(hWnd)
         print_mode = 0b11
 
-        width = right - left
-        height = bot - top
+        # # 获取窗口缩放比例
+        app_dpi = windll.user32.GetDpiForWindow(hWnd)
+        dpi = app_dpi / system_dpi
+        real_rect = [int(x * dpi) for x in get_rect]
+        left = real_rect[0]
+        top = real_rect[1]
+        width = real_rect[2] - real_rect[0]
+        height = real_rect[3] - real_rect[1]
 
         # 返回句柄窗口的设备环境，覆盖整个窗口，包括非客户区，标题栏，菜单，边框
         hWndDC = win32gui.GetWindowDC(hWnd)
@@ -188,7 +199,6 @@ def get_window_image(hWnd=None):
         # im_PIL = Image.frombuffer('RGB', (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
         #                           bmpstr, 'raw', 'BGRX', 0, 1)
         # im_PIL.save("im_PIL.png")  # 保存
-        # rgb = np.frombuffer(bmpstr, dtype=np.uint8).reshape((bmpinfo['bmWidth'], bmpinfo['bmHeight'], 4))
         image = Win32_Image(bmpstr, (bmpinfo['bmWidth'], bmpinfo['bmHeight']))
         return image
     except Exception as e:
@@ -1818,19 +1828,20 @@ def screen_process_task():
         try:
             sct_img, monitor = screen_shot_queue.get(timeout=3)
             bgra = sct_img.bgra
-            color_dim = 4
-            expectsize = sct_img.size[1] * sct_img.size[0] * color_dim
+            expectsize = sct_img.size[1] * sct_img.size[0] * 4
             remain = expectsize - len(bgra)
-            if remain != 0:
+            if remain >= 0:
                 if remain > 0:
                     bgra += bytes(remain)
-                else:
-                    color_dim = len(bgra) // (sct_img.size[1] * sct_img.size[0])
-            # rgb = np.frombuffer(sct_img.rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
-            bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], color_dim))
-            # rgb = bgra[:, :, :3]
-            # rgb = rgb[:, :, ::-1]
-            rgb = bgra[:, :, [2, 1, 0]]
+                # rgb = np.frombuffer(sct_img.rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
+                bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
+                # rgb = bgra[:, :, :3]
+                # rgb = rgb[:, :, ::-1]
+                rgb = bgra[:, :, [2, 1, 0]]
+            else:  # 针对windows管理控制台框架的窗口，如服务管理
+                row_dim = len(bgra) // expectsize
+                bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0] * row_dim, 4))
+                rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
             # 方法1：裁剪
             # if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
@@ -3028,8 +3039,8 @@ def UI_Page():  # 进行图像界面显示
     label = ttk.Label(root, text="屏幕镜像窗口:")
     label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
-    select_hwnd = config_obj.get("select_window_hwnd", "0")
-    win32_windows_var = tk.StringVar(root, get_hwnd_desc(select_hwnd) or select_hwnd)
+    select_hwnd = config_obj.get("select_window_hwnd", 0)
+    win32_windows_var = tk.StringVar(root, get_hwnd_desc(select_hwnd) or select_hwnd or list(all_windows.keys())[0])
     windows_combobox = ttk.Combobox(root, textvariable=win32_windows_var, width=10,
                                     values=list(all_windows.keys()))
     windows_combobox.bind('<Configure>', combo_configure)
