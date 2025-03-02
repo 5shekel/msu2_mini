@@ -163,12 +163,11 @@ def get_window_image(hWnd=None):
 
         # # 获取窗口缩放比例
         app_dpi = windll.user32.GetDpiForWindow(hWnd)
-        dpi = app_dpi / system_dpi
-        real_rect = [int(x * dpi) for x in get_rect]
-        left = real_rect[0]
-        top = real_rect[1]
-        width = real_rect[2] - real_rect[0]
-        height = real_rect[3] - real_rect[1]
+        if app_dpi != system_dpi:
+            dpi = app_dpi / system_dpi
+            get_rect = [int(x * dpi) for x in get_rect]
+        width = get_rect[2] - get_rect[0]
+        height = get_rect[3] - get_rect[1]
 
         # 返回句柄窗口的设备环境，覆盖整个窗口，包括非客户区，标题栏，菜单，边框
         hWndDC = win32gui.GetWindowDC(hWnd)
@@ -184,7 +183,7 @@ def get_window_image(hWnd=None):
         saveDC.SelectObject(saveBitMap)
         if hWnd == desktop_hwnd:
             # 保存bitmap到内存设备描述表
-            saveDC.BitBlt((0, 0), (width, height), mfcDC, (left, top), win32con.SRCCOPY)
+            saveDC.BitBlt((0, 0), (width, height), mfcDC, (get_rect[0], get_rect[1]), win32con.SRCCOPY)
         else:
             # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
             result = windll.user32.PrintWindow(hWnd, saveDC.GetSafeHdc(), print_mode)
