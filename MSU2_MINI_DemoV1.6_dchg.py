@@ -111,10 +111,11 @@ def get_all_windows():
 
     def get_all_hwnd(hwnd, hwnd_title):
         if win32gui.IsWindowVisible(hwnd):
-            window_class = win32gui.GetClassName(hwnd)
+            # window_class = win32gui.GetClassName(hwnd)
             window_title = win32gui.GetWindowText(hwnd)
-            if (window_title != "" and window_class != "Windows.UI.Core.CoreWindow"
-                    and window_class != "Internet Explorer_Hidden"):
+            if window_title != "":
+                # and window_class != "Windows.UI.Core.CoreWindow"
+                # and window_class != "Internet Explorer_Hidden"
                 parent = win32gui.GetParent(hwnd)
                 hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
 
