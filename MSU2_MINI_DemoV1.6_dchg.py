@@ -100,21 +100,16 @@ IMAGE_FILE_TYPES = [
 
 cleanNextTime = False
 
-exclude_window_list = [
-    "Microsoft Text Input Application",
-    "Windows Shell Experience 主机",
-    "Windows Shell Experience Host"
-]
-
 
 def get_all_windows():
     global desktop_hwnd
 
     def get_all_hwnd(hwnd, hwnd_title):
         if win32gui.IsWindowVisible(hwnd):
-            # window_class = win32gui.GetClassName(hwnd)
+            window_class = win32gui.GetClassName(hwnd)
             window_title = win32gui.GetWindowText(hwnd)
-            if window_title != "" and window_title not in exclude_window_list:
+            if (window_title != "" and window_class != "Windows.UI.Core.CoreWindow"
+                    and window_class != "Internet Explorer_Hidden"):
                 parent = win32gui.GetParent(hwnd)
                 hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
 
@@ -1822,11 +1817,16 @@ def screen_process_task():
         try:
             sct_img, monitor = screen_shot_queue.get(timeout=3)
             bgra = sct_img.bgra
-            remain = len(bgra) % (sct_img.size[1] * sct_img.size[0] * 4)
+            color_dim = 4
+            expectsize = sct_img.size[1] * sct_img.size[0] * color_dim
+            remain = expectsize - len(bgra)
             if remain != 0:
-                bgra += bytes(remain)
+                if remain > 0:
+                    bgra += bytes(remain)
+                else:
+                    color_dim = len(bgra) // (sct_img.size[1] * sct_img.size[0])
             # rgb = np.frombuffer(sct_img.rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
-            bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
+            bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], color_dim))
             # rgb = bgra[:, :, :3]
             # rgb = rgb[:, :, ::-1]
             rgb = bgra[:, :, [2, 1, 0]]
