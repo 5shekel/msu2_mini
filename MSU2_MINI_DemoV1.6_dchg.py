@@ -197,6 +197,8 @@ def get_window_image(hWnd=None):
         # # 生成图像
         # im_PIL = Image.frombuffer('RGB', (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
         #                           bmpstr, 'raw', 'BGRX', 0, 1)
+        # im_PIL = Image.frombuffer('RGB', (len(bmpstr) // (bmpinfo['bmHeight'] * 4), bmpinfo['bmHeight']),
+        #                           bmpstr, 'raw', 'BGRX', 0, 1)
         # im_PIL.save("im_PIL.png")  # 保存
         image = Win32_Image(bmpstr, (bmpinfo['bmWidth'], bmpinfo['bmHeight']))
         return image
@@ -1827,8 +1829,7 @@ def screen_process_task():
         try:
             sct_img, monitor = screen_shot_queue.get(timeout=3)
             bgra = sct_img.bgra
-            expectsize = sct_img.size[1] * sct_img.size[0] * 4
-            remain = expectsize - len(bgra)
+            remain = sct_img.size[1] * sct_img.size[0] * 4 - len(bgra)
             if remain >= 0:
                 if remain > 0:
                     bgra += bytes(remain)
@@ -1838,8 +1839,8 @@ def screen_process_task():
                 # rgb = rgb[:, :, ::-1]
                 rgb = bgra[:, :, [2, 1, 0]]
             else:  # 针对windows管理控制台框架的窗口，如服务管理
-                row_dim = len(bgra) // expectsize
-                bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0] * row_dim, 4))
+                bgra = np.frombuffer(bgra, dtype=np.uint8).reshape(
+                    (sct_img.size[1], len(bgra) // (sct_img.size[1] * 4), 4))
                 rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
             # 方法1：裁剪
