@@ -135,6 +135,17 @@ class Win32_Image:
         self.size = size
 
 
+# 根据dpi获取窗口实际大小
+def get_rect_by_dpi(rect, hWnd):
+    app_dpi = windll.user32.GetDpiForWindow(hWnd)
+    if app_dpi != system_dpi:
+        dpi = app_dpi / system_dpi
+        rect = [int(x * dpi) for x in rect]
+    width = rect[2] - rect[0]
+    height = rect[3] - rect[1]
+    return rect[0], rect[1], width, height
+
+
 def get_window_image(hWnd=None):
     global desktop_hwnd
     hWndDC = None
@@ -153,38 +164,40 @@ def get_window_image(hWnd=None):
         # 将窗口置于最前端
         # win32gui.SetForegroundWindow(hWnd)
 
-        # 获取句柄窗口的大小信息
-        # 包含标题栏和工具栏
+        # 获取窗口大小，包含标题栏和工具栏
         # get_rect = win32gui.GetWindowRect(hWnd)
         # print_mode = 0b10
-        # 不包含标题栏和工具栏
+        # 获取窗口大小，不包含标题栏和工具栏
         get_rect = win32gui.GetClientRect(hWnd)
         print_mode = 0b11
 
-        # # 获取窗口缩放比例
-        app_dpi = windll.user32.GetDpiForWindow(hWnd)
-        if app_dpi != system_dpi:
-            dpi = app_dpi / system_dpi
-            get_rect = [int(x * dpi) for x in get_rect]
-        width = get_rect[2] - get_rect[0]
-        height = get_rect[3] - get_rect[1]
-
-        # 返回句柄窗口的设备环境，覆盖整个窗口，包括非客户区，标题栏，菜单，边框
-        hWndDC = win32gui.GetWindowDC(hWnd)
-        # 创建设备描述表
-        mfcDC = win32ui.CreateDCFromHandle(hWndDC)
-        # 创建内存设备描述表
-        saveDC = mfcDC.CreateCompatibleDC()
-        # 创建位图对象准备保存图片
-        saveBitMap = win32ui.CreateBitmap()
-        # 为bitmap开辟存储空间
-        saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
-        # 将截图保存到saveBitMap中
-        saveDC.SelectObject(saveBitMap)
         if hWnd == desktop_hwnd:
+            # 获取窗口长宽
+            width = get_rect[2] - get_rect[0]
+            height = get_rect[3] - get_rect[1]
+
+            # 使用win32gui截屏
+            hWndDC = win32gui.GetWindowDC(hWnd)
+            mfcDC = win32ui.CreateDCFromHandle(hWndDC)
+            saveDC = mfcDC.CreateCompatibleDC()
+            saveBitMap = win32ui.CreateBitmap()
+            saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
+            saveDC.SelectObject(saveBitMap)
+
             # 保存bitmap到内存设备描述表
             saveDC.BitBlt((0, 0), (width, height), mfcDC, (get_rect[0], get_rect[1]), win32con.SRCCOPY)
         else:
+            # 获取窗口实际大小
+            get_rect = get_rect_by_dpi(get_rect, hWnd)
+
+            # 使用win32gui截屏
+            hWndDC = win32gui.GetWindowDC(hWnd)
+            mfcDC = win32ui.CreateDCFromHandle(hWndDC)
+            saveDC = mfcDC.CreateCompatibleDC()
+            saveBitMap = win32ui.CreateBitmap()
+            saveBitMap.CreateCompatibleBitmap(mfcDC, get_rect[2], get_rect[3])
+            saveDC.SelectObject(saveBitMap)
+
             # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
             result = windll.user32.PrintWindow(hWnd, saveDC.GetSafeHdc(), print_mode)
             # if not result:
