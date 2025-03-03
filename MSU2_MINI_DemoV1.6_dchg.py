@@ -109,6 +109,19 @@ cleanNextTime = False
 def get_all_windows():
     global desktop_hwnd
 
+    def children(hwnd, param, parent_title, parent_hwnd):
+        window_class = win32gui.GetClassName(hwnd)
+        if window_class == "TrayClockWClass":
+            window_title = win32gui.GetWindowText(hwnd)
+            param["%s - %s" % (hwnd, window_title)] = (hwnd, parent_hwnd)
+
+    def get_children_windows(parent, parent_title, parent_hwnd):
+        hwndChildList = dict()
+        win32gui.EnumChildWindows(parent,
+                                  lambda hwnd, param: children(hwnd, param, parent_title, parent_hwnd),
+                                  hwndChildList)
+        return hwndChildList
+
     def get_all_hwnd(hwnd, hwnd_title):
         if win32gui.IsWindowVisible(hwnd):
             window_class = win32gui.GetClassName(hwnd)
@@ -117,6 +130,8 @@ def get_all_windows():
                 # and window_class != "Internet Explorer_Hidden"
                 parent = win32gui.GetParent(hwnd)
                 hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
+            elif window_class == "Shell_TrayWnd":
+                hwnd_title.update(get_children_windows(hwnd, window_class, 0))
 
     hwnd_titles = dict()
     try:
