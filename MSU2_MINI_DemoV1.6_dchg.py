@@ -115,7 +115,7 @@ def get_all_windows():
         window_title = win32gui.GetWindowText(hwnd)
         if window_class == "TrayClockWClass":
             # or window_title == "Game Bar":
-            param["%s - %s" % (hwnd, window_title)] = (hwnd, parent_hwnd)
+            param["%s - %.100s" % (hwnd, window_title)] = (hwnd, parent_hwnd)
         return True
 
     def get_children_windows(parent, parent_hwnd):
@@ -131,7 +131,7 @@ def get_all_windows():
             if window_title and window_class != "Windows.UI.Core.CoreWindow":
                 # and window_class != "Internet Explorer_Hidden"
                 parent = win32gui.GetParent(hwnd)
-                hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
+                hwnd_title["%s - %.100s" % (hwnd, window_title)] = (hwnd, parent)
             elif window_class == "Shell_TrayWnd":
                 hwnd_title.update(get_children_windows(hwnd, 0))
         return True
