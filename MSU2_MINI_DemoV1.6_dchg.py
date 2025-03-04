@@ -112,8 +112,8 @@ def get_all_windows():
 
     def children(hwnd, parent_hwnd, param):
         window_class = win32gui.GetClassName(hwnd)
-        if window_class == "TrayClockWClass":
-            window_title = win32gui.GetWindowText(hwnd)
+        window_title = win32gui.GetWindowText(hwnd)
+        if window_class == "TrayClockWClass" or window_title == "Game Bar":
             param["%s - %s" % (hwnd, window_title)] = (hwnd, parent_hwnd)
         return True
 
@@ -131,8 +131,8 @@ def get_all_windows():
                 # and window_class != "Internet Explorer_Hidden"
                 parent = win32gui.GetParent(hwnd)
                 hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
-            elif window_class == "Shell_TrayWnd":
-                hwnd_title.update(get_children_windows(hwnd, 0))
+            # elif window_class == "Shell_TrayWnd":
+            #     hwnd_title.update(get_children_windows(hwnd, 0))
         return True
 
     hwnd_titles = dict()
@@ -145,7 +145,7 @@ def get_all_windows():
         win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
 
         # 添加特殊窗口
-        # hwnd_titles.update(get_children_windows(desktop_hwnd, desktop_hwnd))
+        hwnd_titles.update(get_children_windows(desktop_hwnd, desktop_hwnd))
     except Exception as e:
         print(e)
 
