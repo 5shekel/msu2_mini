@@ -115,7 +115,7 @@ def get_all_windows():
         window_title = win32gui.GetWindowText(hwnd)
         if window_class == "TrayClockWClass":
             # or window_title == "Game Bar":
-            param["%s - %.100s" % (hwnd, window_title)] = (hwnd, parent_hwnd)
+            param["%s - %s" % (hwnd, window_title)] = (hwnd, parent_hwnd)
         return True
 
     def get_children_windows(parent, parent_hwnd):
@@ -131,7 +131,7 @@ def get_all_windows():
             if window_title and window_class != "Windows.UI.Core.CoreWindow":
                 # and window_class != "Internet Explorer_Hidden"
                 parent = win32gui.GetParent(hwnd)
-                hwnd_title["%s - %.100s" % (hwnd, window_title)] = (hwnd, parent)
+                hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
             elif window_class == "Shell_TrayWnd":
                 hwnd_title.update(get_children_windows(hwnd, 0))
         return True
@@ -3051,11 +3051,11 @@ def UI_Page():  # 进行图像界面显示
     def combo_configure(event):
         combo = event.widget
         values = combo.cget('values')
+        long = max(values, key=len)[:100]  # 最长显示100字符
         if len(values) > 10:
             add = '000'
         else:
             add = '0'
-        long = max(values, key=len)
         font = tkfont.nametofont(str(combo.cget('font')))
         width = max(0, font.measure(long.rstrip() + add) - combo.winfo_width())
         # create an unique style name using widget's id
