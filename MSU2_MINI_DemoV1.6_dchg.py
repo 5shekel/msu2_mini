@@ -53,6 +53,7 @@ try:
     if not windll.shell32.IsUserAnAdmin():  # 测试是否是以管理员权限启动
         print("WARN：需要以管理员权限启动本程序，否则部分指标将无法获取")
         # windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+        # sys.exit(0)
 except:
     pass
 
@@ -109,35 +110,42 @@ cleanNextTime = False
 def get_all_windows():
     global desktop_hwnd
 
-    def children(hwnd, param, parent_title, parent_hwnd):
+    def children(hwnd, parent_hwnd, param):
         window_class = win32gui.GetClassName(hwnd)
         if window_class == "TrayClockWClass":
             window_title = win32gui.GetWindowText(hwnd)
             param["%s - %s" % (hwnd, window_title)] = (hwnd, parent_hwnd)
+        return True
 
-    def get_children_windows(parent, parent_title, parent_hwnd):
+    def get_children_windows(parent, parent_hwnd):
         hwndChildList = dict()
-        win32gui.EnumChildWindows(parent,
-                                  lambda hwnd, param: children(hwnd, param, parent_title, parent_hwnd),
-                                  hwndChildList)
+        win32gui.EnumChildWindows(
+            parent, lambda hwnd, param: children(hwnd, parent_hwnd, param), hwndChildList)
         return hwndChildList
 
     def get_all_hwnd(hwnd, hwnd_title):
         if win32gui.IsWindowVisible(hwnd):
             window_class = win32gui.GetClassName(hwnd)
             window_title = win32gui.GetWindowText(hwnd)
-            if window_title != "" and window_class != "Windows.UI.Core.CoreWindow":
+            if window_title and window_class != "Windows.UI.Core.CoreWindow":
                 # and window_class != "Internet Explorer_Hidden"
                 parent = win32gui.GetParent(hwnd)
                 hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
             elif window_class == "Shell_TrayWnd":
-                hwnd_title.update(get_children_windows(hwnd, window_class, 0))
+                hwnd_title.update(get_children_windows(hwnd, 0))
+        return True
 
     hwnd_titles = dict()
     try:
+        # 添加桌面
         desktop_hwnd = win32gui.GetDesktopWindow()
         hwnd_titles.update({"%s - 桌面" % desktop_hwnd: (desktop_hwnd, 0)})
+
+        # 遍历其他所有窗口
         win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
+
+        # 添加特殊窗口
+        # hwnd_titles.update(get_children_windows(desktop_hwnd, desktop_hwnd))
     except Exception as e:
         print(e)
 
