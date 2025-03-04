@@ -3050,9 +3050,14 @@ def UI_Page():  # 进行图像界面显示
 
     def combo_configure(event):
         combo = event.widget
-        long = max(combo.cget('values'), key=len)
+        values = combo.cget('values')
+        if len(values) > 10:
+            add = '000'
+        else:
+            add = '0'
+        long = max(values, key=len)
         font = tkfont.nametofont(str(combo.cget('font')))
-        width = max(0, font.measure(long.strip() + '0') - combo.winfo_width())
+        width = max(0, font.measure(long.rstrip() + add) - combo.winfo_width())
         # create an unique style name using widget's id
         style_name = combo.cget('style') or "TCombobox"
         # the new style must inherit from curret widget style (unless it's our custom style!)
