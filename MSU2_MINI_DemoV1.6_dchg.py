@@ -441,11 +441,11 @@ def Write_Photo_Path4():  # 写入文件
     if path_file_type.lower() == ".gif":
         try:
             gif = Image.open(Path_use1)
-            if gif.n_frames > 1000:
-                insert_text_message("动图过大，无能为力")
-                return
             if not "duration" in gif.info:
                 insert_text_message("非动图文件：%s" % Path_use1)
+                return
+            if gif.n_frames > 1000:
+                insert_text_message("动图过大，无能为力")
                 return
 
             durations = []
