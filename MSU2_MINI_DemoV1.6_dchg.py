@@ -188,6 +188,12 @@ def get_window_image(hWnd=None):
         # 将窗口置于最前端
         # win32gui.SetForegroundWindow(hWnd)
 
+        # 初始化截屏所需内存
+        hWndDC = win32gui.GetWindowDC(hWnd)
+        mfcDC = win32ui.CreateDCFromHandle(hWndDC)
+        saveDC = mfcDC.CreateCompatibleDC()
+        saveBitMap = win32ui.CreateBitmap()
+
         # 获取窗口大小，包含标题栏和工具栏
         # get_rect = win32gui.GetWindowRect(hWnd)
         # print_mode = 0b10
@@ -201,10 +207,6 @@ def get_window_image(hWnd=None):
             height = get_rect[3] - get_rect[1]
 
             # 使用win32gui截屏
-            hWndDC = win32gui.GetWindowDC(hWnd)
-            mfcDC = win32ui.CreateDCFromHandle(hWndDC)
-            saveDC = mfcDC.CreateCompatibleDC()
-            saveBitMap = win32ui.CreateBitmap()
             saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
             saveDC.SelectObject(saveBitMap)
 
@@ -215,10 +217,6 @@ def get_window_image(hWnd=None):
             get_rect = get_rect_by_dpi(get_rect, hWnd)
 
             # 使用win32gui截屏
-            hWndDC = win32gui.GetWindowDC(hWnd)
-            mfcDC = win32ui.CreateDCFromHandle(hWndDC)
-            saveDC = mfcDC.CreateCompatibleDC()
-            saveBitMap = win32ui.CreateBitmap()
             saveBitMap.CreateCompatibleBitmap(mfcDC, get_rect[2], get_rect[3])
             saveDC.SelectObject(saveBitMap)
 
@@ -240,7 +238,7 @@ def get_window_image(hWnd=None):
         image = Win32_Image(bmpstr, (bmpinfo['bmWidth'], bmpinfo['bmHeight']))
         return image
     except Exception as e:
-        print(e)
+        print(traceback.format_exc())
         return Win32_Image(bytes(8), (2, 1))  # 异常时初始化为黑色背景
     finally:
         # 内存释放
@@ -1830,12 +1828,12 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 continue
 
             try:
-                if select_hwnd == desktop_hwnd:
-                    sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
-                    screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
-                else:
-                    sct_img = get_window_image(select_hwnd)
-                    screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
+                # if select_hwnd == desktop_hwnd:
+                #     sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
+                #     screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
+                # else:
+                sct_img = get_window_image(select_hwnd)
+                screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
             except queue.Full:
                 continue
             except Exception as e:
