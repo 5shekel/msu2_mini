@@ -1751,12 +1751,17 @@ def set_select_hwnd(hwnd):
     windows_combobox.set(desc)
 
 
+def clear_queue(queue):
+    for x in range(2):  # 最多删除2次
+        if not queue.empty():  # 清空缓存，防止显示旧的窗口
+            queue.get()
+
+
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
     global config_obj, MG_screen_thread_running, screen_shot_queue, desktop_hwnd
     while MG_screen_thread_running:
         if config_obj.state_machine != 3:
-            if not screen_shot_queue.empty():  # 清空缓存，防止显示旧的窗口
-                screen_shot_queue.get()
+            clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
         if screen_shot_queue.full():
@@ -1799,8 +1804,7 @@ def screen_process_task():
     global config_obj, MG_screen_thread_running, screen_process_queue, screen_shot_queue
     while MG_screen_thread_running:
         if config_obj.state_machine != 3:
-            if not screen_process_queue.empty():  # 清空缓存，防止显示旧的窗口
-                screen_process_queue.get()
+            clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
         if screen_process_queue.full():
@@ -1885,10 +1889,12 @@ def screenshot_panic():
 
 
 def show_PC_Screen():  # 显示照片
-    global config_obj, State_change, Screen_Error, screenshot_test_frame, screen_process_queue
+    global config_obj, State_change, Screen_Error, screenshot_test_frame, screen_process_queue, screen_shot_queue
     global current_time, screenshot_test_time, screenshot_last_limit_time, wait_time, sleep_event
     if State_change == 1:
         State_change = 0
+        clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
+        clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
         sleep_event.clear()  # 使sleep_event.wait生效
         wait_time = 0
         screenshot_last_limit_time = current_time
