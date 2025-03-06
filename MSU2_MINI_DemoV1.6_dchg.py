@@ -2491,10 +2491,6 @@ def UI_Page():  # 进行图像界面显示
         global config_obj, color_use, State_change
         # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
         color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
-        config_obj.text_color_r = r1  # rgb
-        config_obj.text_color_g = g1
-        config_obj.text_color_b = b1
-        save_config()
         State_change = 1
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
@@ -2502,18 +2498,21 @@ def UI_Page():  # 进行图像界面显示
 
     def update_label_color_red():
         global config_obj
-        r1 = int(text_color_red_scale.get())
-        update_label_color(r1, config_obj.text_color_g, config_obj.text_color_b)
+        config_obj.text_color_r = int(text_color_red_scale.get())
+        save_config()
+        update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     def update_label_color_green():
         global config_obj
-        g1 = int(text_color_green_scale.get())
-        update_label_color(config_obj.text_color_r, g1, config_obj.text_color_b)
+        config_obj.text_color_g = int(text_color_green_scale.get())
+        save_config()
+        update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     def update_label_color_blue():
         global config_obj
-        b1 = int(text_color_blue_scale.get())
-        update_label_color(config_obj.text_color_r, config_obj.text_color_g, b1)
+        config_obj.text_color_b = int(text_color_blue_scale.get())
+        save_config()
+        update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     scale_desc = tk.Label(root, text="文字颜色")
     scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
@@ -2521,10 +2520,7 @@ def UI_Page():  # 进行图像界面显示
     Label2 = tk.Label(root, width=2)  # 颜色预览框
     Label2.grid(row=0, column=4, columnspan=1, padx=5, pady=5, sticky=tk.W)
 
-    config_red = config_obj.text_color_r
-    config_green = config_obj.text_color_g
-    config_blue = config_obj.text_color_b
-    update_label_color(config_red, config_green, config_blue)
+    update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     color_frame = ttk.Frame(root, padding="0")
     color_frame.grid(row=1, column=3, rowspan=3, columnspan=2, padx=5, pady=0, sticky=tk.NSEW)
@@ -2537,7 +2533,7 @@ def UI_Page():  # 进行图像界面显示
     text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
                                     takefocus=1, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
     text_color_red_scale.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
-    text_color_red_scale.set(config_red)
+    text_color_red_scale.set(config_obj.text_color_r)
     text_color_red_scale.config(command=lambda x: update_label_color_red())
 
     scale_ind_g = tk.Label(color_frame, text="G")
@@ -2546,7 +2542,7 @@ def UI_Page():  # 进行图像界面显示
     text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
                                       takefocus=1, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
     text_color_green_scale.grid(row=1, column=1, sticky=tk.EW, padx=0, pady=0)
-    text_color_green_scale.set(config_green)
+    text_color_green_scale.set(config_obj.text_color_g)
     text_color_green_scale.config(command=lambda x: update_label_color_green())
 
     scale_ind_b = tk.Label(color_frame, text="B")
@@ -2555,7 +2551,7 @@ def UI_Page():  # 进行图像界面显示
     text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
                                      takefocus=1, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
     text_color_blue_scale.grid(row=2, column=1, sticky=tk.EW, padx=0, pady=0)
-    text_color_blue_scale.set(config_blue)
+    text_color_blue_scale.set(config_obj.text_color_b)
     text_color_blue_scale.config(command=lambda x: update_label_color_blue())
 
     # 自定义显示内容
@@ -2707,17 +2703,20 @@ def UI_Page():  # 进行图像界面显示
         text_frame = ttk.Frame(tech_frame, padding="5")
         text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=0, sticky=tk.EW)
 
+        def update_global_canvas():
+            im = get_full_custom_im()
+            tk_im = ImageTk.PhotoImage(im)
+            canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
+            canvas.image = tk_im
+
         def update_global_text(event=None):
             global config_obj
             # Get the current content of the text area and update the global variable
             full_custom_template_tmp = text_area.get("1.0", tk.END).rstrip('\n')  # tk.END会多一个换行
-            if event is None or config_obj.full_custom_template != full_custom_template_tmp:
+            if config_obj.full_custom_template != full_custom_template_tmp:
                 config_obj.full_custom_template = full_custom_template_tmp
                 save_config()
-                im = get_full_custom_im()
-                tk_im = ImageTk.PhotoImage(im)
-                canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
-                canvas.image = tk_im
+                update_global_canvas()
 
         text_area = tk.Text(text_frame, wrap=tk.WORD, width=10, height=10, padx=0, pady=0)
         text_area.insert(tk.END, config_obj.full_custom_template)
@@ -2734,7 +2733,7 @@ def UI_Page():  # 进行图像界面显示
 
         text_area.bind("<KeyRelease>", update_global_text)  # 按键弹起时触发
         # text_area.bind("<FocusOut>", update_global_text)  # 当组件失去焦点触发
-        update_global_text()
+        update_global_canvas()
 
         scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text_area.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -2749,7 +2748,7 @@ def UI_Page():  # 进行图像界面显示
         btn_frame.grid_columnconfigure(3, weight=1)  # 设置第4列自动调整宽度
 
         def show_error():
-            get_full_custom_im()
+            update_global_canvas()
             print(full_custom_error.rstrip('\n'))
             if full_custom_error == "OK":
                 tk.messagebox.showinfo(title="提示", message=full_custom_error, parent=sub_window)
@@ -2762,22 +2761,24 @@ def UI_Page():  # 进行图像界面显示
         def example(i):
             global config_obj
             if i == 1:
-                config_obj.full_custom_template = '\n'.join([
+                full_custom_template = '\n'.join([
                     "i resource/example_background.png", "c #ff3333", "f resource/Orbitron-Regular.ttf 22",
                     "m 16 16", "v 1 {:.0f}", "p %",
                     "m 96 16", "v 2 {:.0f}", "p %",
                     "m 96 44", "v 3 {:.0f}", "p %"
                 ])
             elif i == 2:
-                config_obj.full_custom_template = '\n'.join([
+                full_custom_template = '\n'.join([
                     "m 8 8", "f resource/Orbitron-Bold.ttf 20", "p CPU", "t 8 0", "c #3366cc", "v 1",
                     "m 8 28", "c #000000", "f resource/Orbitron-Bold.ttf 20", "p GPU", "t 8 0", "c #3366cc", "v 2",
                     "m 8 48", "c #000000", "f resource/Orbitron-Bold.ttf 20", "p RAM", "t 8 0", "c #3366cc", "v 3"
                 ])
-            save_config()
+            if full_custom_template != config_obj.full_custom_template:
+                config_obj.full_custom_template = full_custom_template
+                save_config()
             text_area.delete("1.0", tk.END)
             text_area.insert(tk.END, config_obj.full_custom_template)
-            update_global_text()
+            update_global_canvas()
 
         example_btn_1 = ttk.Button(btn_frame, text="科技", width=15, command=lambda: example(1))
         example_btn_1.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
@@ -2998,10 +2999,12 @@ def UI_Page():  # 进行图像界面显示
     def update_select_hwnd(event):
         global config_obj, all_windows, State_change, sleep_event
         select_str = win32_windows_var.get()
-        config_obj.select_window_hwnd, _ = all_windows.get(select_str)
-        State_change = 1
-        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-        save_config()
+        select_window_hwnd, _ = all_windows.get(select_str)
+        if select_window_hwnd != config_obj.select_window_hwnd:
+            config_obj.select_window_hwnd = select_window_hwnd
+            State_change = 1
+            sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+            save_config()
 
     label = ttk.Label(root, text="屏幕镜像窗口:")
     label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
