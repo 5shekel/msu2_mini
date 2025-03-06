@@ -2971,7 +2971,7 @@ def UI_Page():  # 进行图像界面显示
     def combo_configure(event):
         combo = event.widget
         values = combo.cget('values')
-        long = max(values, key=len)[:100]  # 最长显示100字符
+        long = max(values, key=len)[:75]  # 最长显示100字符
         if len(values) > 10:
             add = '000'
         else:
