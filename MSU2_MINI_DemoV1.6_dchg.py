@@ -2991,7 +2991,7 @@ def UI_Page():  # 进行图像界面显示
         combo_configure(event)
 
     def update_select_hwnd(event):
-        global config_obj, all_windows, sleep_event
+        global config_obj, all_windows, State_change, sleep_event
         select_str = win32_windows_var.get()
         config_obj.select_window_hwnd, _ = all_windows.get(select_str)
         State_change = 1
