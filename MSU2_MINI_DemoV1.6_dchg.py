@@ -25,7 +25,6 @@ import serial.tools.list_ports
 import win32con
 import win32gui
 import win32ui
-from mss import mss  # geezmo: 快速截图
 from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
 
 import MSU2_MINI_MG_minimark as MiniMark
@@ -71,9 +70,6 @@ GRAY2 = 0x4208
 SHOW_WIDTH = 160  # 画布宽度
 SHOW_HEIGHT = 80  # 画布高度
 
-current_time = 0
-Img_data_use = None
-
 PAGE_DESSCRIPTION = [
     "页面1：动图",
     "页面2：时间",
@@ -103,8 +99,6 @@ IMAGE_FILE_TYPES = [
     ("Image file", "*.tif"),
     ("Image file", "*.dib")
 ]
-
-cleanNextTime = False
 
 
 def get_all_windows():
@@ -172,28 +166,25 @@ def get_rect_by_dpi(rect, hWnd):
 
 def get_window_image(hWnd=None):
     global desktop_hwnd
-    hWndDC = None
-    mfcDC = None
-    saveDC = None
-    saveBitMap = None
+
+    # if win32gui.IsIconic(hWnd):  # 判断窗口是否最小化
+    #     print("最小化")
+    #     return
+    if not win32gui.IsWindow(hWnd):
+        hWnd = get_parent(hWnd)
+        if not hWnd:
+            hWnd = desktop_hwnd
+        set_select_hwnd(hWnd)
+    # 将窗口置于最前端
+    # win32gui.SetForegroundWindow(hWnd)
+
+    # 初始化截屏所需内存
+    hWndDC = win32gui.GetWindowDC(hWnd)
+    mfcDC = win32ui.CreateDCFromHandle(hWndDC)
+    saveDC = mfcDC.CreateCompatibleDC()
+    saveBitMap = win32ui.CreateBitmap()
+
     try:
-        # if win32gui.IsIconic(hWnd):  # 判断窗口是否最小化
-        #     print("最小化")
-        #     return
-        if not win32gui.IsWindow(hWnd):
-            hWnd = get_parent(hWnd)
-            if not hWnd:
-                hWnd = desktop_hwnd
-            set_select_hwnd(hWnd)
-        # 将窗口置于最前端
-        # win32gui.SetForegroundWindow(hWnd)
-
-        # 初始化截屏所需内存
-        hWndDC = win32gui.GetWindowDC(hWnd)
-        mfcDC = win32ui.CreateDCFromHandle(hWndDC)
-        saveDC = mfcDC.CreateCompatibleDC()
-        saveBitMap = win32ui.CreateBitmap()
-
         # 获取窗口大小，包含标题栏和工具栏
         # get_rect = win32gui.GetWindowRect(hWnd)
         # print_mode = 0b10
@@ -226,7 +217,7 @@ def get_window_image(hWnd=None):
             #     print("PrintWindow failed: %s" % result)
             #     return Win32_Image(bytes(8), (2, 1))  # 异常时初始化为黑色背景
 
-        ###获取位图信息
+        # 获取位图信息
         bmpinfo = saveBitMap.GetInfo()
         bmpstr = saveBitMap.GetBitmapBits(True)
         # # 生成图像
@@ -243,19 +234,19 @@ def get_window_image(hWnd=None):
     finally:
         # 内存释放
         try:
-            if saveBitMap: win32gui.DeleteObject(saveBitMap.GetHandle())
+            win32gui.DeleteObject(saveBitMap.GetHandle())
         except:
             pass
         try:
-            if saveDC: saveDC.DeleteDC()
+            saveDC.DeleteDC()
         except:
             pass
         try:
-            if mfcDC: mfcDC.DeleteDC()
+            mfcDC.DeleteDC()
         except:
             pass
         try:
-            if hWndDC: win32gui.ReleaseDC(hWnd, hWndDC)
+            win32gui.ReleaseDC(hWnd, hWndDC)
         except:
             pass
 
@@ -532,41 +523,6 @@ def Write_Photo_Path4():  # 写入文件
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
 
-sleep_event = None  # 用event代替time.sleep，加快切换速度
-
-
-def Page_UP():  # 上一页
-    global State_change, machine_model, sleep_event
-    if machine_model >= len(PAGE_DESSCRIPTION) - 1:
-        machine_model = 0
-    else:
-        machine_model = machine_model + 1
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-    State_change = 1
-    insert_text_message(PAGE_DESSCRIPTION[machine_model])
-
-
-def Page_Down():  # 下一页
-    global State_change, machine_model, sleep_event
-    if machine_model <= 0:
-        machine_model = len(PAGE_DESSCRIPTION) - 1
-    else:
-        machine_model = machine_model - 1
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-    State_change = 1
-    insert_text_message(PAGE_DESSCRIPTION[machine_model])
-
-
-def LCD_Change():  # 切换显示方向
-    global LCD_Change_use, Device_State, sleep_event
-    if Device_State == 0:
-        insert_text_message("设备未连接，切换失败")
-        return
-    LCD_Change_use ^= 1
-    insert_text_message(LCD_STATE_MESSAGE[LCD_Change_use])
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-
-
 # 由于设备不支持多线程访问，请不要直接使用SER_Write，应使用SER_rw方法
 def SER_Write(Data_U0):
     global ser
@@ -603,9 +559,6 @@ def SER_Read():
         print("接收异常，%s" % e)
         set_device_state(0)
         return 0
-
-
-SER_lock = None
 
 
 def SER_rw(data, read=True, size=0):
@@ -1478,15 +1431,8 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
         return 0
 
 
-last_refresh_time = 0
-photo_interval = 0.1
-second_times = 0  # 设备超过5秒收不到消息就会断开连接，所以每隔1秒发送一次消息
-gif_wait_time = 0.0
-second_pass = 0
-
-
 def show_gif():  # 显示GIF动图
-    global photo_interval, second_times, second_pass, sleep_event
+    global config_obj, second_pass, sleep_event
     global current_time, last_refresh_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         State_change = 0
@@ -1500,8 +1446,8 @@ def show_gif():  # 显示GIF动图
 
     LCD_Photo(gif_num * 100)
 
-    if second_times != 0:
-        if second_pass < second_times:
+    if config_obj.second_times != 0:
+        if second_pass < config_obj.second_times:
             second_pass += 1
             sleep_event.wait(1)
             return
@@ -1512,10 +1458,10 @@ def show_gif():  # 显示GIF动图
     # 精确调整动图播放速度
     elapse_time = (current_time - last_refresh_time).total_seconds()
     last_refresh_time = current_time
-    if elapse_time - second_times > photo_interval + 5:
-        gif_wait_time = photo_interval
+    if elapse_time - config_obj.second_times > config_obj.photo_interval_var + 5:
+        gif_wait_time = config_obj.photo_interval_var
     else:
-        gif_wait_time += photo_interval - elapse_time + second_times
+        gif_wait_time += config_obj.photo_interval_var - elapse_time + config_obj.second_times
     if gif_wait_time > 0:
         sleep_event.wait(gif_wait_time)
 
@@ -1795,18 +1741,10 @@ def shrink_image_block_average(image, shrink_factor):
     # return shrunk_image
 
 
-screen_shot_queue = None
-screen_process_queue = None
-screenshot_region = (0, 0, SHOW_WIDTH, SHOW_HEIGHT)
-cropped_monitor = {"left": 0, "top": 0, "width": SHOW_WIDTH, "height": SHOW_HEIGHT, "mon": 1}
-select_hwnd = 0
-desktop_hwnd = 0
-all_windows = None
-
-
 def set_select_hwnd(hwnd):
-    global select_hwnd, windows_combobox
-    select_hwnd = hwnd
+    global config_obj, windows_combobox
+    config_obj.select_window_hwnd = hwnd
+    save_config()
     desc = get_hwnd_desc(hwnd)
     if not desc:
         desc = hwnd
@@ -1814,51 +1752,59 @@ def set_select_hwnd(hwnd):
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
-    global MG_screen_thread_running, machine_model, screen_shot_queue, cropped_monitor, screenshot_limit_fps
-    global select_hwnd, desktop_hwnd
-    with mss() as sct:
-        while MG_screen_thread_running:
-            if machine_model != 3:
-                if not screen_shot_queue.empty():  # 清空缓存，防止显示旧的窗口
-                    screen_shot_queue.get()
-                time.sleep(0.5)  # 不需要截图时
-                continue
-            if screen_shot_queue.full():
-                time.sleep(1.0 / screenshot_limit_fps)  # 队列满时暂停一个周期
-                continue
+    global config_obj, MG_screen_thread_running, screen_shot_queue, desktop_hwnd
+    while MG_screen_thread_running:
+        if config_obj.state_machine != 3:
+            if not screen_shot_queue.empty():  # 清空缓存，防止显示旧的窗口
+                screen_shot_queue.get()
+            time.sleep(0.5)  # 不需要截图时
+            continue
+        if screen_shot_queue.full():
+            time.sleep(1.0 / config_obj.fps_var)  # 队列满时暂停一个周期
+            continue
 
-            try:
-                # if select_hwnd == desktop_hwnd:
-                #     sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
-                #     screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
-                # else:
-                sct_img = get_window_image(select_hwnd)
-                screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
-            except queue.Full:
-                continue
-            except Exception as e:
-                print("截屏失败 %s" % traceback.format_exc())
-                time.sleep(0.2)
+        try:
+            # if config_obj.select_window_hwnd == desktop_hwnd:
+            #     from mss import mss
+            #
+            #     with mss() as sct:
+            #         monitors = sct.monitors
+            #         # cropped_monitor = {
+            #         #     "left": screenshot_region[0] + monitor["left"],
+            #         #     "top": screenshot_region[1] + monitor["top"],
+            #         #     "width": screenshot_region[2] or monitor["width"],
+            #         #     "height": screenshot_region[3] or monitor["height"],
+            #         #     "mon": screenshot_monitor_id,
+            #         # }
+            #         # 序号为0的monitor是总体屏幕
+            #         cropped_monitor = monitors[0]
+            #         cropped_monitor["mon"] = 0
+            #         sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
+            #         screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
+            # else:
+            sct_img = get_window_image(config_obj.select_window_hwnd)
+            screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
+        except queue.Full:
+            continue
+        except Exception as e:
+            print("截屏失败 %s" % traceback.format_exc())
+            time.sleep(0.2)
 
     # stop
     print("Stop screenshot")
 
 
-row_np_zero = np.zeros([1, SHOW_WIDTH, 3], dtype=np.uint8)
-column_np_zero = np.zeros([SHOW_HEIGHT, 1, 3], dtype=np.uint8)
-
-
 # geezmo: 流水线 第二步 处理图像
 def screen_process_task():
-    global MG_screen_thread_running, machine_model, screen_process_queue, screenshot_limit_fps, screen_shot_queue
+    global config_obj, MG_screen_thread_running, screen_process_queue, screen_shot_queue
     while MG_screen_thread_running:
-        if machine_model != 3:
+        if config_obj.state_machine != 3:
             if not screen_process_queue.empty():  # 清空缓存，防止显示旧的窗口
                 screen_process_queue.get()
             time.sleep(0.5)  # 不需要截图时
             continue
         if screen_process_queue.full():
-            time.sleep(1.0 / screenshot_limit_fps)  # 队列满时暂停一个周期
+            time.sleep(1.0 / config_obj.fps_var)  # 队列满时暂停一个周期
             continue
 
         try:
@@ -1921,13 +1867,6 @@ def screen_process_task():
     print("Stop screen process")
 
 
-screenshot_test_time = 0
-screenshot_last_limit_time = 0
-screenshot_test_frame = 0
-screenshot_limit_fps = 10
-wait_time = 0.0
-
-
 # 连续多次截图失败，重启截图线程
 def screenshot_panic():
     global MG_screen_thread_running, screen_shot_thread, screen_process_thread
@@ -1946,8 +1885,8 @@ def screenshot_panic():
 
 
 def show_PC_Screen():  # 显示照片
-    global State_change, Screen_Error, screenshot_test_frame, current_time, screen_process_queue
-    global screenshot_test_time, screenshot_last_limit_time, wait_time, screenshot_limit_fps, sleep_event
+    global config_obj, State_change, Screen_Error, screenshot_test_frame, screen_process_queue
+    global current_time, screenshot_test_time, screenshot_last_limit_time, wait_time, sleep_event
     if State_change == 1:
         State_change = 0
         sleep_event.clear()  # 使sleep_event.wait生效
@@ -1972,24 +1911,19 @@ def show_PC_Screen():  # 显示照片
         wait_time = 0
         screenshot_test_time = current_time
         screenshot_test_frame = 0
-        elapse_time = 1.0 / screenshot_limit_fps  # 第一次不需要wait
-    elif screenshot_test_frame % screenshot_limit_fps == 0:
+        elapse_time = 1.0 / config_obj.fps_var  # 第一次不需要wait
+    elif screenshot_test_frame % config_obj.fps_var == 0:
         # 测试用：显示帧率
-        # real_fps = screenshot_limit_fps / ((current_time - screenshot_test_time).total_seconds())
+        # real_fps = config_obj.fps_var / ((current_time - screenshot_test_time).total_seconds())
         # print("串流FPS: %s" % real_fps)
         screenshot_test_time = current_time
     screenshot_last_limit_time = current_time
     screenshot_test_frame += 1
     if Screen_Error != 0:
         Screen_Error = 0
-    wait_time += 1.0 / screenshot_limit_fps - elapse_time
+    wait_time += 1.0 / config_obj.fps_var - elapse_time
     if wait_time > 0:
         sleep_event.wait(wait_time)  # 精确控制FPS
-
-
-netspeed_last_refresh_snetio = None
-netspeed_plot_data = None
-time_second = None
 
 
 def sizeof_fmt(num, suffix="B", base=1024.0):
@@ -2193,16 +2127,10 @@ def load_hardware_monitor():
     return HardwareMonitorManager
 
 
-custom_selected_names = [""] * 2
-custom_selected_displayname = [""] * 2
-custom_selected_names_tech = [""] * 6
-custom_plot_data = None
-
-
 def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_color=(146, 211, 217)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global last_refresh_time, custom_plot_data, State_change, wait_time, current_time
-    global hardware_monitor_manager, custom_selected_names, custom_selected_displayname, netspeed_font, sleep_event
+    global config_obj, last_refresh_time, State_change, wait_time, current_time
+    global custom_plot_data, hardware_monitor_manager, netspeed_font, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         sleep_event.wait(0.2)
@@ -2222,7 +2150,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
 
     # 获取 libre hardware monitor 数值
     hardwares = set()  # 因为hardware同一个周期内不能重复更新，所以这里用set去掉重复项
-    for name in custom_selected_names:
+    for name in config_obj.custom_selected_names:
         if name == "":
             continue
         hardware = hardware_monitor_manager.get_hardware(name)
@@ -2230,11 +2158,11 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
             hardwares.add(hardware)
     hardware_monitor_manager.update_hardwares(hardwares)
 
-    sent, sent_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[0])
+    sent, sent_text = hardware_monitor_manager.get_value_formatted(config_obj.custom_selected_names[0])
     if sent is None:
         sent = 0
 
-    recv, recv_text = hardware_monitor_manager.get_value_formatted(custom_selected_names[1])
+    recv, recv_text = hardware_monitor_manager.get_value_formatted(config_obj.custom_selected_names[1])
     if recv is None:
         recv = 0
 
@@ -2254,9 +2182,9 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
 
     # 绘制文字
 
-    text = "%-6s %-s" % (custom_selected_displayname[0][:8], sent_text)
+    text = "%-6s %-s" % (config_obj.custom_selected_displayname[0][:8], sent_text)
     draw.text((0, 0), text, fill=text_color, font=netspeed_font)
-    text = "%-6s %-s" % (custom_selected_displayname[1][:8], recv_text)
+    text = "%-6s %-s" % (config_obj.custom_selected_displayname[1][:8], recv_text)
     draw.text((0, SHOW_HEIGHT // 2), text, fill=text_color, font=netspeed_font)
 
     # 绘图
@@ -2295,20 +2223,13 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
         sleep_event.wait(wait_time)
 
 
-mini_mark_parser = None
-
-full_custom_template = "p Hello world"
-full_custom_error = "OK"
-
-
 def get_full_custom_im():
-    global full_custom_template, full_custom_error, mini_mark_parser
-    global hardware_monitor_manager, custom_selected_names_tech
+    global config_obj, full_custom_error, mini_mark_parser, hardware_monitor_manager
 
     full_custom_error_tmp = ""
     # 获取 libre hardware monitor 数值
     hardwares = set()  # 因为hardware不能重复更新，所以这里用set去掉重复项
-    for name in custom_selected_names_tech:
+    for name in config_obj.custom_selected_names_tech:
         if name == "":
             continue
         hardware = hardware_monitor_manager.get_hardware(name)
@@ -2318,7 +2239,7 @@ def get_full_custom_im():
 
     record_dict = {}
     index = 1
-    for name in custom_selected_names_tech:
+    for name in config_obj.custom_selected_names_tech:
         value = None
         value_formatted = "--"  # 不能为None，否则解析时可能会有异常
         if name != "":
@@ -2337,7 +2258,7 @@ def get_full_custom_im():
     error_line = ""
     try:
         mini_mark_parser.reset_state()
-        for line in full_custom_template.split('\n'):
+        for line in config_obj.full_custom_template.split('\n'):
             line = line.rstrip('\r')  # possible
             error_line = line
             mini_mark_parser.parse_line(line, draw, im1, record_dict=record_dict)
@@ -2387,29 +2308,45 @@ def show_full_custom():
         sleep_event.wait(wait_time)
 
 
-netspeed_font_size = 20
-default_font = None
-netspeed_font = None
-config_file = "MSU2_MINI.json"
+# now 是否立即保存
+def save_config(now=False):
+    global last_config_save_time, save_thread, config_event
+    last_config_save_time = datetime.now()
+    if now:
+        last_config_save_time -= timedelta(seconds=5)
+        config_event.set()  # 取消sleep, 使config_event.wait无效
+
+    if not save_thread or not save_thread.is_alive():
+        save_thread = threading.Thread(target=save_config_thread, daemon=True)
+        save_thread.start()
 
 
-def save_config(config_obj):
+def save_config_thread():
+    global config_obj, config_file, last_config_save_time, time_second, config_event
+    sleep_time = (last_config_save_time - datetime.now()) / time_second + 5  # 5秒没有任何修改再保存
+    while sleep_time > 0:
+        if config_event.isSet():
+            config_event.clear()  # 使config_event.wait生效
+        config_event.wait(sleep_time)
+        sleep_time = (last_config_save_time - datetime.now()) / time_second + 5
+
     try:
         with open(config_file, "w", encoding="utf-8") as f:
-            json.dump(config_obj, f)
+            json.dump(config_obj.__dict__, f)
     except Exception as e:
         print("写入配置失败：%s" % e)
 
 
 def load_config():
+    config_obj = sys_config()
     try:
         with open(config_file, "r", encoding="utf-8") as f:
-            return json.load(f)
+            config_obj.__dict__.update(json.load(f))
     except FileNotFoundError:
-        pass
+        save_config()
     except Exception as e:
         print("读取配置失败，使用默认配置：%s" % e)
-    return {}
+    return config_obj
 
 
 def not_english(strings):
@@ -2436,18 +2373,34 @@ def get_hwnd_desc(hwnd):
     return None
 
 
+class sys_config(object):
+    def __init__(self):
+        self.text_color_r = 255  # RGB颜色
+        self.text_color_g = 0
+        self.text_color_b = 255
+        self.state_machine = 0  # 页面状态
+        self.lcd_change = 0  # LCD显示方向
+        self.photo_interval_var = 0.1  # 动图间隔，小数部分，实际间隔为 photo_interval_var + second_times
+        self.second_times = 0  # 动图间隔，整数部分。设备超过5秒收不到消息就会断开连接，所以每隔1秒发送一次消息
+        self.number_var = 1  # 屏幕变化 未使用
+        self.select_window_hwnd = 0
+        self.fps_var = 5
+        self.screen_region_var = "0,0,,"  # 投屏区域，未使用
+        self.custom_selected_names = [""] * 2
+        self.custom_selected_displayname = [""] * 2
+        self.custom_selected_names_tech = [""] * 6
+        self.full_custom_template = "p Hello world"
+
+
 def UI_Page():  # 进行图像界面显示
-    global Text1, rgb_tuple, full_custom_template, interval_var, select_hwnd, all_windows, windows_combobox
-    global machine_model, State_change, LCD_Change_use, Label1, Label3, Label4, Label5, Label6
-    global custom_selected_names, custom_selected_displayname, custom_selected_names_tech
+    global config_obj, Text1, interval_var, all_windows, windows_combobox
+    global State_change, Label1, Label3, Label4, Label5, Label6
 
     # 这两个线程尽早启动
     daemon_thread.start()
     load_thread.start()
 
     config_obj = load_config()
-    machine_model = config_obj.get("state_machine", 0)
-    LCD_Change_use = config_obj.get("lcd_change", 0)
 
     # 创建主窗口
     window = tk.Tk()  # 实例化主窗口
@@ -2530,29 +2483,32 @@ def UI_Page():  # 进行图像界面显示
     # 创建颜色滑块
 
     def update_label_color(r1, g1, b1):
-        global color_use, rgb_tuple, State_change
+        global config_obj, color_use, State_change
         # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
         color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
-        rgb_tuple = (r1, g1, b1)  # rgb
+        config_obj.text_color_r = r1  # rgb
+        config_obj.text_color_g = g1
+        config_obj.text_color_b = b1
+        save_config()
         State_change = 1
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
             Label2.config(bg=color_La)
 
     def update_label_color_red():
-        global rgb_tuple
+        global config_obj
         r1 = int(text_color_red_scale.get())
-        update_label_color(r1, rgb_tuple[1], rgb_tuple[2])
+        update_label_color(r1, config_obj.text_color_g, config_obj.text_color_b)
 
     def update_label_color_green():
-        global rgb_tuple
+        global config_obj
         g1 = int(text_color_green_scale.get())
-        update_label_color(rgb_tuple[0], g1, rgb_tuple[2])
+        update_label_color(config_obj.text_color_r, g1, config_obj.text_color_b)
 
     def update_label_color_blue():
-        global rgb_tuple
+        global config_obj
         b1 = int(text_color_blue_scale.get())
-        update_label_color(rgb_tuple[0], rgb_tuple[1], b1)
+        update_label_color(config_obj.text_color_r, config_obj.text_color_g, b1)
 
     scale_desc = tk.Label(root, text="文字颜色")
     scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
@@ -2560,9 +2516,9 @@ def UI_Page():  # 进行图像界面显示
     Label2 = tk.Label(root, width=2)  # 颜色预览框
     Label2.grid(row=0, column=4, columnspan=1, padx=5, pady=5, sticky=tk.W)
 
-    config_red = config_obj.get("text_color_r", 255)
-    config_green = config_obj.get("text_color_g", 0)
-    config_blue = config_obj.get("text_color_b", 255)
+    config_red = config_obj.text_color_r
+    config_green = config_obj.text_color_g
+    config_blue = config_obj.text_color_b
     update_label_color(config_red, config_green, config_blue)
 
     color_frame = ttk.Frame(root, padding="0")
@@ -2599,15 +2555,10 @@ def UI_Page():  # 进行图像界面显示
 
     # 自定义显示内容
 
-    custom_selected_names = config_obj.get("custom_selected_names", custom_selected_names)
-    custom_selected_displayname = config_obj.get("custom_selected_displayname", custom_selected_displayname)
-    custom_selected_names_tech = config_obj.get("custom_selected_names_tech", custom_selected_names_tech)
-    full_custom_template = config_obj.get("full_custom_template", full_custom_template)
-
     def change_netspeed_font():
-        global netspeed_font, netspeed_font_size, custom_selected_displayname
-        name0 = custom_selected_displayname[0][:8]
-        name1 = custom_selected_displayname[1][:8]
+        global config_obj, netspeed_font, netspeed_font_size
+        name0 = config_obj.custom_selected_displayname[0][:8]
+        name1 = config_obj.custom_selected_displayname[1][:8]
         if netspeed_font.getlength(name0) > netspeed_font.getlength(name1):
             longer = name0
         else:
@@ -2669,7 +2620,7 @@ def UI_Page():  # 进行图像界面显示
         top_window.geometry("+%d+%d" % (x, y))
 
     def show_custom():
-        global full_custom_template, sub_window, custom_selected_names_tech
+        global config_obj, sub_window
         if hardware_monitor_manager == 1:
             tk.messagebox.showerror(title="提示", message="Libre Hardware Monitor 加载失败！", parent=window)
             return
@@ -2716,14 +2667,16 @@ def UI_Page():  # 进行图像界面显示
         desc_label.grid(row=1, column=1, padx=5, pady=5)
 
         def update_sensor_value_tech(i):
-            if custom_selected_names_tech[i] != sensor_vars_tech[i].get():
-                custom_selected_names_tech[i] = sensor_vars_tech[i].get()
+            if config_obj.custom_selected_names_tech[i] != sensor_vars_tech[i].get():
+                config_obj.custom_selected_names_tech[i] = sensor_vars_tech[i].get()
+                save_config()
 
         type_list = ["1. CPU", "2. GPU", "3. 内存"]
         row = 6  # 设置自定义项目数
         for row1 in range(row):
-            if row1 >= len(custom_selected_names_tech):
-                custom_selected_names_tech = custom_selected_names_tech + [""]
+            if row1 >= len(config_obj.custom_selected_names_tech):
+                config_obj.custom_selected_names_tech = config_obj.custom_selected_names_tech + [""]
+                save_config()
             if row1 < len(type_list):
                 rowtype = type_list[row1]
             else:
@@ -2732,7 +2685,7 @@ def UI_Page():  # 进行图像界面显示
             sensor_label = tk.Label(tech_frame, text=rowtype, width=8, anchor=tk.W)
             sensor_label.grid(row=row1 + 2, column=0, sticky=tk.EW, padx=5, pady=5)
 
-            sensor_var = tk.StringVar(tech_frame, custom_selected_names_tech[row1])
+            sensor_var = tk.StringVar(tech_frame, config_obj.custom_selected_names_tech[row1])
             sensor_vars_tech.append(sensor_var)
             sensor_combobox = ttk.Combobox(tech_frame, textvariable=sensor_var, width=60,
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
@@ -2750,18 +2703,19 @@ def UI_Page():  # 进行图像界面显示
         text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=0, sticky=tk.EW)
 
         def update_global_text(event=None):
-            global full_custom_template
+            global config_obj
             # Get the current content of the text area and update the global variable
             full_custom_template_tmp = text_area.get("1.0", tk.END).rstrip('\n')  # tk.END会多一个换行
-            if event is None or full_custom_template != full_custom_template_tmp:
-                full_custom_template = full_custom_template_tmp
+            if event is None or config_obj.full_custom_template != full_custom_template_tmp:
+                config_obj.full_custom_template = full_custom_template_tmp
+                save_config()
                 im = get_full_custom_im()
                 tk_im = ImageTk.PhotoImage(im)
                 canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
                 canvas.image = tk_im
 
         text_area = tk.Text(text_frame, wrap=tk.WORD, width=10, height=10, padx=0, pady=0)
-        text_area.insert(tk.END, full_custom_template)
+        text_area.insert(tk.END, config_obj.full_custom_template)
         text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=0, pady=0)
 
         view_frame = ttk.Frame(text_frame, padding="0")
@@ -2801,22 +2755,23 @@ def UI_Page():  # 进行图像界面显示
         show_error_btn.grid(row=0, column=0, padx=5, pady=5, sticky=tk.EW)
 
         def example(i):
-            global full_custom_template
+            global config_obj
             if i == 1:
-                full_custom_template = '\n'.join([
+                config_obj.full_custom_template = '\n'.join([
                     "i resource/example_background.png", "c #ff3333", "f resource/Orbitron-Regular.ttf 22",
                     "m 16 16", "v 1 {:.0f}", "p %",
                     "m 96 16", "v 2 {:.0f}", "p %",
                     "m 96 44", "v 3 {:.0f}", "p %"
                 ])
             elif i == 2:
-                full_custom_template = '\n'.join([
+                config_obj.full_custom_template = '\n'.join([
                     "m 8 8", "f resource/Orbitron-Bold.ttf 20", "p CPU", "t 8 0", "c #3366cc", "v 1",
                     "m 8 28", "c #000000", "f resource/Orbitron-Bold.ttf 20", "p GPU", "t 8 0", "c #3366cc", "v 2",
                     "m 8 48", "c #000000", "f resource/Orbitron-Bold.ttf 20", "p RAM", "t 8 0", "c #3366cc", "v 3"
                 ])
+            save_config()
             text_area.delete("1.0", tk.END)
-            text_area.insert(tk.END, full_custom_template)
+            text_area.insert(tk.END, config_obj.full_custom_template)
             update_global_text()
 
         example_btn_1 = ttk.Button(btn_frame, text="科技", width=15, command=lambda: example(1))
@@ -2856,8 +2811,9 @@ def UI_Page():  # 进行图像界面显示
 
         def update_sensor_value(i):
             global custom_plot_data
-            if custom_selected_names[i] != sensor_vars[i].get():
-                custom_selected_names[i] = sensor_vars[i].get()
+            if config_obj.custom_selected_names[i] != sensor_vars[i].get():
+                config_obj.custom_selected_names[i] = sensor_vars[i].get()
+                save_config()
 
                 # 项目变更时清空旧项目数据
                 if custom_plot_data is None:
@@ -2869,19 +2825,20 @@ def UI_Page():  # 进行图像界面显示
                     custom_plot_data["recv"] = [0] * (SHOW_WIDTH // 2)
 
         def change_sensor_displayname(i):
-            if custom_selected_displayname[i] != sensor_displayname_vars[i].get():
-                custom_selected_displayname[i] = sensor_displayname_vars[i].get()
+            if config_obj.custom_selected_displayname[i] != sensor_displayname_vars[i].get():
+                config_obj.custom_selected_displayname[i] = sensor_displayname_vars[i].get()
+                save_config()
                 change_netspeed_font()
 
         # "简单"模式显示2项
         for row in range(2):
-            sensor_displayname_var = tk.StringVar(simple_frame, custom_selected_displayname[row])
+            sensor_displayname_var = tk.StringVar(simple_frame, config_obj.custom_selected_displayname[row])
             sensor_displayname_vars.append(sensor_displayname_var)
             sensor_entry = ttk.Entry(simple_frame, textvariable=sensor_displayname_var, width=8)
             sensor_entry.bind("<KeyRelease>", lambda event, ii=row: change_sensor_displayname(ii))
             sensor_entry.grid(row=row + 2, column=0, sticky=tk.EW, padx=5, pady=5)
 
-            sensor_var = tk.StringVar(simple_frame, custom_selected_names[row])
+            sensor_var = tk.StringVar(simple_frame, config_obj.custom_selected_names[row])
             sensor_vars.append(sensor_var)
             sensor_combobox = ttk.Combobox(simple_frame, textvariable=sensor_var, width=60,
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
@@ -2896,6 +2853,38 @@ def UI_Page():  # 进行图像界面显示
 
     # 方向和翻页按钮
 
+    def Page_UP():  # 上一页
+        global config_obj, State_change, sleep_event
+        if config_obj.state_machine >= len(PAGE_DESSCRIPTION) - 1:
+            config_obj.state_machine = 0
+        else:
+            config_obj.state_machine = config_obj.state_machine + 1
+        save_config()
+        State_change = 1
+        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+        insert_text_message(PAGE_DESSCRIPTION[config_obj.state_machine])
+
+    def Page_Down():  # 下一页
+        global config_obj, State_change, sleep_event
+        if config_obj.state_machine <= 0:
+            config_obj.state_machine = len(PAGE_DESSCRIPTION) - 1
+        else:
+            config_obj.state_machine = config_obj.state_machine - 1
+        save_config()
+        State_change = 1
+        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+        insert_text_message(PAGE_DESSCRIPTION[config_obj.state_machine])
+
+    def LCD_Change():  # 切换显示方向
+        global config_obj, Device_State, sleep_event
+        if Device_State == 0:
+            insert_text_message("设备未连接，切换失败")
+            return
+        config_obj.lcd_change ^= 1
+        save_config()
+        insert_text_message(LCD_STATE_MESSAGE[config_obj.lcd_change])
+        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+
     btn7 = ttk.Button(root, text="切换显示方向", width=12, command=LCD_Change)
     btn7.grid(row=6, column=1, padx=5, pady=5)
 
@@ -2908,7 +2897,7 @@ def UI_Page():  # 进行图像界面显示
     # 动图间隔
 
     def change_photo_interval(*args):
-        global photo_interval, second_times
+        global config_obj
         try:
             photo_interval_tmp = float(interval_var.get())
         except ValueError as e:
@@ -2916,17 +2905,19 @@ def UI_Page():  # 进行图像界面显示
                 insert_text_message("Invalid number entered: %s" % e)
             return
         insert_text_message("", cleanNext=False)
-        if photo_interval_tmp >= 0 and photo_interval + second_times * 2 != photo_interval_tmp:
-            second_times = int(photo_interval_tmp)  # 舍去小数部分
-            photo_interval = photo_interval_tmp - second_times
-            if second_times > 0 and photo_interval < 0.2:
-                photo_interval += 1
-                second_times -= 1
+        if (photo_interval_tmp >= 0 and config_obj.photo_interval_var + config_obj.second_times * 2 !=
+                photo_interval_tmp):
+            config_obj.second_times = int(photo_interval_tmp)  # 舍去小数部分
+            config_obj.photo_interval_var = photo_interval_tmp - config_obj.second_times
+            if config_obj.second_times > 0 and config_obj.photo_interval_var < 0.2:
+                config_obj.photo_interval_var += 1
+                config_obj.second_times -= 1
+            save_config()
             State_change = 1  # 刷新屏幕
 
     interval_var = tk.StringVar(root, "0.1")
     interval_var.trace_add("write", change_photo_interval)
-    interval_var.set(config_obj.get("photo_interval_var", "0.1"))
+    interval_var.set(config_obj.photo_interval_var + config_obj.second_times)
 
     label_screen_number = ttk.Label(root, text="动图间隔")
     label_screen_number.grid(row=4, column=3, sticky=tk.E, padx=5, pady=5)
@@ -2936,40 +2927,9 @@ def UI_Page():  # 进行图像界面显示
 
     # 屏幕编号
 
-    def change_screenshot_monitor(*args):
-        global screenshot_region, cropped_monitor
-        try:
-            screenshot_monitor_id_tmp = int(number_var.get())
-        except ValueError as e:
-            if len(number_var.get()) > 0:
-                insert_text_message("Invalid number entered: %s" % e)
-            return
-        insert_text_message("", cleanNext=False)
-        if cropped_monitor["mon"] == screenshot_monitor_id_tmp or screenshot_monitor_id_tmp <= 0:
-            return
-
-        with mss() as sct:
-            monitors = sct.monitors
-            # 序号为0的monitor是总体，所以len比实际数量多1个
-            if screenshot_monitor_id_tmp < len(monitors):
-                monitor = monitors[screenshot_monitor_id_tmp]
-                cropped_monitor = {
-                    "left": screenshot_region[0] + monitor["left"],
-                    "top": screenshot_region[1] + monitor["top"],
-                    "width": screenshot_region[2] or monitor["width"],
-                    "height": screenshot_region[3] or monitor["height"],
-                    "mon": screenshot_monitor_id_tmp,
-                }
-                State_change = 1  # 刷新屏幕
-            else:
-                message = "编号为%s的屏幕不存在！" % screenshot_monitor_id_tmp
-                insert_text_message(message)
-                tk.messagebox.showerror(title="错误", message=message)
-                number_var.set(cropped_monitor["mon"])
-
     number_var = tk.StringVar(root, "1")
-    number_var.trace_add("write", change_screenshot_monitor)
-    number_var.set(config_obj.get("number_var", "1"))
+    # number_var.trace_add("write", change_screenshot_monitor)
+    number_var.set(config_obj.number_var)
 
     label_screen_number = ttk.Label(root, text="屏幕编号")
     label_screen_number.grid(row=5, column=3, sticky=tk.E, padx=5, pady=5)
@@ -2980,7 +2940,7 @@ def UI_Page():  # 进行图像界面显示
     # fps
 
     def change_fps(*args):
-        global screenshot_limit_fps
+        global config_obj
         screenshot_limit_fps_tmp = 0
         try:
             screenshot_limit_fps_tmp = int(fps_var.get())
@@ -2989,62 +2949,19 @@ def UI_Page():  # 进行图像界面显示
                 insert_text_message("Invalid number entered: %s" % e)
             return
         insert_text_message("", cleanNext=False)
-        if 0 < screenshot_limit_fps_tmp != screenshot_limit_fps:
-            screenshot_limit_fps = screenshot_limit_fps_tmp
+        if 0 < screenshot_limit_fps_tmp != config_obj.fps_var:
+            config_obj.fps_var = screenshot_limit_fps_tmp
+            save_config()
 
     fps_var = tk.StringVar(root, "5")
     fps_var.trace_add("write", change_fps)
-    fps_var.set(config_obj.get("fps_var", "5"))
+    fps_var.set(config_obj.fps_var)
 
     label = ttk.Label(root, text="最大 FPS")
     label.grid(row=6, column=3, sticky=tk.E, padx=5, pady=5)
 
     fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
     fps_entry.grid(row=6, column=4, sticky=tk.EW, padx=5, pady=5)
-
-    # 区域
-
-    def change_screen_region(*args):
-        global screenshot_region, cropped_monitor, State_change
-        try:
-            t = tuple((0 if x.strip() == "" else int(x)) for x in screen_region_var.get().split(","))
-        except ValueError as e:
-            if len(screen_region_var.get()) > 0:
-                insert_text_message("屏幕镜像区域设置无效: %s\n示例: 0,0,%s,%s" % (e, SHOW_WIDTH, SHOW_HEIGHT))
-            return
-        if len(t) != 4:
-            insert_text_message("屏幕镜像区域设置无效，示例: 0,0,%s,%s" % (SHOW_WIDTH, SHOW_HEIGHT))
-            return
-        insert_text_message("", cleanNext=False)
-        if screenshot_region == t:
-            return
-
-        screenshot_region = t
-        with mss() as sct:
-            monitors = sct.monitors
-            screenshot_monitor_id = cropped_monitor["mon"]
-            if screenshot_monitor_id > len(monitors):
-                monitor = sct.monitors[screenshot_monitor_id]
-            else:
-                monitor = sct.monitors[1]
-        cropped_monitor = {
-            "left": screenshot_region[0] + monitor["left"],
-            "top": screenshot_region[1] + monitor["top"],
-            "width": screenshot_region[2] or monitor["width"],
-            "height": screenshot_region[3] or monitor["height"],
-            "mon": screenshot_monitor_id,
-        }
-        State_change = 1  # 刷新屏幕
-
-    screen_region_var = tk.StringVar(root)
-    screen_region_var.trace_add("write", change_screen_region)
-    # screen_region_var.set(config_obj.get("screen_region_var", "0,0,,"))
-    screen_region_var.set("0,0,,")
-
-    # label = ttk.Label(root, text="屏幕镜像区域(左,上,宽,高):")
-    # label.grid(row=7, column=1, columnspan=2, sticky=tk.E, padx=5, pady=5)
-    # screen_region_entry = ttk.Entry(root, textvariable=screen_region_var, width=8)
-    # screen_region_entry.grid(row=7, column=3, columnspan=2, sticky=tk.EW, padx=5, pady=5)
 
     def combo_configure(event):
         combo = event.widget
@@ -3066,23 +2983,27 @@ def UI_Page():  # 进行图像界面显示
         combo.configure(style=style_name)
 
     def update_windows_list(event):
-        global all_windows, select_hwnd
-        desc = get_hwnd_desc(select_hwnd)
+        global config_obj, all_windows
+        desc = get_hwnd_desc(config_obj.select_window_hwnd)
         if desc:
             event.widget.set(desc)
         event.widget["value"] = list(all_windows.keys())
         combo_configure(event)
 
     def update_select_hwnd(event):
-        global all_windows, select_hwnd
+        global config_obj, all_windows, sleep_event
         select_str = win32_windows_var.get()
-        select_hwnd, _ = all_windows.get(select_str)
+        config_obj.select_window_hwnd, _ = all_windows.get(select_str)
+        State_change = 1
+        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+        save_config()
 
     label = ttk.Label(root, text="屏幕镜像窗口:")
     label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
-    select_hwnd = config_obj.get("select_window_hwnd", 0)
-    win32_windows_var = tk.StringVar(root, get_hwnd_desc(select_hwnd) or select_hwnd or list(all_windows.keys())[0])
+    win32_windows_var = tk.StringVar(
+        root, get_hwnd_desc(config_obj.select_window_hwnd)
+              or config_obj.select_window_hwnd or list(all_windows.keys())[0])
     windows_combobox = ttk.Combobox(root, textvariable=win32_windows_var, width=10,
                                     values=list(all_windows.keys()))
     windows_combobox.bind('<Configure>', combo_configure)
@@ -3097,23 +3018,7 @@ def UI_Page():  # 进行图像界面显示
 
     def on_closing():
         # 结束时保存配置
-        config_obj = {
-            "text_color_r": rgb_tuple[0],
-            "text_color_g": rgb_tuple[1],
-            "text_color_b": rgb_tuple[2],
-            "state_machine": machine_model,
-            "lcd_change": LCD_Change_use,
-            "photo_interval_var": photo_interval + second_times,
-            "number_var": cropped_monitor["mon"],
-            "select_window_hwnd": select_hwnd,
-            "fps_var": screenshot_limit_fps,
-            "screen_region_var": screen_region_var.get(),
-            "custom_selected_names": custom_selected_names,
-            "custom_selected_displayname": custom_selected_displayname,
-            "custom_selected_names_tech": custom_selected_names_tech,
-            "full_custom_template": full_custom_template,
-        }
-        save_config(config_obj)
+        save_config(True)
         window.destroy()
 
     window.protocol("WM_DELETE_WINDOW", on_closing)
@@ -3170,8 +3075,7 @@ def set_device_state(state):
 
 
 def Get_MSN_Device(port_list):  # 尝试获取MSN设备
-    global ADC_det, ser, State_change, current_time
-    global Screen_Error, LCD_Change_now, LCD_Change_use
+    global config_obj, ADC_det, ser, State_change, current_time, Screen_Error, LCD_Change_now
     if ser is not None and ser.is_open:
         ser.close()  # 先将异常的串口连接关闭，防止无法打开
 
@@ -3229,7 +3133,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     # My_MSN_Data = Read_M_SFR_Data(256)  # 读取u8在0x0100之后的128字节
     # Print_MSN_Data(My_MSN_Data)  # 解析字节中的数据格式
     # Read_MSN_Data(My_MSN_Data)  # 从设备读取更详细的数据，如序列号等
-    LCD_Change_now = LCD_Change_use
+    LCD_Change_now = config_obj.lcd_change
     LCD_State(LCD_Change_now)  # 配置显示方向
     # 配置按键阈值
     ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) // 3
@@ -3240,8 +3144,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
-    global machine_model, State_change, LCD_Change_now, LCD_Change_use, Label4
-    global write_path_index, Img_data_use, color_use, rgb_tuple
+    global config_obj, State_change, LCD_Change_now, Label4
+    global write_path_index, Img_data_use, color_use
 
     if write_path_index != 0:
         if write_path_index == 1:
@@ -3256,27 +3160,29 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         write_path_index = 0
         State_change = 1
 
-    if LCD_Change_now != LCD_Change_use:  # 显示方向与设置不符合
-        LCD_Change_now = LCD_Change_use
+    if LCD_Change_now != config_obj.lcd_change:  # 显示方向与设置不符合
+        LCD_Change_now = config_obj.lcd_change
         LCD_State(LCD_Change_now)  # 配置显示方向
         State_change = 1
 
     bar_colors = [(235, 139, 139), (146, 212, 217)]
     # bar_colors = [(128, 255, 128), (255, 128, 255)]
     # bar_colors = [(128, 128, 255), (0, 128, 192)]
-    if machine_model == 1:
+    if config_obj.state_machine == 1:
         show_PC_time(color_use)  # 展示时钟
-    elif machine_model == 2:
+    elif config_obj.state_machine == 2:
         show_Photo()  # 展示单张相册图像
-    elif machine_model == 3:
+    elif config_obj.state_machine == 3:
         show_PC_Screen()  # 屏幕串流
-    elif machine_model == 4:
+    elif config_obj.state_machine == 4:
         show_PC_state(color_use, BLACK)  # 展示CPU/内存/磁盘/电池 使用率
-    elif machine_model == 5:
+    elif config_obj.state_machine == 5:
+        rgb_tuple = (config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
         show_netspeed(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
-    elif machine_model == 6:
+    elif config_obj.state_machine == 6:
+        rgb_tuple = (config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
         show_custom_two_rows(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
-    elif machine_model == 7:
+    elif config_obj.state_machine == 7:
         show_full_custom()
     else:  # default 0
         show_gif()  # 展示36张动图
@@ -3284,44 +3190,6 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
 
 def get_formatted_time_string(time):
     return time.strftime("%Y-%m-%d %H:%M:%S")
-
-
-# print("该设备具有%d个内核和%d个逻辑处理器" % (psutil.cpu_count(logical=False), psutil.cpu_count()))
-# print("该CPU主频为%.1fGHZ" % (psutil.cpu_freq().current / 1000))
-# print("当前CPU占用率为%s%%" % psutil.cpu_percent())
-# mem = psutil.virtual_memory()
-# print("该设备具有%.0fGB的内存" % (mem.total / (1024 * 1024 * 1024)))
-# print("当前内存占用率为%s%%" % mem.percent)
-# battery = psutil.sensors_battery()
-# if battery is not None:
-#     print("电池剩余电量%d%%" % battery.percent)
-# print("系统启动时间%s" % get_formatted_time_string(datetime.fromtimestamp(psutil.boot_time())))
-# print("程序启动时间%s" % get_formatted_time_string(current_time))
-
-State_change = 1  # 状态发生变化
-Screen_Error = 0
-gif_num = 0
-machine_model = 0  # 定义初始状态
-Device_State = 0  # 初始为未连接
-Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
-LCD_Change_use = 0  # 设置显示方向
-LCD_Change_now = 0  # 实际显示方向
-color_use = RED  # 彩色图片点阵算法 5R6G5B
-rgb_tuple = (0, 0, 0)  # RGB颜色
-write_path_index = 0
-
-Label1 = None  # 设备状态显示框
-Label3 = None  # 背景图像路径显示框
-Label4 = None  # 闪存固件路径显示框
-Label5 = None  # 相册图像路径显示框
-Label6 = None  # 动图文件路径显示框
-Text1 = None  # 信息显示文本框
-windows_combobox = None
-interval_var = None
-ser = None  # 设备连接句柄
-ADC_det = 0  # 按键阈值
-sub_window = None  # 子窗口，设置为全局变量用于重新打开时不需要重复创建
-hardware_monitor_manager = None
 
 
 def load_task():
@@ -3450,6 +3318,84 @@ def manage_task():
     print("Stop manager")
 
 
+current_time = 0
+Img_data_use = None
+
+cleanNextTime = False
+
+sleep_event = None  # 用event代替time.sleep，加快切换速度
+SER_lock = None
+
+last_refresh_time = 0
+gif_wait_time = 0.0
+second_pass = 0
+
+screen_shot_queue = None
+screen_process_queue = None
+desktop_hwnd = 0
+all_windows = None
+
+row_np_zero = np.zeros([1, SHOW_WIDTH, 3], dtype=np.uint8)
+column_np_zero = np.zeros([SHOW_HEIGHT, 1, 3], dtype=np.uint8)
+
+screenshot_test_time = 0
+screenshot_last_limit_time = 0
+screenshot_test_frame = 0
+wait_time = 0.0
+
+netspeed_last_refresh_snetio = None
+netspeed_plot_data = None
+time_second = None
+
+custom_plot_data = None  # 用于 show_custom_two_rows,
+
+mini_mark_parser = None
+full_custom_error = "OK"
+
+netspeed_font_size = 20
+default_font = None
+netspeed_font = None
+
+config_file = "MSU2_MINI.json"
+last_config_save_time = 0  # 最后一次保存时间
+save_thread = None
+config_event = None
+config_obj = sys_config()
+
+State_change = 1  # 状态发生变化
+Screen_Error = 0
+gif_num = 0
+Device_State = 0  # 初始为未连接
+Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
+LCD_Change_now = 0  # 实际显示方向
+color_use = RED  # 彩色图片点阵算法 5R6G5B
+write_path_index = 0
+
+Label1 = None  # 设备状态显示框
+Label3 = None  # 背景图像路径显示框
+Label4 = None  # 闪存固件路径显示框
+Label5 = None  # 相册图像路径显示框
+Label6 = None  # 动图文件路径显示框
+Text1 = None  # 信息显示文本框
+windows_combobox = None
+interval_var = None
+ser = None  # 设备连接句柄
+ADC_det = 0  # 按键阈值
+sub_window = None  # 子窗口，设置为全局变量用于重新打开时不需要重复创建
+hardware_monitor_manager = None
+
+# print("该设备具有%d个内核和%d个逻辑处理器" % (psutil.cpu_count(logical=False), psutil.cpu_count()))
+# print("该CPU主频为%.1fGHZ" % (psutil.cpu_freq().current / 1000))
+# print("当前CPU占用率为%s%%" % psutil.cpu_percent())
+# mem = psutil.virtual_memory()
+# print("该设备具有%.0fGB的内存" % (mem.total / (1024 * 1024 * 1024)))
+# print("当前内存占用率为%s%%" % mem.percent)
+# battery = psutil.sensors_battery()
+# if battery is not None:
+#     print("电池剩余电量%d%%" % battery.percent)
+# print("系统启动时间%s" % get_formatted_time_string(datetime.fromtimestamp(psutil.boot_time())))
+# print("程序启动时间%s" % get_formatted_time_string(current_time))
+
 if __name__ == "__main__":
     exit_code = 0
     try:
@@ -3459,6 +3405,7 @@ if __name__ == "__main__":
         screenshot_last_limit_time = current_time
         time_second = timedelta(seconds=1)
         sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
+        config_event = threading.Event()  # 用event代替time.sleep，加快切换速度
         SER_lock = threading.Lock()
         screen_shot_queue = queue.Queue(2)
         screen_process_queue = queue.Queue(2)
