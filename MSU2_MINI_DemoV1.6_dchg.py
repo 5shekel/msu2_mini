@@ -1752,9 +1752,8 @@ def set_select_hwnd(hwnd):
 
 
 def clear_queue(queue):
-    for x in range(2):  # 最多删除2次
-        if not queue.empty():  # 清空缓存，防止显示旧的窗口
-            queue.get()
+    for _ in range(queue.qsize()):
+        queue.get()
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
