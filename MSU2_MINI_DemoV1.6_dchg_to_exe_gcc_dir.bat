@@ -1,7 +1,7 @@
 @echo off
 cd /D "%~dp0"
 
-set mainfilename=MSU2_MINI_DemoV1.6_dchg
+set "mainfilename=MSU2_MINI_DemoV1.6_dchg"
 rem mkdir %mainfilename%.dist 2>nul
 
 setlocal enabledelayedexpansion
@@ -23,5 +23,9 @@ python -m nuitka --standalone --windows-console-mode=disable ^
 	%mainfilename%.py
 
 endlocal
+
+set "datenow=%date:~5,2%%date:~8,2%"
+set "outfilename=MSU2_MINI_MG(by nuitka，稳定不报毒版本还报毒就用这个)-%datenow%"
+move "%mainfilename%" "%outfilename%"
 
 pause
