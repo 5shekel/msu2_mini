@@ -1953,8 +1953,6 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
     # geezmo: 预渲染图片，显示网速
     if State_change == 1:
         # 初始化
-        if netspeed_plot_data is None:
-            netspeed_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
         State_change = 0
         sleep_event.clear()  # 使sleep_event.wait生效
         wait_time = 0
@@ -2143,8 +2141,6 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
     image_height = SHOW_HEIGHT // 4  # 高度
 
     if State_change == 1:
-        if custom_plot_data is None:
-            custom_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
         State_change = 0
         sleep_event.clear()  # 使sleep_event.wait生效
         wait_time = 0
@@ -2820,9 +2816,6 @@ def UI_Page():  # 进行图像界面显示
                 save_config()
 
                 # 项目变更时清空旧项目数据
-                if custom_plot_data is None:
-                    return
-                key = None
                 if i == 0:
                     custom_plot_data["sent"] = [0] * (SHOW_WIDTH // 2)
                 elif i == 1:
@@ -3419,6 +3412,9 @@ if __name__ == "__main__":
         mini_mark_parser = MiniMarkParser()
         default_font = MiniMark.load_font("simhei.ttf", netspeed_font_size)
         netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 4)
+
+        netspeed_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
+        custom_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
 
         MG_daemon_running = True
         MG_screen_thread_running = True
