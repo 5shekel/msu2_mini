@@ -13,7 +13,6 @@ import tkinter.filedialog  # 用于获取文件路径
 import tkinter.font as tkfont
 import tkinter.messagebox
 import traceback
-from ctypes import windll
 from datetime import datetime, timedelta  # 用于获取当前时间
 from tkinter import ttk  # geezmo: 好看的皮肤
 
@@ -22,39 +21,50 @@ import psutil  # 引入psutil获取设备信息（需要额外安装）
 import pystray
 import serial  # 引入串口库（需要额外安装）
 import serial.tools.list_ports
-import win32con
-import win32gui
-import win32ui
 from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
 
 import MSU2_MINI_MG_minimark as MiniMark
 from MSU2_MINI_MG_minimark import MiniMarkParser
 
-# 使用高dpi缩放适配高分屏。0：不使用缩放 1：所有屏幕 2：当前屏幕
-try:  # >= win 8.1
-    windll.shcore.SetProcessDpiAwareness(1)
-except:  # win 8.0 or less
+
+def isWindows():
+    return True if os.name == "nt" else False
+
+
+if isWindows():
+    from ctypes import windll
+    import win32con
+    import win32gui
+    import win32ui
+
+    # 使用高dpi缩放适配高分屏。0：不使用缩放 1：所有屏幕 2：当前屏幕
+    try:  # >= win 8.1
+        windll.shcore.SetProcessDpiAwareness(1)
+    except:  # win 8.0 or less
+        try:
+            windll.user32.SetProcessDPIAware()
+        except:
+            pass
     try:
-        windll.user32.SetProcessDPIAware()
+        system_dpi = windll.user32.GetDpiForSystem()
+    except:
+        system_dpi = 1
+
+    try:
+        # 取消命令行窗口快速编辑模式，防止鼠标误触导致阻塞
+        windll.kernel32.SetConsoleMode(windll.kernel32.GetStdHandle(-10), 128)
     except:
         pass
-try:
-    system_dpi = windll.user32.GetDpiForSystem()
-except:
-    system_dpi = 1
-
-try:
-    # 取消命令行窗口快速编辑模式，防止鼠标误触导致阻塞
-    windll.kernel32.SetConsoleMode(windll.kernel32.GetStdHandle(-10), 128)
-except:
-    pass
-try:
-    if not windll.shell32.IsUserAnAdmin():  # 测试是否是以管理员权限启动
-        print("WARN：需要以管理员权限启动本程序，否则部分指标将无法获取")
-        # windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
-        # sys.exit(0)
-except:
-    pass
+    try:
+        if not windll.shell32.IsUserAnAdmin():  # 测试是否是以管理员权限启动
+            print("WARN：需要以管理员权限启动本程序，否则部分指标将无法获取")
+            # windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+            # sys.exit(0)
+    except:
+        pass
+else:  # linux
+    # 命令行或后台启动需要加DISPLAY
+    os.environ["DISPLAY"] = ":0.0"
 
 # 颜色对应的RGB565编码
 RED = 0xF800
@@ -3081,8 +3091,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     for port in port_list:
         try:  # 尝试打开串口
             # 初始化串口连接,初始使用
-            ser = serial.Serial(port.name, 115200, timeout=5.0,
-                                write_timeout=5.0, inter_byte_timeout=0.1)
+            ser = serial.Serial(port.name if isWindows() else "/dev/" + port.name,
+                                115200, timeout=5.0, write_timeout=5.0, inter_byte_timeout=0.1)
         except Exception as e:  # 出现异常
             print("%s 无法打开，请检查是否被其他程序占用: %s" % (port.name, e))
             if ser is not None and ser.is_open:
@@ -3407,7 +3417,7 @@ if __name__ == "__main__":
 
         config_obj = sys_config()
         mini_mark_parser = MiniMarkParser()
-        default_font = MiniMark.load_font("simhei.ttf", netspeed_font_size)
+        default_font = MiniMark.load_font("./simhei.ttf", netspeed_font_size)
         netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 4)
 
         row_np_zero = np.zeros([1, SHOW_WIDTH, 3], dtype=np.uint8)
