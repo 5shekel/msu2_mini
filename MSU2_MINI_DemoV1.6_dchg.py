@@ -373,7 +373,7 @@ def Write_Photo_Path1():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 1
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+    state_change_set(save=False)
 
 
 def Write_Photo_Path2():  # 写入文件
@@ -388,7 +388,7 @@ def Write_Photo_Path2():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 2
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+    state_change_set(save=False)
 
 
 def Write_Photo_Path3():  # 写入文件
@@ -405,7 +405,7 @@ def Write_Photo_Path3():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 3
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+    state_change_set(save=False)
 
 
 def Write_Photo_Path4():  # 写入文件
@@ -520,7 +520,23 @@ def Write_Photo_Path4():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 4
+    state_change_set(save=False)
+
+
+def state_change_set(message=None, save=True):
+    global State_change, sleep_event
+    State_change = 1
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+    if save:
+        save_config()
+    if message is not None:
+        insert_text_message(message)
+
+
+def state_change_clear():
+    global State_change, sleep_event
+    State_change = 0
+    sleep_event.clear()  # 使sleep_event.wait生效
 
 
 def Page_UP():  # 上一页
@@ -529,10 +545,7 @@ def Page_UP():  # 上一页
         config_obj.state_machine = 0
     else:
         config_obj.state_machine = config_obj.state_machine + 1
-    save_config()
-    State_change = 1
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-    insert_text_message(PAGE_DESSCRIPTION[config_obj.state_machine])
+    state_change_set(PAGE_DESSCRIPTION[config_obj.state_machine])
 
 
 def Page_Down():  # 下一页
@@ -541,10 +554,7 @@ def Page_Down():  # 下一页
         config_obj.state_machine = len(PAGE_DESSCRIPTION) - 1
     else:
         config_obj.state_machine = config_obj.state_machine - 1
-    save_config()
-    State_change = 1
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-    insert_text_message(PAGE_DESSCRIPTION[config_obj.state_machine])
+    state_change_set(PAGE_DESSCRIPTION[config_obj.state_machine])
 
 
 def LCD_Change():  # 切换显示方向
@@ -553,9 +563,7 @@ def LCD_Change():  # 切换显示方向
         insert_text_message("设备未连接，切换失败")
         return
     config_obj.lcd_change ^= 1
-    save_config()
-    insert_text_message(LCD_STATE_MESSAGE[config_obj.lcd_change])
-    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+    state_change_set(LCD_STATE_MESSAGE[config_obj.lcd_change])
 
 
 # 由于设备不支持多线程访问，请不要直接使用SER_Write，应使用SER_rw方法
@@ -1470,8 +1478,7 @@ def show_gif():  # 显示GIF动图
     global config_obj, second_pass, sleep_event
     global current_time, last_refresh_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
-        State_change = 0
-        sleep_event.clear()  # 使sleep_event.wait生效
+        state_change_clear()
         # gif_num = 0
         gif_wait_time = 0
         last_refresh_time = current_time
@@ -1506,8 +1513,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
     photo_add = 4038
     num_add = 4026
     if State_change == 1:
-        State_change = 0
-        sleep_event.clear()  # 使sleep_event.wait生效
+        state_change_clear()
         wait_time = 0
         last_refresh_time = current_time
         LCD_Set_Color(FC, BC)
@@ -1599,8 +1605,7 @@ def show_PC_state(FC, BC):  # 显示PC状态
 def show_Photo():  # 显示照片
     global State_change, sleep_event
     if State_change == 1:
-        State_change = 0
-        sleep_event.clear()  # 使sleep_event.wait生效
+        state_change_clear()
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     LCD_Photo(3926)  # 放置背景
@@ -1612,8 +1617,7 @@ def show_PC_time(FC):
     photo_add = 3826
     num_add = 3651
     if State_change == 1:
-        State_change = 0
-        sleep_event.clear()  # 使sleep_event.wait生效
+        state_change_clear()
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
         LCD_Photo(photo_add)  # 放置背景
         LCD_Set_Color(FC, photo_add)
@@ -1928,8 +1932,7 @@ def show_PC_Screen():  # 显示照片
     global config_obj, State_change, Screen_Error, screenshot_test_frame, screen_process_queue
     global current_time, screenshot_test_time, screenshot_last_limit_time, wait_time, sleep_event
     if State_change == 1:
-        State_change = 0
-        sleep_event.clear()  # 使sleep_event.wait生效
+        state_change_clear()
         wait_time = 0
         screenshot_last_limit_time = current_time
         Screen_Error = 0
@@ -1989,9 +1992,7 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
     current_snetio = psutil.net_io_counters()
     # geezmo: 预渲染图片，显示网速
     if State_change == 1:
-        # 初始化
-        State_change = 0
-        sleep_event.clear()  # 使sleep_event.wait生效
+        state_change_clear()
         wait_time = 0
         last_refresh_time = current_time - timedelta(seconds=0.001)
         netspeed_last_refresh_snetio = current_snetio
@@ -2178,8 +2179,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
     image_height = SHOW_HEIGHT // 4  # 高度
 
     if State_change == 1:
-        State_change = 0
-        sleep_event.clear()  # 使sleep_event.wait生效
+        state_change_clear()
         wait_time = 0
         last_refresh_time = current_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
@@ -2319,9 +2319,7 @@ def show_full_custom():
         return
 
     if State_change == 1:
-        # 初始化
-        State_change = 0
-        sleep_event.clear()  # 使sleep_event.wait生效
+        state_change_clear()
         wait_time = 0
         last_refresh_time = current_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
@@ -2522,7 +2520,7 @@ def UI_Page():  # 进行图像界面显示
         global config_obj, color_use, State_change
         # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
         color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
-        State_change = 1
+        state_change_set()
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
             Label2.config(bg=color_La)
@@ -2530,19 +2528,16 @@ def UI_Page():  # 进行图像界面显示
     def update_label_color_red():
         global config_obj
         config_obj.text_color_r = int(text_color_red_scale.get())
-        save_config()
         update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     def update_label_color_green():
         global config_obj
         config_obj.text_color_g = int(text_color_green_scale.get())
-        save_config()
         update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     def update_label_color_blue():
         global config_obj
         config_obj.text_color_b = int(text_color_blue_scale.get())
-        save_config()
         update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     scale_desc = tk.Label(root, text="文字颜色")
@@ -2906,7 +2901,6 @@ def UI_Page():  # 进行图像界面显示
             if len(interval_var.get()) > 0:
                 insert_text_message("Invalid number entered: %s" % e)
             return
-        insert_text_message("", cleanNext=False)
         if (photo_interval_tmp >= 0 and config_obj.photo_interval_var + config_obj.second_times * 2 !=
                 photo_interval_tmp):
             config_obj.second_times = int(photo_interval_tmp)  # 舍去小数部分
@@ -2914,8 +2908,7 @@ def UI_Page():  # 进行图像界面显示
             if config_obj.second_times > 0 and config_obj.photo_interval_var < 0.2:
                 config_obj.photo_interval_var += 1
                 config_obj.second_times -= 1
-            save_config()
-            State_change = 1  # 刷新屏幕
+            state_change_set("")
 
     interval_var = tk.StringVar(root, "0.1")
     interval_var.trace_add("write", change_photo_interval)
@@ -3000,8 +2993,7 @@ def UI_Page():  # 进行图像界面显示
             config_obj.select_window_hwnd = select_window_hwnd
             clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
             clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
-            sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-            save_config()
+            state_change_set()
 
     label = ttk.Label(root, text="屏幕镜像窗口:")
     label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
@@ -3163,12 +3155,10 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         elif write_path_index == 4:
             Write_Flash_hex_fast(0, Img_data_use)
         write_path_index = 0
-        State_change = 1
 
     if LCD_Change_now != config_obj.lcd_change:  # 显示方向与设置不符合
         LCD_Change_now = config_obj.lcd_change
         LCD_State(LCD_Change_now)  # 配置显示方向
-        State_change = 1
 
     bar_colors = [(235, 139, 139), (146, 212, 217)]
     # bar_colors = [(128, 255, 128), (255, 128, 255)]
