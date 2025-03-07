@@ -1888,12 +1888,10 @@ def screenshot_panic():
 
 
 def show_PC_Screen():  # 显示照片
-    global config_obj, State_change, Screen_Error, screenshot_test_frame, screen_process_queue, screen_shot_queue
+    global config_obj, State_change, Screen_Error, screenshot_test_frame, screen_process_queue
     global current_time, screenshot_test_time, screenshot_last_limit_time, wait_time, sleep_event
     if State_change == 1:
         State_change = 0
-        clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
-        clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
         sleep_event.clear()  # 使sleep_event.wait生效
         wait_time = 0
         screenshot_last_limit_time = current_time
