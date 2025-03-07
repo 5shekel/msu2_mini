@@ -3334,8 +3334,8 @@ screen_process_queue = None
 desktop_hwnd = 0
 all_windows = None
 
-row_np_zero = np.zeros([1, SHOW_WIDTH, 3], dtype=np.uint8)
-column_np_zero = np.zeros([SHOW_HEIGHT, 1, 3], dtype=np.uint8)
+row_np_zero = None
+column_np_zero = None
 
 screenshot_test_time = 0
 screenshot_last_limit_time = 0
@@ -3359,7 +3359,7 @@ config_file = "MSU2_MINI.json"
 last_config_save_time = 0  # 最后一次保存时间
 save_thread = None
 config_event = None
-config_obj = sys_config()
+config_obj = None
 
 State_change = 1  # 状态发生变化
 Screen_Error = 0
@@ -3409,9 +3409,13 @@ if __name__ == "__main__":
         screen_shot_queue = queue.Queue(2)
         screen_process_queue = queue.Queue(2)
 
+        config_obj = sys_config()
         mini_mark_parser = MiniMarkParser()
         default_font = MiniMark.load_font("simhei.ttf", netspeed_font_size)
         netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 4)
+
+        row_np_zero = np.zeros([1, SHOW_WIDTH, 3], dtype=np.uint8)
+        column_np_zero = np.zeros([SHOW_HEIGHT, 1, 3], dtype=np.uint8)
 
         netspeed_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
         custom_plot_data = {"sent": [0] * (SHOW_WIDTH // 2), "recv": [0] * (SHOW_WIDTH // 2)}
