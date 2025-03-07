@@ -1742,9 +1742,11 @@ def shrink_image_block_average(image, shrink_factor):
 
 
 def set_select_hwnd(hwnd):
-    global config_obj, windows_combobox
+    global config_obj, windows_combobox, screen_shot_queue, screen_process_queue
     config_obj.select_window_hwnd = hwnd
     save_config()
+    clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
+    clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
     desc = get_hwnd_desc(hwnd)
     if not desc:
         desc = hwnd
@@ -2988,12 +2990,13 @@ def UI_Page():  # 进行图像界面显示
         combo_configure(event)
 
     def update_select_hwnd(event):
-        global config_obj, all_windows, State_change, sleep_event
+        global config_obj, all_windows, State_change, sleep_event, screen_shot_queue, screen_process_queue
         select_str = win32_windows_var.get()
         select_window_hwnd, _ = all_windows.get(select_str)
         if select_window_hwnd != config_obj.select_window_hwnd:
             config_obj.select_window_hwnd = select_window_hwnd
-            State_change = 1
+            clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
+            clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
             sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
             save_config()
 
