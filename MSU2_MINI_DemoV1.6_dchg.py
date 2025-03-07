@@ -523,6 +523,41 @@ def Write_Photo_Path4():  # 写入文件
     sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
 
+def Page_UP():  # 上一页
+    global config_obj, State_change, sleep_event
+    if config_obj.state_machine >= len(PAGE_DESSCRIPTION) - 1:
+        config_obj.state_machine = 0
+    else:
+        config_obj.state_machine = config_obj.state_machine + 1
+    save_config()
+    State_change = 1
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+    insert_text_message(PAGE_DESSCRIPTION[config_obj.state_machine])
+
+
+def Page_Down():  # 下一页
+    global config_obj, State_change, sleep_event
+    if config_obj.state_machine <= 0:
+        config_obj.state_machine = len(PAGE_DESSCRIPTION) - 1
+    else:
+        config_obj.state_machine = config_obj.state_machine - 1
+    save_config()
+    State_change = 1
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+    insert_text_message(PAGE_DESSCRIPTION[config_obj.state_machine])
+
+
+def LCD_Change():  # 切换显示方向
+    global config_obj, Device_State, sleep_event
+    if Device_State == 0:
+        insert_text_message("设备未连接，切换失败")
+        return
+    config_obj.lcd_change ^= 1
+    save_config()
+    insert_text_message(LCD_STATE_MESSAGE[config_obj.lcd_change])
+    sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+
+
 # 由于设备不支持多线程访问，请不要直接使用SER_Write，应使用SER_rw方法
 def SER_Write(Data_U0):
     global ser
@@ -2851,38 +2886,6 @@ def UI_Page():  # 进行图像界面显示
     show_custom_btn.grid(row=5, column=1, padx=5, pady=5)
 
     # 方向和翻页按钮
-
-    def Page_UP():  # 上一页
-        global config_obj, State_change, sleep_event
-        if config_obj.state_machine >= len(PAGE_DESSCRIPTION) - 1:
-            config_obj.state_machine = 0
-        else:
-            config_obj.state_machine = config_obj.state_machine + 1
-        save_config()
-        State_change = 1
-        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-        insert_text_message(PAGE_DESSCRIPTION[config_obj.state_machine])
-
-    def Page_Down():  # 下一页
-        global config_obj, State_change, sleep_event
-        if config_obj.state_machine <= 0:
-            config_obj.state_machine = len(PAGE_DESSCRIPTION) - 1
-        else:
-            config_obj.state_machine = config_obj.state_machine - 1
-        save_config()
-        State_change = 1
-        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-        insert_text_message(PAGE_DESSCRIPTION[config_obj.state_machine])
-
-    def LCD_Change():  # 切换显示方向
-        global config_obj, Device_State, sleep_event
-        if Device_State == 0:
-            insert_text_message("设备未连接，切换失败")
-            return
-        config_obj.lcd_change ^= 1
-        save_config()
-        insert_text_message(LCD_STATE_MESSAGE[config_obj.lcd_change])
-        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
 
     btn7 = ttk.Button(root, text="切换显示方向", width=12, command=LCD_Change)
     btn7.grid(row=6, column=1, padx=5, pady=5)
