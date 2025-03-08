@@ -26,12 +26,9 @@ from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
 import MSU2_MINI_MG_minimark as MiniMark
 from MSU2_MINI_MG_minimark import MiniMarkParser
 
+isWindows = True if os.name == "nt" else False
 
-def isWindows():
-    return True if os.name == "nt" else False
-
-
-if isWindows():
+if isWindows:
     from ctypes import windll
     import win32con
     import win32gui
@@ -153,6 +150,7 @@ def get_all_windows():
         # hwnd_titles.update(get_children_windows(desktop_hwnd, desktop_hwnd))
     except Exception as e:
         print(e)
+        hwnd_titles = {"": (0, 0)}
 
     return hwnd_titles
 
@@ -1809,6 +1807,22 @@ def clear_queue(queue):
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
     global config_obj, MG_screen_thread_running, screen_shot_queue, desktop_hwnd
+    if not isWindows:
+        from mss import mss
+
+        with mss() as sct:
+            monitors = sct.monitors
+            # cropped_monitor = {
+            #     "left": screenshot_region[0] + monitor["left"],
+            #     "top": screenshot_region[1] + monitor["top"],
+            #     "width": screenshot_region[2] or monitor["width"],
+            #     "height": screenshot_region[3] or monitor["height"],
+            #     "mon": screenshot_monitor_id,
+            # }
+            # 序号为0的monitor是总体屏幕
+            cropped_monitor = monitors[0]
+            cropped_monitor["mon"] = 0
+
     while MG_screen_thread_running:
         if config_obj.state_machine != 3:
             clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
@@ -1819,31 +1833,20 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
             continue
 
         try:
-            # if config_obj.select_window_hwnd == desktop_hwnd:
-            #     from mss import mss
-            #
-            #     with mss() as sct:
-            #         monitors = sct.monitors
-            #         # cropped_monitor = {
-            #         #     "left": screenshot_region[0] + monitor["left"],
-            #         #     "top": screenshot_region[1] + monitor["top"],
-            #         #     "width": screenshot_region[2] or monitor["width"],
-            #         #     "height": screenshot_region[3] or monitor["height"],
-            #         #     "mon": screenshot_monitor_id,
-            #         # }
-            #         # 序号为0的monitor是总体屏幕
-            #         cropped_monitor = monitors[0]
-            #         cropped_monitor["mon"] = 0
-            #         sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
-            #         screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
-            # else:
-            sct_img = get_window_image(config_obj.select_window_hwnd)
-            screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
+            if isWindows:
+                sct_img = get_window_image(config_obj.select_window_hwnd)
+                screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
+            else:
+                sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
+                screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
         except queue.Full:
             continue
         except Exception as e:
             print("截屏失败 %s" % traceback.format_exc())
             time.sleep(0.2)
+
+    # stop
+    print("Stop screenshot")
 
 
 # geezmo: 流水线 第二步 处理图像
@@ -1913,6 +1916,9 @@ def screen_process_task():
         except Exception as e:
             print("screen_process_task error: %s" % traceback.format_exc())
             time.sleep(0.2)
+
+    # stop
+    print("Stop screen process")
 
 
 # 重启截图线程
@@ -3082,7 +3088,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     for port in port_list:
         try:  # 尝试打开串口
             # 初始化串口连接,初始使用
-            ser = serial.Serial(port.name if isWindows() else "/dev/" + port.name,
+            ser = serial.Serial(port.name if isWindows else "/dev/" + port.name,
                                 115200, timeout=5.0, write_timeout=5.0, inter_byte_timeout=0.1)
         except Exception as e:  # 出现异常
             print("%s 无法打开，请检查是否被其他程序占用: %s" % (port.name, e))
