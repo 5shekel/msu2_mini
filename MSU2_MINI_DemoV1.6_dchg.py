@@ -201,7 +201,7 @@ def get_window_image(hWnd=None):
     saveBitMap = win32ui.CreateBitmap()
 
     try:
-        # 获取窗口大小，包含标题栏和工具栏
+        # # 获取窗口大小，包含标题栏和工具栏
         # get_rect = win32gui.GetWindowRect(hWnd)
         # print_mode = 0b10
         # 获取窗口大小，不包含标题栏和工具栏
@@ -217,7 +217,7 @@ def get_window_image(hWnd=None):
             saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
             saveDC.SelectObject(saveBitMap)
 
-            # 保存bitmap到内存设备描述表
+            # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
             saveDC.BitBlt((0, 0), (width, height), mfcDC, (get_rect[0], get_rect[1]), win32con.SRCCOPY)
         else:
             # 获取窗口实际大小
@@ -246,6 +246,7 @@ def get_window_image(hWnd=None):
         return image
     except Exception as e:
         print(traceback.format_exc())
+        time.sleep(0.5)
         return Win32_Image(bytes(8), (2, 1))  # 异常时初始化为黑色背景
     finally:
         # 内存释放
