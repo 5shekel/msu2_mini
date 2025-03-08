@@ -26,6 +26,6 @@ endlocal
 
 set "datenow=%date:~5,2%%date:~8,2%"
 set "outfilename=MSU2_MINI_MG(by nuitka£¨Œ»∂®≤ª±®∂æ)-%datenow%.exe"
-move MSU2_mini.exe "%outfilename%"
+move /Y MSU2_mini.exe "%outfilename%"
 
 pause

@@ -1921,41 +1921,19 @@ def screen_process_task():
     print("Stop screen process")
 
 
-# 连续多次截图失败，重启截图线程
-def screenshot_panic():
-    global MG_screen_thread_running, screen_shot_thread, screen_process_thread
-    MG_screen_thread_running = False
-    print("Screenshot threads are panicking")
-    if screen_shot_thread.is_alive():
-        screen_shot_thread.join()
-    if screen_process_thread.is_alive():
-        screen_process_thread.join()
-
-    MG_screen_thread_running = True
-    screen_shot_thread = threading.Thread(target=screen_shot_task, daemon=True)
-    screen_process_thread = threading.Thread(target=screen_process_task, daemon=True)
-    screen_shot_thread.start()
-    screen_process_thread.start()
-
-
 def show_PC_Screen():  # 显示照片
-    global config_obj, State_change, Screen_Error, screenshot_test_frame, screen_process_queue
+    global config_obj, State_change, screenshot_test_frame, screen_process_queue
     global current_time, screenshot_test_time, screenshot_last_limit_time, wait_time, sleep_event
     if State_change == 1:
         state_change_clear()
         wait_time = 0
         screenshot_last_limit_time = current_time
-        Screen_Error = 0
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     try:
-        hexstream = screen_process_queue.get(timeout=1)
+        hexstream = screen_process_queue.get(timeout=3)
     except queue.Empty:
-        Screen_Error = Screen_Error + 1
-        if Screen_Error > 100:
-            screenshot_panic()
-            Screen_Error = 0
-        time.sleep(0.05)  # 防止频繁重试
+        time.sleep(0.2)  # 防止频繁重试
         return
     SER_rw(hexstream, read=False)  # 发出指令
 
@@ -1972,8 +1950,6 @@ def show_PC_Screen():  # 显示照片
         screenshot_test_time = current_time
     screenshot_last_limit_time = current_time
     screenshot_test_frame += 1
-    if Screen_Error != 0:
-        Screen_Error = 0
     wait_time += 1.0 / config_obj.fps_var - elapse_time
     if wait_time > 0:
         sleep_event.wait(wait_time)  # 精确控制FPS
@@ -3082,7 +3058,7 @@ def set_device_state(state):
 
 
 def Get_MSN_Device(port_list):  # 尝试获取MSN设备
-    global config_obj, ADC_det, ser, State_change, current_time, Screen_Error, LCD_Change_now
+    global config_obj, ADC_det, ser, State_change, current_time, LCD_Change_now
     if ser is not None and ser.is_open:
         ser.close()  # 先将异常的串口连接关闭，防止无法打开
 
@@ -3097,7 +3073,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             print("%s 无法打开，请检查是否被其他程序占用: %s" % (port.name, e))
             if ser is not None and ser.is_open:
                 ser.close()  # 将串口关闭，防止下次无法打开
-            time.sleep(0.1)  # 防止频繁重试
+            time.sleep(0.2)  # 防止频繁重试
             continue  # 尝试下一个端口
         recv = SER_Read()
         if recv == 0:
@@ -3147,7 +3123,6 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     ADC_det = ADC_det - 200  # 根据125的阈值判断是否被按下
     State_change = 1  # 状态发生变化
     set_device_state(1)  # 可以正常连接
-    Screen_Error = 0
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
@@ -3368,7 +3343,6 @@ config_event = None
 config_obj = None
 
 State_change = 1  # 状态发生变化
-Screen_Error = 0
 gif_num = 0
 Device_State = 0  # 初始为未连接
 Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有修改，3窗口已隐藏有修改
@@ -3410,7 +3384,7 @@ if __name__ == "__main__":
         screenshot_last_limit_time = current_time
         time_second = timedelta(seconds=1)
         sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
-        config_event = threading.Event()  # 用event代替time.sleep，加快切换速度
+        config_event = threading.Event()  # 用event代替time.sleep，用于退出时快速保存
         SER_lock = threading.Lock()
         screen_shot_queue = queue.Queue(2)
         screen_process_queue = queue.Queue(2)

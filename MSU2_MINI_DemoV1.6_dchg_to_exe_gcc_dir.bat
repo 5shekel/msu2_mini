@@ -26,6 +26,6 @@ endlocal
 
 set "datenow=%date:~5,2%%date:~8,2%"
 set "outfilename=MSU2_MINI_MG(by nuitka，稳定不报毒版本还报毒就用这个)-%datenow%"
-move "%mainfilename%" "%outfilename%"
+move /Y "%mainfilename%" "%outfilename%"
 
 pause
