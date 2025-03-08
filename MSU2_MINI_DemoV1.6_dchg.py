@@ -1845,9 +1845,6 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
             print("截屏失败 %s" % traceback.format_exc())
             time.sleep(0.2)
 
-    # stop
-    print("Stop screenshot")
-
 
 # geezmo: 流水线 第二步 处理图像
 def screen_process_task():
@@ -1917,8 +1914,25 @@ def screen_process_task():
             print("screen_process_task error: %s" % traceback.format_exc())
             time.sleep(0.2)
 
-    # stop
-    print("Stop screen process")
+
+# 重启截图线程
+def screenshot_panic(clean_queue=True):
+    global MG_screen_thread_running, screen_shot_thread, screen_process_thread, screen_shot_queue, screen_process_queue
+    MG_screen_thread_running = False
+    if screen_shot_thread.is_alive():
+        screen_shot_thread.join()
+    if screen_process_thread.is_alive():
+        screen_process_thread.join()
+
+    if clean_queue:
+        clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
+        clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
+
+    MG_screen_thread_running = True
+    screen_shot_thread = threading.Thread(target=screen_shot_task, daemon=True)
+    screen_process_thread = threading.Thread(target=screen_process_task, daemon=True)
+    screen_shot_thread.start()
+    screen_process_thread.start()
 
 
 def show_PC_Screen():  # 显示照片
@@ -2977,8 +2991,7 @@ def UI_Page():  # 进行图像界面显示
         select_window_hwnd, _ = all_windows.get(select_str)
         if select_window_hwnd != config_obj.select_window_hwnd:
             config_obj.select_window_hwnd = select_window_hwnd
-            clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
-            clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
+            screenshot_panic()
             state_change_set()
 
     label = ttk.Label(root, text="屏幕镜像窗口:")
