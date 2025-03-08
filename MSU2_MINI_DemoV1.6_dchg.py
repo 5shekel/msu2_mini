@@ -2991,7 +2991,9 @@ def UI_Page():  # 进行图像界面显示
         select_window_hwnd, _ = all_windows.get(select_str)
         if select_window_hwnd != config_obj.select_window_hwnd:
             config_obj.select_window_hwnd = select_window_hwnd
-            screenshot_panic()
+            # screenshot_panic()  # 重启截图线程。这是标准流程，但是多耗资源，改为如下只清空队列
+            clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
+            clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
             state_change_set()
 
     label = ttk.Label(root, text="屏幕镜像窗口:")
