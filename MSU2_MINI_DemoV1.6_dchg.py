@@ -77,15 +77,23 @@ GRAY2 = 0x4208
 SHOW_WIDTH = 160  # 画布宽度
 SHOW_HEIGHT = 80  # 画布高度
 
+GIF_PAGE_ID = 0
+PCTIME_PAGE_ID = 1
+PHOTO_PAGE_ID = 2
+SCREEN_PAGE_ID = 3
+STATE_PAGE_ID = 4
+NETSPEED_PAGE_ID = 5
+CUSTOM1_PAGE_ID = 6
+CUSTOM2_PAGE_ID = 7
 PAGE_DESSCRIPTION = [
-    "页面1：动图",
-    "页面2：时间",
-    "页面3：单个相册图片",
-    "页面4：屏幕镜像",
-    "页面5：电脑CPU/内存/磁盘/电池使用率监控",
-    "页面6：网络流量监控",
-    "页面7：自定义显示两项图表",
-    "页面8：自定义显示多项数值"
+    "页面1：动图",  # GIF_PAGE_ID = 0
+    "页面2：时间",  # PCTIME_PAGE_ID = 1
+    "页面3：单个相册图片",  # PHOTO_PAGE_ID = 2
+    "页面4：屏幕镜像",  # SCREEN_PAGE_ID = 3
+    "页面5：电脑CPU/内存/磁盘/电池使用率监控",  # STATE_PAGE_ID = 4
+    "页面6：网络流量监控",  # NETSPEED_PAGE_ID = 5
+    "页面7：自定义显示两项图表",  # CUSTOM1_PAGE_ID = 6
+    "页面8：自定义显示多项数值"  # CUSTOM2_PAGE_ID = 7
 ]
 
 LCD_STATE_MESSAGE = [
@@ -368,7 +376,7 @@ def Start_Write_Photo_Path(index):  # 写入文件
 
 
 def Write_Photo_Path1():  # 写入文件
-    global Label3, write_path_index, Img_data_use, sleep_event
+    global config_obj, Label3, write_path_index, Img_data_use, sleep_event
     photo_path = Label3.get("1.0", tk.END).rstrip()
     if not photo_path:
         insert_text_message("Path1 is None")
@@ -381,7 +389,8 @@ def Write_Photo_Path1():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 1
-    state_change_set(save=False)
+    if config_obj.state_machine == PCTIME_PAGE_ID:
+        state_change_set(save=False)
 
 
 def Write_Photo_Path2():  # 写入文件
@@ -400,7 +409,7 @@ def Write_Photo_Path2():  # 写入文件
 
 
 def Write_Photo_Path3():  # 写入文件
-    global Label5, write_path_index, Img_data_use, sleep_event
+    global config_obj, Label5, write_path_index, Img_data_use, sleep_event
     photo_path = Label5.get("1.0", tk.END).rstrip()
     if not photo_path:
         insert_text_message("Path3 is None")
@@ -413,11 +422,12 @@ def Write_Photo_Path3():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 3
-    state_change_set(save=False)
+    if config_obj.state_machine == PHOTO_PAGE_ID:
+        state_change_set(save=False)
 
 
 def Write_Photo_Path4():  # 写入文件
-    global Label6, interval_var, write_path_index, Img_data_use, sleep_event
+    global config_obj, Label6, interval_var, write_path_index, Img_data_use, sleep_event
     photo_path = Label6.get("1.0", tk.END).rstrip()
     if not photo_path:
         insert_text_message("Path4 is None")
@@ -528,7 +538,8 @@ def Write_Photo_Path4():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 4
-    state_change_set(save=False)
+    if config_obj.state_machine == GIF_PAGE_ID:
+        state_change_set(save=False)
 
 
 def state_change_set(message=None, save=True):
@@ -1824,7 +1835,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
             cropped_monitor["mon"] = 0
 
     while MG_screen_thread_running:
-        if config_obj.state_machine != 3:
+        if config_obj.state_machine != SCREEN_PAGE_ID:
             clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
@@ -1853,7 +1864,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 def screen_process_task():
     global config_obj, MG_screen_thread_running, screen_process_queue, screen_shot_queue
     while MG_screen_thread_running:
-        if config_obj.state_machine != 3:
+        if config_obj.state_machine != SCREEN_PAGE_ID:
             clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
@@ -2526,7 +2537,10 @@ def UI_Page():  # 进行图像界面显示
         global config_obj, color_use, State_change
         # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
         color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
-        state_change_set()
+        if config_obj.state_machine in [PCTIME_PAGE_ID, STATE_PAGE_ID, NETSPEED_PAGE_ID, CUSTOM1_PAGE_ID]:
+            state_change_set()
+        else:
+            save_config()
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
             Label2.config(bg=color_La)
@@ -2914,7 +2928,10 @@ def UI_Page():  # 进行图像界面显示
             if config_obj.second_times > 0 and config_obj.photo_interval_var < 0.2:
                 config_obj.photo_interval_var += 1
                 config_obj.second_times -= 1
-            state_change_set("")
+            if config_obj.state_machine == GIF_PAGE_ID:
+                state_change_set("")
+            else:
+                save_config()
 
     interval_var = tk.StringVar(root, "0.1")
     interval_var.trace_add("write", change_photo_interval)
@@ -2997,10 +3014,13 @@ def UI_Page():  # 进行图像界面显示
         select_window_hwnd, _ = all_windows.get(select_str)
         if select_window_hwnd != config_obj.select_window_hwnd:
             config_obj.select_window_hwnd = select_window_hwnd
-            # screenshot_panic()  # 重启截图线程。这是标准流程，但是多耗资源，改为如下只清空队列
-            clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
-            clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
-            state_change_set()
+            if config_obj.state_machine == SCREEN_PAGE_ID:
+                # screenshot_panic()  # 重启截图线程。这是标准流程，但是多耗资源，改为如下只清空队列
+                clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
+                clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
+                state_change_set()
+            else:
+                save_config()
 
     label = ttk.Label(root, text="屏幕镜像窗口:")
     label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
@@ -3169,23 +3189,23 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     bar_colors = [(235, 139, 139), (146, 212, 217)]
     # bar_colors = [(128, 255, 128), (255, 128, 255)]
     # bar_colors = [(128, 128, 255), (0, 128, 192)]
-    if config_obj.state_machine == 1:
+    if config_obj.state_machine == PCTIME_PAGE_ID:
         show_PC_time(color_use)  # 展示时钟
-    elif config_obj.state_machine == 2:
+    elif config_obj.state_machine == PHOTO_PAGE_ID:
         show_Photo()  # 展示单张相册图像
-    elif config_obj.state_machine == 3:
+    elif config_obj.state_machine == SCREEN_PAGE_ID:
         show_PC_Screen()  # 屏幕串流
-    elif config_obj.state_machine == 4:
+    elif config_obj.state_machine == STATE_PAGE_ID:
         show_PC_state(color_use, BLACK)  # 展示CPU/内存/磁盘/电池 使用率
-    elif config_obj.state_machine == 5:
+    elif config_obj.state_machine == NETSPEED_PAGE_ID:
         rgb_tuple = (config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
         show_netspeed(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
-    elif config_obj.state_machine == 6:
+    elif config_obj.state_machine == CUSTOM1_PAGE_ID:
         rgb_tuple = (config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
         show_custom_two_rows(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
-    elif config_obj.state_machine == 7:
+    elif config_obj.state_machine == CUSTOM2_PAGE_ID:
         show_full_custom()
-    else:  # default 0
+    else:  # default GIF_PAGE_ID
         show_gif()  # 展示36张动图
 
 
