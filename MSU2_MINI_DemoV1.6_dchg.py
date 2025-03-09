@@ -2536,15 +2536,15 @@ def UI_Page():  # 进行图像界面显示
 
     def update_label_color(r1, g1, b1):
         global config_obj, color_use, State_change
-        # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
-        color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
-        if config_obj.state_machine in [PCTIME_PAGE_ID, STATE_PAGE_ID, NETSPEED_PAGE_ID, CUSTOM1_PAGE_ID]:
-            state_change_set()
-        else:
-            save_config()
         if Label2:
             color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
             Label2.config(bg=color_La)
+        # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
+        color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
+        if config_obj.state_machine in [PCTIME_PAGE_ID, STATE_PAGE_ID]:
+            state_change_set()
+        else:
+            save_config()
 
     def update_label_color_red():
         global config_obj
