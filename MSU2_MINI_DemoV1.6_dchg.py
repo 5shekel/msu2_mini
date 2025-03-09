@@ -2541,10 +2541,9 @@ def UI_Page():  # 进行图像界面显示
             Label2.config(bg=color_La)
         # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
         color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
+        save_config()
         if config_obj.state_machine in [PCTIME_PAGE_ID, STATE_PAGE_ID]:
-            state_change_set()
-        else:
-            save_config()
+            State_change = 1
 
     def update_label_color_red():
         global config_obj
