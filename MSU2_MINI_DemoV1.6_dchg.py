@@ -380,7 +380,7 @@ def Write_Photo_Path1():  # 写入文件
     global config_obj, Label3, write_path_index, Img_data_use, sleep_event
     photo_path = Label3.get("1.0", tk.END).rstrip()
     if not photo_path:
-        insert_text_message("Path1 is None")
+        insert_text_message("背景图像未选择")
         return
 
     insert_text_message("图像格式转换...", cleanNext=False)
@@ -398,7 +398,7 @@ def Write_Photo_Path2():  # 写入文件
     global Label4, write_path_index, sleep_event
     photo_path = Label4.get("1.0", tk.END).rstrip()
     if not photo_path:
-        insert_text_message("Path2 is None")
+        insert_text_message("闪存固件未选择")
         return
     insert_text_message("准备烧写Flash固件...", cleanNext=False)
 
@@ -413,7 +413,7 @@ def Write_Photo_Path3():  # 写入文件
     global config_obj, Label5, write_path_index, Img_data_use, sleep_event
     photo_path = Label5.get("1.0", tk.END).rstrip()
     if not photo_path:
-        insert_text_message("Path3 is None")
+        insert_text_message("相册图像未选择")
         return
 
     insert_text_message("图像格式转换...", cleanNext=False)
@@ -431,7 +431,7 @@ def Write_Photo_Path4():  # 写入文件
     global config_obj, Label6, interval_var, write_path_index, Img_data_use, sleep_event
     photo_path = Label6.get("1.0", tk.END).rstrip()
     if not photo_path:
-        insert_text_message("Path4 is None")
+        insert_text_message("动图文件未选择")
         return
 
     Img_data_use = bytearray()
@@ -2930,7 +2930,7 @@ def UI_Page():  # 进行图像界面显示
                 config_obj.photo_interval_var += 1
                 config_obj.second_times -= 1
             if config_obj.state_machine == GIF_PAGE_ID:
-                state_change_set("")
+                state_change_set()
             else:
                 save_config()
 
@@ -2967,7 +2967,6 @@ def UI_Page():  # 进行图像界面显示
             if len(fps_var.get()) > 0:
                 insert_text_message("Invalid number entered: %s" % e)
             return
-        insert_text_message("", cleanNext=False)
         if 0 < screenshot_limit_fps_tmp != config_obj.fps_var:
             config_obj.fps_var = screenshot_limit_fps_tmp
             save_config()
@@ -3464,7 +3463,7 @@ if __name__ == "__main__":
         # reap threads
         if ser is not None and ser.is_open:
             print("%s close" % ser.name)
-            ser.close()  # 正常关闭串口
+            ser.close()  # 正常关闭串口。串口先于线程关闭，可能会出现访问串口异常，不过能够加快整体关闭速度
         if load_thread.is_alive():
             load_thread.join(timeout=5.0)
         if manager_thread.is_alive():
