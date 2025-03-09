@@ -186,9 +186,9 @@ def get_window_image(hWnd=None):
     # if win32gui.IsIconic(hWnd):  # 判断窗口是否最小化
     #     print("最小化")
     #     return
-    if not win32gui.IsWindow(hWnd):
+    while not win32gui.IsWindow(hWnd):
         hWnd = get_parent(hWnd)
-        if not hWnd:
+        if hWnd == 0:
             hWnd = desktop_hwnd
         set_select_hwnd(hWnd)
     # 将窗口置于最前端
