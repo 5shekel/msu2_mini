@@ -624,6 +624,15 @@ def SER_Read():
         return 0
 
 
+def close(ser):
+    SER_lock.acquire()
+    try:
+        if ser is not None and ser.is_open:
+            ser.close()
+    finally:
+        SER_lock.release()
+
+
 def SER_rw(data, read=True, size=0):
     SER_lock.acquire()
     try:
@@ -3088,7 +3097,7 @@ def set_device_state(state):
     if Device_State != state:
         Device_State = state
         if Device_State == 0:
-            ser.close()  # 先将异常的串口连接关闭，防止无法打开
+            close(ser)  # 先将异常的串口连接关闭，防止无法打开
     if Device_State_Labelen == 2:
         Device_State_Labelen = 0
     if Device_State_Labelen == 0:
@@ -3105,8 +3114,7 @@ def set_device_state(state):
 
 def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     global config_obj, ADC_det, ser, State_change, current_time, LCD_Change_now
-    if ser is not None and ser.is_open:
-        ser.close()  # 先将异常的串口连接关闭，防止无法打开
+    close(ser)  # 先将异常的串口连接关闭，防止无法打开
 
     # 对串口进行监听，确保其为MSN设备
     My_MSN_Device = None
@@ -3117,14 +3125,13 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                                 115200, timeout=5.0, write_timeout=5.0, inter_byte_timeout=0.1)
         except Exception as e:  # 出现异常
             print("%s 无法打开，请检查是否被其他程序占用: %s" % (port.name, e))
-            if ser is not None and ser.is_open:
-                ser.close()  # 将串口关闭，防止下次无法打开
+            close(ser)  # 将串口关闭，防止下次无法打开
             time.sleep(0.2)  # 防止频繁重试
             continue  # 尝试下一个端口
         recv = SER_Read()
         if recv == 0:
             print("未接收到设备响应，打开失败：%s" % port.name)
-            ser.close()  # 将串口关闭，防止下次无法打开
+            close(ser)  # 将串口关闭，防止下次无法打开
             continue  # 尝试下一个端口
 
         # 逐字解析编码，收到6个字符以上数据时才进行解析
@@ -3152,7 +3159,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
 
         if My_MSN_Device is None:
             print("设备校验失败：%s" % port.name)
-            ser.close()  # 将串口关闭，防止下次无法打开
+            close(ser)  # 将串口关闭，防止下次无法打开
         else:
             break  # 连接成功即退出循环
 
@@ -3463,10 +3470,8 @@ if __name__ == "__main__":
         tk.messagebox.showerror(title="错误", message=message)
     finally:
         # reap threads
-        print("Closing")
-        if ser is not None and ser.is_open:
-            print("%s close" % ser.name)
-            ser.close()  # 正常关闭串口
+        print("%s close" % ser.name)
+        close(ser)  # 正常关闭串口
         if load_thread.is_alive():
             load_thread.join(timeout=5.0)
         if manager_thread.is_alive():
