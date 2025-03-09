@@ -3464,6 +3464,9 @@ if __name__ == "__main__":
     finally:
         # reap threads
         print("Closing")
+        if ser is not None and ser.is_open:
+            print("%s close" % ser.name)
+            ser.close()  # 正常关闭串口
         if load_thread.is_alive():
             load_thread.join(timeout=5.0)
         if manager_thread.is_alive():
@@ -3474,8 +3477,5 @@ if __name__ == "__main__":
             screen_shot_thread.join(timeout=5.0)
         if daemon_thread.is_alive():
             daemon_thread.join(timeout=5.0)
-        if ser is not None and ser.is_open:
-            print("%s close" % ser.name)
-            ser.close()  # 正常关闭串口
 
         sys.exit(exit_code)
