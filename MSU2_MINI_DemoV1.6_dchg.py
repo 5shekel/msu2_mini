@@ -3041,6 +3041,11 @@ def UI_Page():  # 进行图像界面显示
     Text1.grid(row=5, column=0, rowspan=3, columnspan=1, sticky=tk.NS, padx=5, pady=5)
 
     def on_closing():
+        global MG_screen_thread_running, MG_daemon_running, sleep_event
+        MG_screen_thread_running = False
+        MG_daemon_running = False
+        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
+
         # 结束时保存配置
         save_config(True)
         window.destroy()
@@ -3459,10 +3464,6 @@ if __name__ == "__main__":
     finally:
         # reap threads
         print("Closing")
-        MG_screen_thread_running = False
-        MG_daemon_running = False
-        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-
         if load_thread.is_alive():
             load_thread.join(timeout=5.0)
         if manager_thread.is_alive():
