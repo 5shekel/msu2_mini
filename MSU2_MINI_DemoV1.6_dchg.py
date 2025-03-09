@@ -632,6 +632,7 @@ def SER_rw(data, read=True, size=0):
                 return result
     except Exception as e:  # 出现异常
         print("串口读写异常，%s" % e)
+        ser.close()
     finally:
         SER_lock.release()
     # 释放锁后再处理异常
