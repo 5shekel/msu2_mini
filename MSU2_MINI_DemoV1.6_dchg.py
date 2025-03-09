@@ -13,7 +13,7 @@ import tkinter.filedialog  # 用于获取文件路径
 import tkinter.font as tkfont
 import tkinter.messagebox
 import traceback
-from datetime import datetime, timedelta  # 用于获取当前时间
+from datetime import datetime  # 用于获取当前时间
 from tkinter import ttk  # geezmo: 好看的皮肤
 
 import numpy as np  # 使用numpy加速数据处理
@@ -246,7 +246,7 @@ def get_window_image(hWnd=None):
         return image
     except Exception as e:
         print(traceback.format_exc())
-        time.sleep(0.5)
+        time.sleep(0.2)
         return Win32_Image(bytes(8), (2, 1))  # 异常时初始化为黑色背景
     finally:
         # 内存释放
@@ -1494,12 +1494,12 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
 
 def show_gif():  # 显示GIF动图
     global config_obj, second_pass, sleep_event
-    global current_time, last_refresh_time, gif_wait_time, State_change, gif_num
+    global current_monoto_time, last_refresh_time, gif_wait_time, State_change, gif_num
     if State_change == 1:
         state_change_clear()
         # gif_num = 0
         gif_wait_time = 0
-        last_refresh_time = current_time
+        last_refresh_time = current_monoto_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
     if gif_num > 35:
         gif_num = 0
@@ -1516,8 +1516,8 @@ def show_gif():  # 显示GIF动图
 
     gif_num = gif_num + 1
     # 精确调整动图播放速度
-    elapse_time = (current_time - last_refresh_time).total_seconds()
-    last_refresh_time = current_time
+    elapse_time = current_monoto_time - last_refresh_time
+    last_refresh_time = current_monoto_time
     if elapse_time - config_obj.second_times > config_obj.photo_interval_var + 5:
         gif_wait_time = config_obj.photo_interval_var
     else:
@@ -1527,13 +1527,13 @@ def show_gif():  # 显示GIF动图
 
 
 def show_PC_state(FC, BC):  # 显示PC状态
-    global State_change, sleep_event, last_refresh_time, wait_time, current_time
+    global State_change, sleep_event, last_refresh_time, wait_time, current_monoto_time
     photo_add = 4038
     num_add = 4026
     if State_change == 1:
         state_change_clear()
         wait_time = 0
-        last_refresh_time = current_time
+        last_refresh_time = current_monoto_time
         LCD_Set_Color(FC, BC)
         hex_use = LCD_Photo_wb(0, 0, SHOW_WIDTH, SHOW_HEIGHT, photo_add)  # 放置背景
         recv = SER_rw(hex_use)  # 发出指令
@@ -1612,8 +1612,8 @@ def show_PC_state(FC, BC):  # 显示PC状态
         print("show_PC_state failed: %s" % recv)
         set_device_state(0)  # 接收出错
 
-    seconds_elapsed = (current_time - last_refresh_time) / time_second
-    last_refresh_time = current_time
+    seconds_elapsed = current_monoto_time - last_refresh_time
+    last_refresh_time = current_monoto_time
     # 1秒左右刷新一次
     wait_time += 1 - seconds_elapsed
     if wait_time > 0:
@@ -1631,7 +1631,7 @@ def show_Photo():  # 显示照片
 
 
 def show_PC_time(FC):
-    global State_change, current_time, sleep_event
+    global State_change, sleep_event
     photo_add = 3826
     num_add = 3651
     if State_change == 1:
@@ -1647,6 +1647,7 @@ def show_PC_time(FC):
         # LCD_ASCII_32X64_MIX(136+8,32,":",FC,photo_add,num_add)
 
     hex_use = bytearray()
+    current_time = datetime.now()
 
     time_h = int(current_time.hour)
     time_m = int(current_time.minute)
@@ -1835,7 +1836,8 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 
     while MG_screen_thread_running:
         if config_obj.state_machine != SCREEN_PAGE_ID:
-            clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
+            if not screen_shot_queue.empty():
+                clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
         if screen_shot_queue.full():
@@ -1864,7 +1866,8 @@ def screen_process_task():
     global config_obj, MG_screen_thread_running, screen_process_queue, screen_shot_queue
     while MG_screen_thread_running:
         if config_obj.state_machine != SCREEN_PAGE_ID:
-            clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
+            if not screen_process_queue.empty():
+                clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
         if screen_process_queue.full():
@@ -1953,11 +1956,11 @@ def screenshot_panic(clean_queue=True):
 
 def show_PC_Screen():  # 显示照片
     global config_obj, State_change, screenshot_test_frame, screen_process_queue
-    global current_time, screenshot_test_time, screenshot_last_limit_time, wait_time, sleep_event
+    global current_monoto_time, screenshot_test_time, screenshot_last_limit_time, wait_time, sleep_event
     if State_change == 1:
         state_change_clear()
         wait_time = 0
-        screenshot_last_limit_time = current_time
+        screenshot_last_limit_time = current_monoto_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     try:
@@ -1967,18 +1970,18 @@ def show_PC_Screen():  # 显示照片
         return
     SER_rw(hexstream, read=False)  # 发出指令
 
-    elapse_time = (current_time - screenshot_last_limit_time).total_seconds()
+    elapse_time = current_monoto_time - screenshot_last_limit_time
     if elapse_time > 5:  # 有切换，重置参数
         wait_time = 0
-        screenshot_test_time = current_time
+        screenshot_test_time = current_monoto_time
         screenshot_test_frame = 0
         elapse_time = 1.0 / config_obj.fps_var  # 第一次不需要wait
     elif screenshot_test_frame % config_obj.fps_var == 0:
         # 测试用：显示帧率
-        # real_fps = config_obj.fps_var / ((current_time - screenshot_test_time).total_seconds())
+        # real_fps = config_obj.fps_var / (current_monoto_time - screenshot_test_time)
         # print("串流FPS: %s" % real_fps)
-        screenshot_test_time = current_time
-    screenshot_last_limit_time = current_time
+        screenshot_test_time = current_monoto_time
+    screenshot_last_limit_time = current_monoto_time
     screenshot_test_frame += 1
     wait_time += 1.0 / config_obj.fps_var - elapse_time
     if wait_time > 0:
@@ -2000,7 +2003,7 @@ def sizeof_fmt(num, suffix="B", base=1024.0):
 
 def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_color=(146, 211, 217)):
     global last_refresh_time, netspeed_last_refresh_snetio, netspeed_plot_data
-    global default_font, State_change, wait_time, current_time, sleep_event
+    global default_font, State_change, wait_time, current_monoto_time, sleep_event
 
     bar_width = 2  # 每个点宽度
     image_height = SHOW_HEIGHT // 4  # 高度
@@ -2010,12 +2013,12 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
     if State_change == 1:
         state_change_clear()
         wait_time = 0
-        last_refresh_time = current_time - timedelta(seconds=0.001)
+        last_refresh_time = current_monoto_time - 0.001
         netspeed_last_refresh_snetio = current_snetio
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     # 获取网速 bytes/second
-    seconds_elapsed = (current_time - last_refresh_time) / time_second
+    seconds_elapsed = current_monoto_time - last_refresh_time
 
     # 因为刷新间隔刚好是1秒，所以不需要除时间
     sent_per_second = (current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent) / seconds_elapsed
@@ -2025,7 +2028,7 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
     netspeed_plot_data["recv"].pop(0)
     netspeed_plot_data["recv"].append(recv_per_second)
 
-    last_refresh_time = current_time
+    last_refresh_time = current_monoto_time
     netspeed_last_refresh_snetio = current_snetio
 
     # 绘制图片
@@ -2184,7 +2187,7 @@ def load_hardware_monitor():
 
 def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_color=(146, 211, 217)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global config_obj, last_refresh_time, State_change, wait_time, current_time
+    global config_obj, last_refresh_time, State_change, wait_time, current_monoto_time
     global custom_plot_data, hardware_monitor_manager, netspeed_font, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
@@ -2197,7 +2200,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
     if State_change == 1:
         state_change_clear()
         wait_time = 0
-        last_refresh_time = current_time
+        last_refresh_time = current_monoto_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     # 获取 libre hardware monitor 数值
@@ -2223,8 +2226,8 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
     custom_plot_data["recv"].pop(0)
     custom_plot_data["recv"].append(recv)
 
-    seconds_elapsed = (current_time - last_refresh_time) / time_second
-    last_refresh_time = current_time
+    seconds_elapsed = current_monoto_time - last_refresh_time
+    last_refresh_time = current_monoto_time
 
     # 绘制图片
 
@@ -2328,7 +2331,7 @@ def get_full_custom_im():
 
 def show_full_custom():
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_time, sleep_event
+    global last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_monoto_time, sleep_event
 
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         sleep_event.wait(0.2)
@@ -2337,12 +2340,12 @@ def show_full_custom():
     if State_change == 1:
         state_change_clear()
         wait_time = 0
-        last_refresh_time = current_time
+        last_refresh_time = current_monoto_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
-    seconds_elapsed = (current_time - last_refresh_time) / time_second
+    seconds_elapsed = current_monoto_time - last_refresh_time
 
-    last_refresh_time = current_time
+    last_refresh_time = current_monoto_time
 
     im1 = get_full_custom_im()
 
@@ -2361,9 +2364,9 @@ def show_full_custom():
 # now 是否立即保存
 def save_config(now=False):
     global last_config_save_time, save_thread, config_event
-    last_config_save_time = datetime.now()
+    last_config_save_time = time.monotonic()
     if now:
-        last_config_save_time -= timedelta(seconds=5)
+        last_config_save_time -= 5
         config_event.set()  # 取消sleep, 使config_event.wait无效
 
     if not save_thread or not save_thread.is_alive():
@@ -2372,13 +2375,13 @@ def save_config(now=False):
 
 
 def save_config_thread():
-    global config_obj, config_file, last_config_save_time, time_second, config_event
-    sleep_time = (last_config_save_time - datetime.now()) / time_second + 5  # 5秒没有任何修改再保存
+    global config_obj, config_file, last_config_save_time, config_event
+    sleep_time = last_config_save_time - time.monotonic() + 5  # 5秒没有任何修改再保存
     while sleep_time > 0:
         if config_event.isSet():
             config_event.clear()  # 使config_event.wait生效
         config_event.wait(sleep_time)
-        sleep_time = (last_config_save_time - datetime.now()) / time_second + 5
+        sleep_time = last_config_save_time - time.monotonic() + 5
 
     try:
         with open(config_file, "w", encoding="utf-8") as f:
@@ -3102,7 +3105,7 @@ def set_device_state(state):
 
 
 def Get_MSN_Device(port_list):  # 尝试获取MSN设备
-    global config_obj, ADC_det, ser, State_change, current_time, LCD_Change_now
+    global config_obj, ADC_det, ser, State_change, LCD_Change_now
     if ser is not None and ser.is_open:
         ser.close()  # 先将异常的串口连接关闭，防止无法打开
 
@@ -3138,7 +3141,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             if recv[-6:] == hex_use:
                 # 对MSN设备进行登记
                 My_MSN_Device = MSN_Device(port.name, msn_version)
-                print(get_formatted_time_string(current_time), end=' ')
+                print(get_formatted_time_string(datetime.now()), end=' ')
                 if port.location is None:
                     insert_text_message("%s连接成功" % port.name)
                 else:
@@ -3169,8 +3172,10 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
-    global config_obj, State_change, LCD_Change_now, Label4
+    global config_obj, State_change, LCD_Change_now, Label4, current_monoto_time
     global write_path_index, Img_data_use, color_use
+
+    current_monoto_time = time.monotonic()
 
     if write_path_index != 0:
         if write_path_index == 1:
@@ -3227,11 +3232,10 @@ def load_task():
 
 
 def daemon_task():
-    global current_time, Device_State, Device_State_Labelen, sleep_event
+    global Device_State, Device_State_Labelen, sleep_event
 
     while MG_daemon_running:
         try:
-            current_time = datetime.now()
             if Device_State_Labelen == 2:
                 set_device_state(Device_State)
 
@@ -3252,7 +3256,7 @@ def daemon_task():
             # Get_MSN_Device(not_wch_port_list)
             # if Device_State != 0:
             #     continue
-            print(get_formatted_time_string(current_time), end=' ')
+            print(get_formatted_time_string(datetime.now()), end=' ')
             insert_text_message("没有找到可用的设备，请确认设备是否正确连接")
             if sleep_event.isSet():
                 sleep_event.clear()
@@ -3273,11 +3277,11 @@ def daemon_task():
 # 长按：切换方向
 def manage_task():
     global ADC_det
-    now = datetime.now()
+    now = time.monotonic()
     key_on = 0  # 按键是否按下
-    check_limit = timedelta(milliseconds=2000)  # 持续检测阈值
-    key_on_limit = timedelta(milliseconds=500)  # 长按阈值
-    double_key_limit = timedelta(milliseconds=700)  # 双击间隔时长，同时影响单击反应时间
+    check_limit = 2.0  # 持续检测阈值
+    key_on_limit = 0.5  # 长按阈值
+    double_key_limit = 0.7  # 双击间隔时长，同时影响单击反应时间
     last_check_time = now - check_limit
     first_press_time = 0  # 按下起始时间，未按下0，按下且已触发事件1
     while MG_daemon_running:
@@ -3286,7 +3290,7 @@ def manage_task():
             continue
 
         try:
-            now = datetime.now()
+            now = time.monotonic()
             ADC_ch = Read_ADC_CH(9)
             if ADC_ch == 0:
                 continue
@@ -3341,7 +3345,7 @@ def manage_task():
     print("Stop manager")
 
 
-current_time = 0
+current_monoto_time = 0
 Img_data_use = None
 
 cleanNextTime = False
@@ -3368,7 +3372,6 @@ wait_time = 0.0
 
 netspeed_last_refresh_snetio = None
 netspeed_plot_data = None
-time_second = None
 
 custom_plot_data = None  # 用于 show_custom_two_rows,
 
@@ -3416,16 +3419,15 @@ hardware_monitor_manager = None
 # if battery is not None:
 #     print("电池剩余电量%d%%" % battery.percent)
 # print("系统启动时间%s" % get_formatted_time_string(datetime.fromtimestamp(psutil.boot_time())))
-# print("程序启动时间%s" % get_formatted_time_string(current_time))
+# print("程序启动时间%s" % get_formatted_time_string(datetime.now()))
 
 if __name__ == "__main__":
     exit_code = 0
     try:
-        current_time = datetime.now()
-        last_refresh_time = current_time
-        screenshot_test_time = current_time
-        screenshot_last_limit_time = current_time
-        time_second = timedelta(seconds=1)
+        current_monoto_time = time.monotonic()
+        last_refresh_time = current_monoto_time
+        screenshot_test_time = current_monoto_time
+        screenshot_last_limit_time = current_monoto_time
         sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
         config_event = threading.Event()  # 用event代替time.sleep，用于退出时快速保存
         SER_lock = threading.Lock()
