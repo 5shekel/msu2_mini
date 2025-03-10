@@ -1837,6 +1837,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
     while MG_screen_thread_running:
         if config_obj.state_machine != SCREEN_PAGE_ID:
             if not screen_shot_queue.empty():
+                time.sleep(0.5)  # 等一下再清空，防止页面切换缓慢
                 clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
@@ -1850,7 +1851,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
             else:
                 sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
-                screen_shot_queue.put((sct_img, cropped_monitor), timeout=3)
+                screen_shot_queue.put((sct_img, cropped_monitor), timeout=1.0)
         except queue.Full:
             continue
         except Exception as e:
@@ -1867,6 +1868,7 @@ def screen_process_task():
     while MG_screen_thread_running:
         if config_obj.state_machine != SCREEN_PAGE_ID:
             if not screen_process_queue.empty():
+                time.sleep(0.5)  # 等一下再清空，防止页面切换缓慢
                 clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
@@ -1875,7 +1877,7 @@ def screen_process_task():
             continue
 
         try:
-            sct_img, monitor = screen_shot_queue.get(timeout=3)
+            sct_img, monitor = screen_shot_queue.get(timeout=1.0)
             bgra = sct_img.bgra
             remain = sct_img.size[1] * sct_img.size[0] * 4 - len(bgra)
             if remain >= 0:
@@ -1923,7 +1925,7 @@ def screen_process_task():
             # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
             hexstream = Screen_Date_Process(rgb565.flatten())
 
-            screen_process_queue.put(hexstream, timeout=3)
+            screen_process_queue.put(hexstream, timeout=1.0)
         except (queue.Empty, queue.Full):
             continue
         except Exception as e:
@@ -1964,9 +1966,8 @@ def show_PC_Screen():  # 显示照片
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     try:
-        hexstream = screen_process_queue.get(timeout=3)
+        hexstream = screen_process_queue.get(timeout=1.0)
     except queue.Empty:
-        time.sleep(0.2)  # 防止频繁重试
         return
     SER_rw(hexstream, read=False)  # 发出指令
 
