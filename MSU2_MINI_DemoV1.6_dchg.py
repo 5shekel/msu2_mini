@@ -3118,15 +3118,14 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     for port in port_list:
         try:  # 尝试打开串口
             # 初始化串口连接,初始使用
-            ser = serial.Serial(port.name if isWindows else "/dev/" + port.name,
-                                115200, timeout=5.0, write_timeout=5.0, inter_byte_timeout=0.1)
+            ser = serial.Serial(port.device, 115200, timeout=5.0, write_timeout=5.0, inter_byte_timeout=0.1)
             recv = SER_Read()
             if recv == 0:
-                print("未接收到设备响应，打开失败：%s" % port.name)
+                print("未接收到设备响应，打开失败：%s" % port.device)
                 ser.close()  # 将串口关闭，防止下次无法打开
                 continue  # 尝试下一个端口
         except Exception as e:  # 出现异常
-            print("%s 无法打开，请检查是否被其他程序占用: %s" % (port.name, e))
+            print("%s 无法打开，请检查是否被其他程序占用: %s" % (port.device, e))
             if ser is not None and ser.is_open:
                 ser.close()  # 将串口关闭，防止下次无法打开
             time.sleep(0.2)  # 防止频繁重试
@@ -3144,18 +3143,18 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             # 确保为MSN设备
             if recv[-6:] == hex_use:
                 # 对MSN设备进行登记
-                My_MSN_Device = MSN_Device(port.name, msn_version)
+                My_MSN_Device = MSN_Device(port.device, msn_version)
                 print(get_formatted_time_string(datetime.now()), end=' ')
                 if port.location is None:
-                    insert_text_message("%s连接成功" % port.name)
+                    insert_text_message("%s连接成功" % port.device)
                 else:
-                    insert_text_message("%s@%s连接成功" % (port.name, port.location))
+                    insert_text_message("%s@%s连接成功" % (port.device, port.location))
                 break  # 退出当前for循环
             else:
                 print("设备无法连接，请检查连接是否正常：%s" % recv)
 
         if My_MSN_Device is None:
-            print("设备校验失败：%s" % port.name)
+            print("设备校验失败：%s" % port.device)
             ser.close()  # 将串口关闭，防止下次无法打开
         else:
             break  # 连接成功即退出循环
