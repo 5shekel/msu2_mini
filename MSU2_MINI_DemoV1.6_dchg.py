@@ -122,8 +122,8 @@ def get_all_windows():
     def children(hwnd, parent_hwnd, param):
         window_class = win32gui.GetClassName(hwnd)
         window_title = win32gui.GetWindowText(hwnd)
-        if window_class == "TrayClockWClass":
-            # or window_title == "Game Bar":
+        if window_class == "TrayClockWClass":  # 系统时钟
+            # or window_title == "Game Bar":  # Xbox Game Bar
             param["%s - %s" % (hwnd, window_title)] = (hwnd, parent_hwnd)
         return True
 
@@ -137,11 +137,11 @@ def get_all_windows():
         if win32gui.IsWindowVisible(hwnd):
             window_class = win32gui.GetClassName(hwnd)
             window_title = win32gui.GetWindowText(hwnd)
-            if window_title and window_class != "Windows.UI.Core.CoreWindow":
+            if window_title and window_class != "Windows.UI.Core.CoreWindow":  # 普通窗口
                 # and window_class != "Internet Explorer_Hidden"
                 parent = win32gui.GetParent(hwnd)
                 hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
-            elif window_class == "Shell_TrayWnd":
+            elif window_class == "Shell_TrayWnd":  # 任务栏
                 hwnd_title.update(get_children_windows(hwnd, 0))
         return True
 
@@ -186,7 +186,7 @@ def get_window_image(hWnd=None):
     # if win32gui.IsIconic(hWnd):  # 判断窗口是否最小化
     #     print("最小化")
     #     return
-    while not win32gui.IsWindow(hWnd):
+    while not win32gui.IsWindow(hWnd):  # 只需要窗口在，不需要可见，比如最小化或者隐藏到任务栏
         hWnd = get_parent(hWnd)
         if hWnd == 0:
             hWnd = desktop_hwnd
@@ -208,7 +208,7 @@ def get_window_image(hWnd=None):
         get_rect = win32gui.GetClientRect(hWnd)
         print_mode = 0b11
 
-        if hWnd == desktop_hwnd:
+        if hWnd == desktop_hwnd:  # PrintWindow不能截取桌面，需要用BitBlt
             # 获取窗口长宽
             width = get_rect[2] - get_rect[0]
             height = get_rect[3] - get_rect[1]
@@ -2715,9 +2715,10 @@ def UI_Page():  # 进行图像界面显示
         desc_label = tk.Label(tech_frame, text="项目")
         desc_label.grid(row=1, column=1, padx=5, pady=5)
 
-        def update_sensor_value_tech(i):
-            if config_obj.custom_selected_names_tech[i] != sensor_vars_tech[i].get():
-                config_obj.custom_selected_names_tech[i] = sensor_vars_tech[i].get()
+        def update_sensor_value_tech(tvars, i):
+            global config_obj
+            if config_obj.custom_selected_names_tech[i] != tvars[i].get():
+                config_obj.custom_selected_names_tech[i] = tvars[i].get()
                 save_config()
 
         type_list = ["1. CPU", "2. GPU", "3. 内存"]
@@ -2738,7 +2739,8 @@ def UI_Page():  # 进行图像界面显示
             sensor_vars_tech.append(sensor_var)
             sensor_combobox = ttk.Combobox(tech_frame, textvariable=sensor_var, width=60,
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
-            sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row1: update_sensor_value_tech(ii))
+            sensor_combobox.bind("<<ComboboxSelected>>",
+                                 lambda event, ii=row1: update_sensor_value_tech(sensor_vars_tech, ii))
             sensor_combobox.grid(row=row1 + 2, column=1, sticky=tk.EW, padx=5, pady=5)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
@@ -2760,7 +2762,7 @@ def UI_Page():  # 进行图像界面显示
         def update_global_text(event=None):
             global config_obj
             # Get the current content of the text area and update the global variable
-            full_custom_template_tmp = text_area.get("1.0", tk.END).rstrip('\n')  # tk.END会多一个换行
+            full_custom_template_tmp = event.widget.get("1.0", tk.END).rstrip('\n')  # tk.END会多一个换行
             if config_obj.full_custom_template != full_custom_template_tmp:
                 config_obj.full_custom_template = full_custom_template_tmp
                 save_config()
@@ -2863,10 +2865,10 @@ def UI_Page():  # 进行图像界面显示
         desc_label = tk.Label(simple_frame, text="项目")
         desc_label.grid(row=1, column=1, padx=5, pady=5)
 
-        def update_sensor_value(i):
-            global custom_plot_data
-            if config_obj.custom_selected_names[i] != sensor_vars[i].get():
-                config_obj.custom_selected_names[i] = sensor_vars[i].get()
+        def update_sensor_value(vvars, i):
+            global config_obj, custom_plot_data
+            if config_obj.custom_selected_names[i] != vvars[i].get():
+                config_obj.custom_selected_names[i] = vvars[i].get()
                 save_config()
 
                 # 项目变更时清空旧项目数据
@@ -2875,9 +2877,10 @@ def UI_Page():  # 进行图像界面显示
                 elif i == 1:
                     custom_plot_data["recv"] = [0] * (SHOW_WIDTH // 2)
 
-        def change_sensor_displayname(i):
-            if config_obj.custom_selected_displayname[i] != sensor_displayname_vars[i].get():
-                config_obj.custom_selected_displayname[i] = sensor_displayname_vars[i].get()
+        def change_sensor_displayname(dvars, i):
+            global config_obj
+            if config_obj.custom_selected_displayname[i] != dvars[i].get():
+                config_obj.custom_selected_displayname[i] = dvars[i].get()
                 save_config()
                 change_netspeed_font()
 
@@ -2886,14 +2889,15 @@ def UI_Page():  # 进行图像界面显示
             sensor_displayname_var = tk.StringVar(simple_frame, config_obj.custom_selected_displayname[row])
             sensor_displayname_vars.append(sensor_displayname_var)
             sensor_entry = ttk.Entry(simple_frame, textvariable=sensor_displayname_var, width=8)
-            sensor_entry.bind("<KeyRelease>", lambda event, ii=row: change_sensor_displayname(ii))
+            sensor_entry.bind("<KeyRelease>",
+                              lambda event, ii=row: change_sensor_displayname(sensor_displayname_vars, ii))
             sensor_entry.grid(row=row + 2, column=0, sticky=tk.EW, padx=5, pady=5)
 
             sensor_var = tk.StringVar(simple_frame, config_obj.custom_selected_names[row])
             sensor_vars.append(sensor_var)
             sensor_combobox = ttk.Combobox(simple_frame, textvariable=sensor_var, width=60,
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
-            sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value(ii))
+            sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value(sensor_vars, ii))
             sensor_combobox.grid(row=row + 2, column=1, sticky=tk.EW, padx=5, pady=5)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
@@ -3011,7 +3015,7 @@ def UI_Page():  # 进行图像界面显示
 
     def update_select_hwnd(event):
         global config_obj, all_windows, State_change, sleep_event, screen_shot_queue, screen_process_queue
-        select_str = win32_windows_var.get()
+        select_str = event.widget.get()
         select_window_hwnd, _ = all_windows.get(select_str)
         if select_window_hwnd != config_obj.select_window_hwnd:
             config_obj.select_window_hwnd = select_window_hwnd
