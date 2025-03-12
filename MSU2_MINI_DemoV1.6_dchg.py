@@ -2725,8 +2725,9 @@ def UI_Page():  # 进行图像界面显示
         desc_label = tk.Label(tech_frame, text="项目")
         desc_label.grid(row=1, column=1, padx=5, pady=5)
 
-        def update_sensor_value_tech(tvars, i):
+        def update_sensor_value_tech(event, tvars, i):
             global config_obj
+            event.widget.selection_clear()
             if config_obj.custom_selected_names_tech[i] != tvars[i].get():
                 config_obj.custom_selected_names_tech[i] = tvars[i].get()
                 save_config()
@@ -2750,7 +2751,7 @@ def UI_Page():  # 进行图像界面显示
             sensor_combobox = ttk.Combobox(tech_frame, textvariable=sensor_var, width=60,
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
             sensor_combobox.bind("<<ComboboxSelected>>",
-                                 lambda event, ii=row1: update_sensor_value_tech(sensor_vars_tech, ii))
+                                 lambda event, ii=row1: update_sensor_value_tech(event, sensor_vars_tech, ii))
             sensor_combobox.grid(row=row1 + 2, column=1, sticky=tk.EW, padx=5, pady=5)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
@@ -2875,8 +2876,9 @@ def UI_Page():  # 进行图像界面显示
         desc_label = tk.Label(simple_frame, text="项目")
         desc_label.grid(row=1, column=1, padx=5, pady=5)
 
-        def update_sensor_value(vvars, i):
+        def update_sensor_value(event, vvars, i):
             global config_obj, custom_plot_data
+            event.widget.selection_clear()
             if config_obj.custom_selected_names[i] != vvars[i].get():
                 config_obj.custom_selected_names[i] = vvars[i].get()
                 save_config()
@@ -2907,7 +2909,8 @@ def UI_Page():  # 进行图像界面显示
             sensor_vars.append(sensor_var)
             sensor_combobox = ttk.Combobox(simple_frame, textvariable=sensor_var, width=60,
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
-            sensor_combobox.bind("<<ComboboxSelected>>", lambda event, ii=row: update_sensor_value(sensor_vars, ii))
+            sensor_combobox.bind("<<ComboboxSelected>>",
+                                 lambda event, ii=row: update_sensor_value(event, sensor_vars, ii))
             sensor_combobox.grid(row=row + 2, column=1, sticky=tk.EW, padx=5, pady=5)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
@@ -3025,6 +3028,7 @@ def UI_Page():  # 进行图像界面显示
 
     def update_select_hwnd(event):
         global config_obj, all_windows, State_change, sleep_event, screen_shot_queue, screen_process_queue
+        event.widget.selection_clear()
         select_str = event.widget.get()
         select_window_hwnd, _ = all_windows.get(select_str)
         if select_window_hwnd != config_obj.select_window_hwnd:
