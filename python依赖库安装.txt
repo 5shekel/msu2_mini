@@ -1,6 +1,7 @@
 安装python3.x版本，安装时需要选择tcl/tk and IDLE选项
 
 pip install --upgrade pip
+
 pip install serial
 pip install pyserial
 pip install psutil
@@ -11,3 +12,5 @@ pip install pystray
 pip install HardwareMonitor
 pip install pywin32
 
+apt-get install python3-tk
+pip install pythontk

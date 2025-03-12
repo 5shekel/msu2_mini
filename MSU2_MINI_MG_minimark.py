@@ -30,8 +30,11 @@ def load_font(font_name, font_size):
         try:
             font_cache[key] = ImageFont.truetype(get_resource(font_name), font_size)
         except (OSError, ValueError) as e:
-            print("Warning: font %s load failed, %s:%s" % (key, type(e), e))
-            return load_font("./simhei.ttf", font_size)
+            try:
+                font_cache[key] = ImageFont.truetype(get_resource("./simhei.ttf"), font_size)
+            except (OSError, ValueError) as e:
+                print("Warning: font %s load failed, %s:%s" % (key, type(e), e))
+                font_cache[key] = ImageFont.load_default(font_size)
     return font_cache[key]
 
 

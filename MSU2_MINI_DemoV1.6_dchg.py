@@ -92,8 +92,6 @@ PAGE_DESSCRIPTION = [
     "页面4：屏幕镜像",  # SCREEN_PAGE_ID = 3
     "页面5：电脑CPU/内存/磁盘/电池使用率监控",  # STATE_PAGE_ID = 4
     "页面6：网络流量监控",  # NETSPEED_PAGE_ID = 5
-    "页面7：自定义显示两项图表",  # CUSTOM1_PAGE_ID = 6
-    "页面8：自定义显示多项数值"  # CUSTOM2_PAGE_ID = 7
 ]
 
 LCD_STATE_MESSAGE = [
@@ -2420,7 +2418,11 @@ def get_parent(hwnd):
 
 def get_hwnd_desc(hwnd):
     global all_windows
-    all_windows = get_all_windows()
+    if isWindows:
+        all_windows = get_all_windows()
+    else:
+        all_windows = {"桌面": (0, 0)}
+
     for key, value in all_windows.items():
         if value[0] == hwnd:
             return key
@@ -3224,14 +3226,18 @@ def get_formatted_time_string(time):
 
 
 def load_task():
-    global hardware_monitor_manager
+    global hardware_monitor_manager, PAGE_DESSCRIPTION
     try:
         HardwareMonitorManager = load_hardware_monitor()
         hardware_monitor_manager = HardwareMonitorManager()
+        PAGE_DESSCRIPTION = PAGE_DESSCRIPTION + [
+            "页面7：自定义显示两项图表",  # CUSTOM1_PAGE_ID = 6
+            "页面8：自定义显示多项数值"  # CUSTOM2_PAGE_ID = 7
+        ]
+        print("Libre hardware monitor load successed")
     except Exception as e:
-        print("Libre hardware monitor 加载失败，%s" % traceback.format_exc())
         hardware_monitor_manager = 1
-    print("Libre hardware monitor load finished")
+        print("Libre hardware monitor 加载失败，%s" % traceback.format_exc())
 
 
 def daemon_task():
