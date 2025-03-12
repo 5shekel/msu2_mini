@@ -130,7 +130,7 @@ def get_all_windows():
         window_title = win32gui.GetWindowText(hwnd)
         if window_class == "TrayClockWClass":  # 系统时钟
             # or window_title == "Game Bar":  # Xbox Game Bar
-            param["%s - %s" % (hwnd, window_title)] = (hwnd, parent_hwnd)
+            param["[%s] - %s" % (get_process_name(hwnd), window_title)] = (hwnd, parent_hwnd)
         return True
 
     def get_children_windows(parent, parent_hwnd):
@@ -146,7 +146,7 @@ def get_all_windows():
             if window_title and window_class != "Windows.UI.Core.CoreWindow":  # 普通窗口
                 # and window_class != "Internet Explorer_Hidden"
                 parent = win32gui.GetParent(hwnd)
-                hwnd_title["%s - %s" % (hwnd, window_title)] = (hwnd, parent)
+                hwnd_title["[%s] - %s" % (get_process_name(hwnd), window_title)] = (hwnd, parent)
             elif window_class == "Shell_TrayWnd":  # 任务栏
                 hwnd_title.update(get_children_windows(hwnd, 0))
         return True
@@ -155,7 +155,7 @@ def get_all_windows():
     try:
         # 添加桌面
         desktop_hwnd = win32gui.GetDesktopWindow()
-        hwnd_titles.update({"%s - 桌面" % desktop_hwnd: (desktop_hwnd, 0)})
+        hwnd_titles.update({"[%s] - 桌面" % desktop_hwnd: (desktop_hwnd, 0)})
 
         # 遍历其他所有窗口
         win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
@@ -3023,7 +3023,7 @@ def UI_Page():  # 进行图像界面显示
         desc = get_hwnd_desc(config_obj.select_window_hwnd)
         if desc:
             event.widget.set(desc)
-        event.widget["value"] = list(all_windows.keys())
+        event.widget["value"] = sorted(all_windows.keys(), key=str.lower)
         combo_configure(event)
 
     def update_select_hwnd(event):
@@ -3048,7 +3048,7 @@ def UI_Page():  # 进行图像界面显示
         root, get_hwnd_desc(config_obj.select_window_hwnd)
               or config_obj.select_window_hwnd or list(all_windows.keys())[0])
     windows_combobox = ttk.Combobox(root, textvariable=win32_windows_var, width=10,
-                                    values=list(all_windows.keys()))
+                                    values=sorted(all_windows.keys(), key=str.lower))
     windows_combobox.bind('<Configure>', combo_configure)
     windows_combobox.bind('<ButtonPress>', update_windows_list)
     windows_combobox.bind("<<ComboboxSelected>>", update_select_hwnd)
