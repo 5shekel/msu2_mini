@@ -125,12 +125,16 @@ def get_all_windows():
         except:
             return hwnd
 
+    def add_dict(dicts, hwnd, title, parent):
+        # key需要包含hwnd，否则可能因key重复被覆盖
+        dicts["[%s] - %s (%s)" % (get_process_name(hwnd), title, hwnd)] = (hwnd, parent)
+
     def children(hwnd, parent_hwnd, param):
         window_class = win32gui.GetClassName(hwnd)
         window_title = win32gui.GetWindowText(hwnd)
         if window_class == "TrayClockWClass":  # 系统时钟
             # or window_title == "Game Bar":  # Xbox Game Bar
-            param["[%s] - %s" % (get_process_name(hwnd), window_title)] = (hwnd, parent_hwnd)
+            add_dict(param, hwnd, window_title, parent_hwnd)
         return True
 
     def get_children_windows(parent, parent_hwnd):
@@ -146,7 +150,7 @@ def get_all_windows():
             if window_title and window_class != "Windows.UI.Core.CoreWindow":  # 普通窗口
                 # and window_class != "Internet Explorer_Hidden"
                 parent = win32gui.GetParent(hwnd)
-                hwnd_title["[%s] - %s" % (get_process_name(hwnd), window_title)] = (hwnd, parent)
+                add_dict(hwnd_title, hwnd, window_title, parent)
             elif window_class == "Shell_TrayWnd":  # 任务栏
                 hwnd_title.update(get_children_windows(hwnd, 0))
         return True
@@ -155,7 +159,7 @@ def get_all_windows():
     try:
         # 添加桌面
         desktop_hwnd = win32gui.GetDesktopWindow()
-        hwnd_titles.update({"[%s] - 桌面" % desktop_hwnd: (desktop_hwnd, 0)})
+        add_dict(hwnd_titles, desktop_hwnd, "桌面", 0)
 
         # 遍历其他所有窗口
         win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
