@@ -159,7 +159,7 @@ def get_all_windows():
     try:
         # 添加桌面
         desktop_hwnd = win32gui.GetDesktopWindow()
-        add_dict(hwnd_titles, desktop_hwnd, "桌面", 0)
+        hwnd_titles["[%s] - 桌面" % desktop_hwnd] = (desktop_hwnd, 0)
 
         # 遍历其他所有窗口
         win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
