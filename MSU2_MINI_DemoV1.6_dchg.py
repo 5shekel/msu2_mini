@@ -33,6 +33,7 @@ if isWindows:
     import win32con
     import win32gui
     import win32ui
+    import win32process
 
     # 使用高dpi缩放适配高分屏。0：不使用缩放 1：所有屏幕 2：当前屏幕
     try:  # >= win 8.1
@@ -117,6 +118,13 @@ IMAGE_FILE_TYPES = [
 def get_all_windows():
     global desktop_hwnd
 
+    def get_process_name(hwnd):
+        try:
+            _, procpid = win32process.GetWindowThreadProcessId(hwnd)
+            return psutil.Process(procpid).name()
+        except:
+            return hwnd
+
     def children(hwnd, parent_hwnd, param):
         window_class = win32gui.GetClassName(hwnd)
         window_title = win32gui.GetWindowText(hwnd)
@@ -192,13 +200,13 @@ def get_window_image(hWnd=None):
     # 将窗口置于最前端
     # win32gui.SetForegroundWindow(hWnd)
 
-    # 初始化截屏所需内存
-    hWndDC = win32gui.GetWindowDC(hWnd)
-    mfcDC = win32ui.CreateDCFromHandle(hWndDC)
-    saveDC = mfcDC.CreateCompatibleDC()
-    saveBitMap = win32ui.CreateBitmap()
-
     try:
+        # 初始化截屏所需内存
+        hWndDC = win32gui.GetWindowDC(hWnd)
+        mfcDC = win32ui.CreateDCFromHandle(hWndDC)
+        saveDC = mfcDC.CreateCompatibleDC()
+        saveBitMap = win32ui.CreateBitmap()
+
         # # 获取窗口大小，包含标题栏和工具栏
         # get_rect = win32gui.GetWindowRect(hWnd)
         # print_mode = 0b10
@@ -2012,7 +2020,7 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
     if State_change == 1:
         state_change_clear()
         wait_time = 0
-        last_refresh_time = current_monoto_time - 0.001
+        last_refresh_time = current_monoto_time - 0.001  # -0.001防止出现除0错误
         netspeed_last_refresh_snetio = current_snetio
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
@@ -2995,7 +3003,7 @@ def UI_Page():  # 进行图像界面显示
             add = '000'
         else:
             add = '0'
-        long = (max(values, key=len).rstrip() + add)[:75]  # 最长显示100字符
+        long = (max(values, key=len).rstrip() + add)[:100]  # 最长显示100字符
         font = tkfont.nametofont(str(combo.cget('font')))
         width = max(0, font.measure(long) - combo.winfo_width())
         # create an unique style name using widget's id
