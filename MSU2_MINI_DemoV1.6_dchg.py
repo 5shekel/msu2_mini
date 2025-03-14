@@ -3260,6 +3260,8 @@ def load_task():
 def daemon_task():
     global Device_State, Device_State_Labelen, sleep_event
 
+    wch_port_list_old = None
+    retry_times = 0
     while MG_daemon_running:
         try:
             if Device_State_Labelen == 2:
@@ -3274,8 +3276,22 @@ def daemon_task():
             # geezmo: 如果有 VID = 0x1a86 （沁恒）的，优先考虑这些设备，防止访问其他串口出错
             # 如果没有这些设备，或者 pyserial 没有提供信息，则不管
             wch_port_list = [x for x in port_list if x.vid == 0x1a86]
+
+            if wch_port_list != wch_port_list_old:
+                wch_port_list_old = wch_port_list
+                retry_times = 0
+            else:
+                retry_times += 1
+                if retry_times >= 5:
+                    if sleep_event.isSet():
+                        sleep_event.clear()
+                    sleep_event.wait(1)  # 防止频繁重试
+                    if (retry_times % 10) != 0:  # 减缓重试频率，10秒重试一次
+                        continue
+
             Get_MSN_Device(wch_port_list)
             if Device_State != 0:
+                retry_times = 0
                 continue
             # 这儿去掉对VID非0x1a86的检测，因为很多反馈对蓝牙有影响
             # not_wch_port_list = [x for x in port_list if x.vid != 0x1a86]
@@ -3286,7 +3302,7 @@ def daemon_task():
             insert_text_message("没有找到可用的设备，请确认设备是否正确连接")
             if sleep_event.isSet():
                 sleep_event.clear()
-            sleep_event.wait(1)  # 防止频繁重试
+            sleep_event.wait(0.2)  # 防止频繁重试
         except Exception as e:  # 出现非预期异常
             print("Exception in daemon_task, %s" % traceback.format_exc())
             if sleep_event.isSet():
