@@ -3288,7 +3288,7 @@ def daemon_task():
                     if sleep_event.isSet():
                         sleep_event.clear()
                     sleep_event.wait(1)  # 防止频繁重试
-                    if (retry_times % 10) != 0:  # 减缓重试频率，10秒重试一次
+                    if (retry_times % 5) != 0:  # 减缓重试频率，5秒重试一次
                         continue
 
             Get_MSN_Device(wch_port_list)
