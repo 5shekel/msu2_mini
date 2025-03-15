@@ -1506,8 +1506,8 @@ def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
 
 
 def show_gif():  # 显示GIF动图
-    global config_obj, second_pass, sleep_event
-    global current_monoto_time, last_refresh_time, gif_wait_time, State_change, gif_num
+    global config_obj, second_pass, sleep_event, last_refresh_time, gif_wait_time, State_change, gif_num
+    current_monoto_time = time.monotonic()
     if State_change == 1:
         state_change_clear()
         # gif_num = 0
@@ -1540,7 +1540,8 @@ def show_gif():  # 显示GIF动图
 
 
 def show_PC_state(FC, BC):  # 显示PC状态
-    global State_change, sleep_event, last_refresh_time, wait_time, current_monoto_time
+    global State_change, sleep_event, last_refresh_time, wait_time
+    current_monoto_time = time.monotonic()
     photo_add = 4038
     num_add = 4026
     if State_change == 1:
@@ -1970,8 +1971,9 @@ def screenshot_panic(clean_queue=True):
 
 
 def show_PC_Screen():  # 显示照片
-    global config_obj, State_change, screenshot_test_frame, screen_process_queue
-    global current_monoto_time, screenshot_test_time, screenshot_last_limit_time, wait_time, sleep_event
+    global config_obj, State_change, screen_process_queue, screenshot_last_limit_time, wait_time, sleep_event
+    global screenshot_test_time, screenshot_test_frame  # 用于计算串流FPS
+    current_monoto_time = time.monotonic()
     if State_change == 1:
         state_change_clear()
         wait_time = 0
@@ -1987,16 +1989,19 @@ def show_PC_Screen():  # 显示照片
     elapse_time = current_monoto_time - screenshot_last_limit_time
     if elapse_time > 5:  # 有切换，重置参数
         wait_time = 0
-        screenshot_test_time = current_monoto_time
-        screenshot_test_frame = 0
         elapse_time = 1.0 / config_obj.fps_var  # 第一次不需要wait
-    elif screenshot_test_frame % config_obj.fps_var == 0:
-        # 测试用：显示帧率
-        # real_fps = config_obj.fps_var / (current_monoto_time - screenshot_test_time)
-        # print("串流FPS: %s" % real_fps)
-        screenshot_test_time = current_monoto_time
+
+    #     # 这段用于计算串流FPS，不需要可以注释掉（缩进格式就是这样的，不需要改动）
+    #     screenshot_test_frame = 0
+    #     screenshot_test_time = current_monoto_time
+    # elif screenshot_test_frame % config_obj.fps_var == 0:
+    #     # 测试用：显示帧率
+    #     real_fps = config_obj.fps_var / (current_monoto_time - screenshot_test_time)
+    #     print("串流FPS: %s" % real_fps)
+    #     screenshot_test_time = current_monoto_time
+    # screenshot_test_frame += 1
+
     screenshot_last_limit_time = current_monoto_time
-    screenshot_test_frame += 1
     wait_time += 1.0 / config_obj.fps_var - elapse_time
     if wait_time > 0:
         sleep_event.wait(wait_time)  # 精确控制FPS
@@ -2018,8 +2023,8 @@ def sizeof_fmt(num, suffix="B", base=1024.0):
 def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
                   bar2_color=(146, 211, 217), back_color=(0, 0, 0)):
     global last_refresh_time, netspeed_last_refresh_snetio, netspeed_plot_data
-    global default_font, State_change, wait_time, current_monoto_time, sleep_event
-
+    global default_font, State_change, wait_time, sleep_event
+    current_monoto_time = time.monotonic()
     bar_width = 2  # 每个点宽度
     image_height = SHOW_HEIGHT // 4  # 高度
 
@@ -2203,9 +2208,9 @@ def load_hardware_monitor():
 def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
                          bar2_color=(146, 211, 217), back_color=(0, 0, 0)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global config_obj, last_refresh_time, State_change, wait_time, current_monoto_time
+    global config_obj, last_refresh_time, State_change, wait_time
     global custom_plot_data, hardware_monitor_manager, netspeed_font, sleep_event
-
+    current_monoto_time = time.monotonic()
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         sleep_event.wait(0.2)
         return
@@ -2347,8 +2352,8 @@ def get_full_custom_im():
 
 def show_full_custom():
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
-    global last_refresh_time, State_change, wait_time, hardware_monitor_manager, current_monoto_time, sleep_event
-
+    global last_refresh_time, State_change, wait_time, hardware_monitor_manager, sleep_event
+    current_monoto_time = time.monotonic()
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
         sleep_event.wait(0.2)
         return
@@ -3198,10 +3203,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
-    global config_obj, State_change, LCD_Change_now, Label4, current_monoto_time
+    global config_obj, State_change, LCD_Change_now, Label4
     global write_path_index, Img_data_use, color_use
-
-    current_monoto_time = time.monotonic()
 
     if write_path_index != 0:
         if write_path_index == 1:
@@ -3390,7 +3393,6 @@ def manage_task():
     print("Stop manager")
 
 
-current_monoto_time = 0
 Img_data_use = None
 
 cleanNextTime = False
@@ -3410,9 +3412,9 @@ all_windows = None
 row_np_zero = None
 column_np_zero = None
 
-screenshot_test_time = 0
+screenshot_test_time = 0  # 用于计算串流FPS
+screenshot_test_frame = 0  # 用于计算串流FPS
 screenshot_last_limit_time = 0
-screenshot_test_frame = 0
 wait_time = 0.0
 
 netspeed_last_refresh_snetio = None
@@ -3475,10 +3477,9 @@ hardware_monitor_manager = None
 if __name__ == "__main__":
     exit_code = 0
     try:
-        current_monoto_time = time.monotonic()
-        last_refresh_time = current_monoto_time
-        screenshot_test_time = current_monoto_time
-        screenshot_last_limit_time = current_monoto_time
+        last_refresh_time = time.monotonic()
+        screenshot_test_time = last_refresh_time
+        screenshot_last_limit_time = last_refresh_time
         sleep_event = threading.Event()  # 用event代替time.sleep，加快切换速度
         config_event = threading.Event()  # 用event代替time.sleep，用于退出时快速保存
         SER_lock = threading.Lock()
