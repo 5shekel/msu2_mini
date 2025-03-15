@@ -126,6 +126,8 @@ def get_all_windows():
             return hwnd
 
     def add_dict(dicts, hwnd, title, parent):
+        if len(title) > 100:
+            title = title[:100] + '...'
         # key需要包含hwnd，否则可能因key重复被覆盖
         dicts["[%s] - %s (%s)" % (get_process_name(hwnd), title, hwnd)] = (hwnd, parent)
 
