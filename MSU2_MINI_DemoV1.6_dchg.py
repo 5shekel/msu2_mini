@@ -2015,7 +2015,8 @@ def sizeof_fmt(num, suffix="B", base=1024.0):
     return "%3.1fY%s" % (num, suffix)
 
 
-def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_color=(146, 211, 217)):
+def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
+                  bar2_color=(146, 211, 217), back_color=(0, 0, 0)):
     global last_refresh_time, netspeed_last_refresh_snetio, netspeed_plot_data
     global default_font, State_change, wait_time, current_monoto_time, sleep_event
 
@@ -2046,7 +2047,7 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_col
     netspeed_last_refresh_snetio = current_snetio
 
     # 绘制图片
-    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), (0, 0, 0))
+    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), back_color)
     draw = ImageDraw.Draw(im1)
 
     # 绘制文字
@@ -2199,7 +2200,8 @@ def load_hardware_monitor():
     return HardwareMonitorManager
 
 
-def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), bar2_color=(146, 211, 217)):
+def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
+                         bar2_color=(146, 211, 217), back_color=(0, 0, 0)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
     global config_obj, last_refresh_time, State_change, wait_time, current_monoto_time
     global custom_plot_data, hardware_monitor_manager, netspeed_font, sleep_event
@@ -2245,7 +2247,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139), b
 
     # 绘制图片
 
-    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), (0, 0, 0))
+    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), back_color)
 
     draw = ImageDraw.Draw(im1)
 
@@ -3217,9 +3219,6 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         LCD_Change_now = config_obj.lcd_change
         LCD_State(LCD_Change_now)  # 配置显示方向
 
-    bar_colors = [(235, 139, 139), (146, 212, 217)]
-    # bar_colors = [(128, 255, 128), (255, 128, 255)]
-    # bar_colors = [(128, 128, 255), (0, 128, 192)]
     if config_obj.state_machine == PCTIME_PAGE_ID:
         show_PC_time(color_use)  # 展示时钟
     elif config_obj.state_machine == PHOTO_PAGE_ID:
@@ -3230,10 +3229,12 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         show_PC_state(color_use, BLACK)  # 展示CPU/内存/磁盘/电池 使用率
     elif config_obj.state_machine == NETSPEED_PAGE_ID:
         rgb_tuple = (config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
-        show_netspeed(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
+        show_netspeed(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1],
+                      back_color=back_color)
     elif config_obj.state_machine == CUSTOM1_PAGE_ID:
         rgb_tuple = (config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
-        show_custom_two_rows(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1])
+        show_custom_two_rows(text_color=rgb_tuple, bar1_color=bar_colors[0], bar2_color=bar_colors[1],
+                             back_color=back_color)
     elif config_obj.state_machine == CUSTOM2_PAGE_ID:
         show_full_custom()
     else:  # default GIF_PAGE_ID
@@ -3415,9 +3416,9 @@ screenshot_test_frame = 0
 wait_time = 0.0
 
 netspeed_last_refresh_snetio = None
-netspeed_plot_data = None
+netspeed_plot_data = None  # 用于 show_netspeed
 
-custom_plot_data = None  # 用于 show_custom_two_rows,
+custom_plot_data = None  # 用于 show_custom_two_rows
 
 mini_mark_parser = None
 full_custom_error = "OK"
@@ -3439,6 +3440,12 @@ Device_State_Labelen = 0  # 0无修改，1窗口已隐藏，2窗口已恢复有�
 LCD_Change_now = 0  # 实际显示方向
 color_use = RED  # 彩色图片点阵算法 5R6G5B
 write_path_index = 0
+
+# 曲线图颜色和背景颜色
+back_color = (0, 0, 0)
+bar_colors = [(235, 139, 139), (146, 212, 217)]
+# bar_colors = [(128, 255, 128), (255, 128, 255)]
+# bar_colors = [(128, 128, 255), (0, 128, 192)]
 
 Label1 = None  # 设备状态显示框
 Label3 = None  # 背景图像路径显示框
