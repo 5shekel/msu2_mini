@@ -1897,6 +1897,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
                 try:
                     if cap.isOpened():
+                        # print(cap.get(cv2.CAP_PROP_CONVERT_RGB))
                         # cap.set(cv2.CAP_PROP_FPS, config_obj.fps_var)
                         cap.set(cv2.CAP_PROP_FRAME_WIDTH, SHOW_WIDTH)
                         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, SHOW_HEIGHT)
@@ -1905,15 +1906,12 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                         while (MG_screen_thread_running and config_obj.state_machine == CAMERA_VIDEO_ID and
                                camera_name == config_obj.camera_var):
                             suc, frame = cap.read()
-                            if suc:
-                                image = Win32_Image(rgb=frame, size=(width, height))
-                                screen_shot_queue.put((image, {"width": width, "height": height}), timeout=3)
-                            time.sleep(1.0 / config_obj.fps_var)
+                            if not suc:
+                                raise Exception("cap.read() failed")
+                            image = Win32_Image(rgb=frame, size=(width, height))
+                            screen_shot_queue.put((image, {"width": width, "height": height}), timeout=3)
                     else:
-                        # 没有图像时显示黑色背景
-                        image = Win32_Image(rgb=bytes(6), size=(2, 1))
-                        screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=3)
-                        time.sleep(0.5)
+                        raise Exception("capture open failed")
                 finally:
                     cap.release()
             elif isWindows:
@@ -1926,7 +1924,10 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
             continue
         except Exception as e:
             print("获取图像失败 %s" % traceback.format_exc())
-            time.sleep(0.2)
+            # 没有图像时显示黑色背景
+            image = Win32_Image(rgb=bytes(6), size=(2, 1))
+            screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=3)
+            time.sleep(0.5)
 
     # stop
     print("Stop screenshot")
