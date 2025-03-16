@@ -2524,7 +2524,6 @@ class sys_config(object):
         self.camera_var = ""  # 相机编号
         self.select_window_hwnd = 0
         self.fps_var = 5
-        self.screen_region_var = "0,0,,"  # 投屏区域，未使用
         self.custom_selected_names = [""] * 2
         self.custom_selected_displayname = [""] * 2
         self.custom_selected_names_tech = [""] * 6
@@ -3146,9 +3145,12 @@ def UI_Page():  # 进行图像界面显示
     label = ttk.Label(root, text="屏幕镜像窗口:")
     label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
-    win32_windows_var = tk.StringVar(
-        root, get_hwnd_desc(config_obj.select_window_hwnd)
-              or config_obj.select_window_hwnd or list(all_windows.keys())[0])
+    select_windows = get_hwnd_desc(config_obj.select_window_hwnd)
+    if select_windows is None:
+        select_windows = list(all_windows.keys())[0]
+        config_obj.select_window_hwnd, _ = all_windows.get(select_windows)
+    win32_windows_var = tk.StringVar(root, select_windows)
+
     windows_combobox = ttk.Combobox(root, textvariable=win32_windows_var, width=10,
                                     values=sorted(all_windows.keys(), key=str.lower))
     windows_combobox.bind('<Configure>', combo_configure)
