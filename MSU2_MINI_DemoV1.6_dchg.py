@@ -1903,11 +1903,16 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, SHOW_HEIGHT)
                         width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
                         height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+                        last_time = time.monotonic()
                         while (MG_screen_thread_running and config_obj.state_machine == CAMERA_VIDEO_ID and
                                camera_name == config_obj.camera_var):
                             suc, frame = cap.read()
                             if not suc:
                                 raise Exception("cap.read() failed")
+                            current_time = time.monotonic()
+                            if current_time - last_time > 2.0:  # 解决待机恢复后图像异常问题
+                                raise Exception("cap.read() timeout")
+                            last_time = current_time
                             image = Win32_Image(rgb=frame, size=(width, height))
                             screen_shot_queue.put((image, {"width": width, "height": height}), timeout=3)
                     else:
