@@ -119,7 +119,7 @@ IMAGE_FILE_TYPES = [
 
 
 def get_all_cameras():
-    all_camera_devices = dict()
+    all_camera_devices = {"": -1}
     try:
         camera_devices = camera_device.list_video_devices()
         for camera_id, camera_name in camera_devices:
@@ -1887,6 +1887,10 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
         try:
             if config_obj.state_machine == CAMERA_VIDEO_ID:
                 if not config_obj.camera_var:
+                    # 没有图像时显示黑色背景
+                    image = Win32_Image(rgb=bytes(6), size=(2, 1))
+                    screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=3)
+                    time.sleep(0.5)
                     continue
                 camera_name = config_obj.camera_var
                 camera_id = all_cameras.get(config_obj.camera_var)
