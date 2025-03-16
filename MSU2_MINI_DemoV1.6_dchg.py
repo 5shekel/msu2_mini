@@ -119,7 +119,7 @@ IMAGE_FILE_TYPES = [
 
 
 def get_all_cameras():
-    all_camera_devices = {"": -1}
+    all_camera_devices = {"": None}
     try:
         camera_devices = camera_device.list_video_devices()
         for camera_id, camera_name in camera_devices:
@@ -1886,14 +1886,14 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 
         try:
             if config_obj.state_machine == CAMERA_VIDEO_ID:
-                if not config_obj.camera_var:
+                camera_id = all_cameras.get(config_obj.camera_var)
+                if camera_id is None:
                     # 没有图像时显示黑色背景
                     image = Win32_Image(rgb=bytes(6), size=(2, 1))
                     screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=3)
                     time.sleep(0.5)
                     continue
                 camera_name = config_obj.camera_var
-                camera_id = all_cameras.get(config_obj.camera_var)
                 cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
                 try:
                     if cap.isOpened():
@@ -1909,6 +1909,11 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                                 image = Win32_Image(rgb=frame, size=(width, height))
                                 screen_shot_queue.put((image, {"width": width, "height": height}), timeout=3)
                             time.sleep(1.0 / config_obj.fps_var)
+                    else:
+                        # 没有图像时显示黑色背景
+                        image = Win32_Image(rgb=bytes(6), size=(2, 1))
+                        screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=3)
+                        time.sleep(0.5)
                 finally:
                     cap.release()
             elif isWindows:
@@ -3073,16 +3078,14 @@ def UI_Page():  # 进行图像界面显示
     label_camera_number.grid(row=5, column=3, sticky=tk.E, padx=5, pady=5)
 
     all_cameras = get_all_cameras()
-    if len(all_cameras) > 0:
+    if len(all_cameras) > 1:
         PAGE_ID[CAMERA_VIDEO_ID] = "相机视频"
         # 用于保持页面的顺序
         new_PAGE_ID = sorted(PAGE_ID.items(), key=lambda a: a[0])
         PAGE_ID.clear()
         PAGE_ID.update(new_PAGE_ID)
-        if not config_obj.camera_var:
-            config_obj.camera_var = list(all_cameras.keys())[0]
-    else:
-        config_obj.camera_var = ""
+    if not config_obj.camera_var or config_obj.camera_var not in all_cameras.keys():
+        config_obj.camera_var = list(all_cameras.keys())[0]
     camera_var = tk.StringVar(root, config_obj.camera_var)
     # camera_var.trace_add("write", change_screenshot_monitor)
 
