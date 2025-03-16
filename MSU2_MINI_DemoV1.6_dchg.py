@@ -16,12 +16,14 @@ import traceback
 from datetime import datetime  # 用于获取当前时间
 from tkinter import ttk  # geezmo: 好看的皮肤
 
+import cv2
 import numpy as np  # 使用numpy加速数据处理
 import psutil  # 引入psutil获取设备信息（需要额外安装）
 import pystray
 import serial  # 引入串口库（需要额外安装）
 import serial.tools.list_ports
 from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
+from PyCameraList import camera_device
 
 import MSU2_MINI_MG_minimark as MiniMark
 from MSU2_MINI_MG_minimark import MiniMarkParser
@@ -82,18 +84,19 @@ GIF_PAGE_ID = 0
 PCTIME_PAGE_ID = 1
 PHOTO_PAGE_ID = 2
 SCREEN_PAGE_ID = 3
-STATE_PAGE_ID = 4
-NETSPEED_PAGE_ID = 5
-CUSTOM1_PAGE_ID = 6
-CUSTOM2_PAGE_ID = 7
-PAGE_DESSCRIPTION = [
-    "页面1：动图",  # GIF_PAGE_ID = 0
-    "页面2：时间",  # PCTIME_PAGE_ID = 1
-    "页面3：单个相册图片",  # PHOTO_PAGE_ID = 2
-    "页面4：屏幕镜像",  # SCREEN_PAGE_ID = 3
-    "页面5：电脑CPU/内存/磁盘/电池使用率监控",  # STATE_PAGE_ID = 4
-    "页面6：网络流量监控",  # NETSPEED_PAGE_ID = 5
-]
+CAMERA_VIDEO_ID = 4
+STATE_PAGE_ID = 5
+NETSPEED_PAGE_ID = 6
+CUSTOM1_PAGE_ID = 7
+CUSTOM2_PAGE_ID = 8
+PAGE_ID = {
+    GIF_PAGE_ID: "动图",
+    PCTIME_PAGE_ID: "时间",
+    PHOTO_PAGE_ID: "单个相册图片",
+    SCREEN_PAGE_ID: "屏幕镜像",
+    STATE_PAGE_ID: "电脑CPU/内存/磁盘/电池使用率监控",
+    NETSPEED_PAGE_ID: "网络流量监控",
+}
 
 LCD_STATE_MESSAGE = [
     "正向",
@@ -113,6 +116,17 @@ IMAGE_FILE_TYPES = [
     ("Image file", "*.tif"),
     ("Image file", "*.dib")
 ]
+
+
+def get_all_cameras():
+    all_camera_devices = dict()
+    try:
+        camera_devices = camera_device.list_video_devices()
+        for camera_id, camera_name in camera_devices:
+            all_camera_devices["%s - %s" % (camera_id, camera_name)] = camera_id
+    except Exception as e:
+        print(e)
+    return all_camera_devices
 
 
 def get_all_windows():
@@ -177,7 +191,8 @@ def get_all_windows():
 
 
 class Win32_Image:
-    def __init__(self, bgra, size):
+    def __init__(self, rgb=None, bgra=None, size=(0, 0)):
+        self.rgb = rgb
         self.bgra = bgra
         self.size = size
 
@@ -244,7 +259,7 @@ def get_window_image(hWnd=None):
             result = windll.user32.PrintWindow(hWnd, saveDC.GetSafeHdc(), print_mode)
             # if not result:
             #     print("PrintWindow failed: %s" % result)
-            #     return Win32_Image(bytes(8), (2, 1))  # 异常时初始化为黑色背景
+            #     return Win32_Image(rgb=bytes(6), size=(2, 1))  # 异常时初始化为黑色背景
 
         # 获取位图信息
         bmpinfo = saveBitMap.GetInfo()
@@ -255,12 +270,12 @@ def get_window_image(hWnd=None):
         # im_PIL = Image.frombuffer('RGB', (len(bmpstr) // (bmpinfo['bmHeight'] * 4), bmpinfo['bmHeight']),
         #                           bmpstr, 'raw', 'BGRX', 0, 1)
         # im_PIL.save("im_PIL.png")  # 保存
-        image = Win32_Image(bmpstr, (bmpinfo['bmWidth'], bmpinfo['bmHeight']))
+        image = Win32_Image(bgra=bmpstr, size=(bmpinfo['bmWidth'], bmpinfo['bmHeight']))
         return image
     except Exception as e:
         print(traceback.format_exc())
         time.sleep(0.2)
-        return Win32_Image(bytes(8), (2, 1))  # 异常时初始化为黑色背景
+        return Win32_Image(rgb=bytes(6), size=(2, 1))  # 异常时初始化为黑色背景
     finally:
         # 内存释放
         try:
@@ -574,20 +589,30 @@ def state_change_clear():
 
 def Page_UP():  # 上一页
     global config_obj, State_change, sleep_event
-    if config_obj.state_machine >= len(PAGE_DESSCRIPTION) - 1:
-        config_obj.state_machine = 0
-    else:
-        config_obj.state_machine = config_obj.state_machine + 1
-    state_change_set(PAGE_DESSCRIPTION[config_obj.state_machine])
+    try:
+        index = list(PAGE_ID.keys()).index(config_obj.state_machine)
+        if index >= len(PAGE_ID) - 1:
+            index = 0
+        else:
+            index = index + 1
+    except:
+        index = 0
+    config_obj.state_machine = list(PAGE_ID.keys())[index]
+    state_change_set(PAGE_ID[config_obj.state_machine])
 
 
 def Page_Down():  # 下一页
     global config_obj, State_change, sleep_event
-    if config_obj.state_machine <= 0:
-        config_obj.state_machine = len(PAGE_DESSCRIPTION) - 1
-    else:
-        config_obj.state_machine = config_obj.state_machine - 1
-    state_change_set(PAGE_DESSCRIPTION[config_obj.state_machine])
+    try:
+        index = list(PAGE_ID.keys()).index(config_obj.state_machine)
+        if index == 0:
+            index = len(PAGE_ID) - 1
+        else:
+            index = index - 1
+    except:
+        index = 0
+    config_obj.state_machine = list(PAGE_ID.keys())[index]
+    state_change_set(PAGE_ID[config_obj.state_machine])
 
 
 def LCD_Change():  # 切换显示方向
@@ -1831,25 +1856,25 @@ def clear_queue(queue):
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
-    global config_obj, MG_screen_thread_running, screen_shot_queue, desktop_hwnd
+    global config_obj, all_cameras, MG_screen_thread_running, screen_shot_queue, desktop_hwnd
     if not isWindows:
         from mss import mss
 
-        with mss() as sct:
-            monitors = sct.monitors
-            # cropped_monitor = {
-            #     "left": screenshot_region[0] + monitor["left"],
-            #     "top": screenshot_region[1] + monitor["top"],
-            #     "width": screenshot_region[2] or monitor["width"],
-            #     "height": screenshot_region[3] or monitor["height"],
-            #     "mon": screenshot_monitor_id,
-            # }
-            # 序号为0的monitor是总体屏幕
-            cropped_monitor = monitors[0]
-            cropped_monitor["mon"] = 0
+        sct = mss()
+        # 序号为0的monitor是总体屏幕
+        monitor = sct.monitors[0]
+        # cropped_monitor = {
+        #     "left": screenshot_region[0] + monitor["left"],
+        #     "top": screenshot_region[1] + monitor["top"],
+        #     "width": screenshot_region[2] or monitor["width"],
+        #     "height": screenshot_region[3] or monitor["height"],
+        #     "mon": screenshot_monitor_id,
+        # }
+        cropped_monitor = monitor
+        cropped_monitor["mon"] = 0
 
     while MG_screen_thread_running:
-        if config_obj.state_machine != SCREEN_PAGE_ID:
+        if config_obj.state_machine != SCREEN_PAGE_ID and config_obj.state_machine != CAMERA_VIDEO_ID:
             if not screen_shot_queue.empty():
                 time.sleep(0.5)  # 等一下再清空，防止页面切换缓慢
                 clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
@@ -1860,7 +1885,29 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
             continue
 
         try:
-            if isWindows:
+            if config_obj.state_machine == CAMERA_VIDEO_ID:
+                if not config_obj.camera_var:
+                    continue
+                camera_name = config_obj.camera_var
+                camera_id = all_cameras.get(config_obj.camera_var)
+                cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
+                try:
+                    if cap.isOpened():
+                        # cap.set(cv2.CAP_PROP_FPS, config_obj.fps_var)
+                        cap.set(cv2.CAP_PROP_FRAME_WIDTH, SHOW_WIDTH)
+                        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, SHOW_HEIGHT)
+                        width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+                        height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+                        while (MG_screen_thread_running and config_obj.state_machine == CAMERA_VIDEO_ID and
+                               camera_name == config_obj.camera_var):
+                            suc, frame = cap.read()
+                            if suc:
+                                image = Win32_Image(rgb=frame, size=(width, height))
+                                screen_shot_queue.put((image, {"width": width, "height": height}), timeout=3)
+                            time.sleep(1.0 / config_obj.fps_var)
+                finally:
+                    cap.release()
+            elif isWindows:
                 sct_img = get_window_image(config_obj.select_window_hwnd)
                 screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
             else:
@@ -1869,7 +1916,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
         except queue.Full:
             continue
         except Exception as e:
-            print("截屏失败 %s" % traceback.format_exc())
+            print("获取图像失败 %s" % traceback.format_exc())
             time.sleep(0.2)
 
     # stop
@@ -1880,7 +1927,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 def screen_process_task():
     global config_obj, MG_screen_thread_running, screen_process_queue, screen_shot_queue
     while MG_screen_thread_running:
-        if config_obj.state_machine != SCREEN_PAGE_ID:
+        if config_obj.state_machine != SCREEN_PAGE_ID and config_obj.state_machine != CAMERA_VIDEO_ID:
             if not screen_process_queue.empty():
                 time.sleep(0.5)  # 等一下再清空，防止页面切换缓慢
                 clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
@@ -1892,20 +1939,25 @@ def screen_process_task():
 
         try:
             sct_img, monitor = screen_shot_queue.get(timeout=1.0)
-            bgra = sct_img.bgra
-            remain = sct_img.size[1] * sct_img.size[0] * 4 - len(bgra)
-            if remain >= 0:
-                if remain > 0:
-                    bgra += bytes(remain)
-                # rgb = np.frombuffer(sct_img.rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
-                bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
-                # rgb = bgra[:, :, :3]
-                # rgb = rgb[:, :, ::-1]
-                rgb = bgra[:, :, [2, 1, 0]]
-            else:  # 针对windows管理控制台框架的窗口，如服务管理
-                bgra = np.frombuffer(bgra, dtype=np.uint8).reshape(
-                    (sct_img.size[1], len(bgra) // (sct_img.size[1] * 4), 4))
-                rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
+            if sct_img.rgb is not None:
+                rgb = sct_img.rgb
+                if type(rgb) == bytes:
+                    rgb = np.frombuffer(rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
+            else:
+                bgra = sct_img.bgra
+                remain = sct_img.size[1] * sct_img.size[0] * 4 - len(bgra)
+                if remain >= 0:
+                    if remain > 0:
+                        bgra += bytes(remain)
+                    # rgb = np.frombuffer(sct_img.rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
+                    bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
+                    # rgb = bgra[:, :, :3]
+                    # rgb = rgb[:, :, ::-1]
+                    rgb = bgra[:, :, [2, 1, 0]]
+                else:  # 针对windows管理控制台框架的窗口，如服务管理
+                    bgra = np.frombuffer(bgra, dtype=np.uint8).reshape(
+                        (sct_img.size[1], len(bgra) // (sct_img.size[1] * 4), 4))
+                    rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
             # 方法1：裁剪
             # if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
@@ -2460,7 +2512,7 @@ class sys_config(object):
         self.lcd_change = 0  # LCD显示方向
         self.photo_interval_var = 0.1  # 动图间隔，小数部分，实际间隔为 photo_interval_var + second_times
         self.second_times = 0  # 动图间隔，整数部分。设备超过5秒收不到消息就会断开连接，所以每隔1秒发送一次消息
-        self.number_var = 1  # 屏幕变化 未使用
+        self.camera_var = ""  # 相机编号
         self.select_window_hwnd = 0
         self.fps_var = 5
         self.screen_region_var = "0,0,,"  # 投屏区域，未使用
@@ -2471,8 +2523,8 @@ class sys_config(object):
 
 
 def UI_Page():  # 进行图像界面显示
-    global config_obj, Text1, interval_var, all_windows, windows_combobox
-    global State_change, Label1, Label3, Label4, Label5, Label6
+    global config_obj, Text1, interval_var, all_windows, all_cameras, windows_combobox
+    global State_change, Label1, Label3, Label4, Label5, Label6, PAGE_ID
 
     # 这两个线程尽早启动
     daemon_thread.start()
@@ -2976,17 +3028,65 @@ def UI_Page():  # 进行图像界面显示
     number_entry = ttk.Entry(root, textvariable=interval_var, width=4)
     number_entry.grid(row=4, column=4, sticky=tk.EW, padx=5, pady=5)
 
-    # 屏幕编号
+    # 相机编号
 
-    number_var = tk.StringVar(root, "1")
-    # number_var.trace_add("write", change_screenshot_monitor)
-    number_var.set(config_obj.number_var)
+    def combo_configure(event):
+        combo = event.widget
+        values = combo.cget('values')
+        if len(values) == 0:
+            return
+        elif len(values) > 10:
+            long = (max(values, key=len).rstrip() + '000')
+        else:
+            long = (max(values, key=len).rstrip() + '0')
+        font = tkfont.nametofont(str(combo.cget('font')))
+        width = min(max(0, font.measure(long) - combo.winfo_width()),
+                    window.winfo_screenwidth() - combo.winfo_rootx() - combo.winfo_width())
+        # create an unique style name using widget's id
+        style_name = combo.cget('style') or "TCombobox"
+        # the new style must inherit from curret widget style (unless it's our custom style!)
+        if str(combo.winfo_id()) not in style_name:
+            style_name = "Combobox%s.%s" % (combo.winfo_id(), style_name)
+        style = ttk.Style()
+        style.configure(style_name, postoffset=(0, 0, width, 0))
+        combo.configure(style=style_name)
 
-    label_screen_number = ttk.Label(root, text="屏幕编号")
-    label_screen_number.grid(row=5, column=3, sticky=tk.E, padx=5, pady=5)
+    def update_select_camera(event):
+        global config_obj, all_cameras, State_change, sleep_event, screen_shot_queue, screen_process_queue
+        event.widget.selection_clear()
+        camera_id = event.widget.get()
+        if camera_id != config_obj.camera_var:
+            config_obj.camera_var = camera_id
+            if config_obj.state_machine == CAMERA_VIDEO_ID:
+                # screenshot_panic()  # 重启截图线程。这是标准流程，但是多耗资源，改为如下只清空队列
+                clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
+                clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
+                state_change_set()
+            else:
+                save_config()
 
-    number_entry = ttk.Entry(root, textvariable=number_var, width=4)
-    number_entry.grid(row=5, column=4, sticky=tk.EW, padx=5, pady=5)
+    label_camera_number = ttk.Label(root, text="相机名称")
+    label_camera_number.grid(row=5, column=3, sticky=tk.E, padx=5, pady=5)
+
+    all_cameras = get_all_cameras()
+    if len(all_cameras) > 0:
+        PAGE_ID[CAMERA_VIDEO_ID] = "相机视频"
+        # 用于保持页面的顺序
+        new_PAGE_ID = sorted(PAGE_ID.items(), key=lambda a: a[0])
+        PAGE_ID.clear()
+        PAGE_ID.update(new_PAGE_ID)
+        if not config_obj.camera_var:
+            config_obj.camera_var = list(all_cameras.keys())[0]
+    else:
+        config_obj.camera_var = ""
+    camera_var = tk.StringVar(root, config_obj.camera_var)
+    # camera_var.trace_add("write", change_screenshot_monitor)
+
+    camera_combobox = ttk.Combobox(root, textvariable=camera_var, width=4, values=list(all_cameras.keys()))
+    camera_combobox.bind('<Configure>', combo_configure)
+    camera_combobox.bind("<<ComboboxSelected>>", update_select_camera)
+    camera_combobox.grid(row=5, column=4, columnspan=1, sticky=tk.EW, padx=5, pady=5)
+    camera_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
     # fps
 
@@ -3012,25 +3112,6 @@ def UI_Page():  # 进行图像界面显示
 
     fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
     fps_entry.grid(row=6, column=4, sticky=tk.EW, padx=5, pady=5)
-
-    def combo_configure(event):
-        combo = event.widget
-        values = combo.cget('values')
-        if len(values) > 10:
-            long = (max(values, key=len).rstrip() + '000')
-        else:
-            long = (max(values, key=len).rstrip() + '0')
-        font = tkfont.nametofont(str(combo.cget('font')))
-        width = min(max(0, font.measure(long) - combo.winfo_width()),
-                    window.winfo_screenwidth() - combo.winfo_rootx() - combo.winfo_width())
-        # create an unique style name using widget's id
-        style_name = combo.cget('style') or "TCombobox"
-        # the new style must inherit from curret widget style (unless it's our custom style!)
-        if str(combo.winfo_id()) not in style_name:
-            style_name = "Combobox%s.%s" % (combo.winfo_id(), style_name)
-        style = ttk.Style()
-        style.configure(style_name, postoffset=(0, 0, width, 0))
-        combo.configure(style=style_name)
 
     def update_windows_list(event):
         global config_obj, all_windows
@@ -3226,8 +3307,8 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         show_PC_time(color_use)  # 展示时钟
     elif config_obj.state_machine == PHOTO_PAGE_ID:
         show_Photo()  # 展示单张相册图像
-    elif config_obj.state_machine == SCREEN_PAGE_ID:
-        show_PC_Screen()  # 屏幕串流
+    elif config_obj.state_machine == SCREEN_PAGE_ID or config_obj.state_machine == CAMERA_VIDEO_ID:
+        show_PC_Screen()  # 屏幕串流 和 相机视频
     elif config_obj.state_machine == STATE_PAGE_ID:
         show_PC_state(color_use, BLACK)  # 展示CPU/内存/磁盘/电池 使用率
     elif config_obj.state_machine == NETSPEED_PAGE_ID:
@@ -3249,14 +3330,12 @@ def get_formatted_time_string(time):
 
 
 def load_task():
-    global hardware_monitor_manager, PAGE_DESSCRIPTION
+    global hardware_monitor_manager, PAGE_ID
     try:
         HardwareMonitorManager = load_hardware_monitor()
         hardware_monitor_manager = HardwareMonitorManager()
-        PAGE_DESSCRIPTION = PAGE_DESSCRIPTION + [
-            "页面7：自定义显示两项图表",  # CUSTOM1_PAGE_ID = 6
-            "页面8：自定义显示多项数值"  # CUSTOM2_PAGE_ID = 7
-        ]
+        PAGE_ID[CUSTOM1_PAGE_ID] = "自定义显示两项图表"
+        PAGE_ID[CUSTOM2_PAGE_ID] = "自定义显示多项数值"
         print("Libre hardware monitor load successed")
     except Exception as e:
         hardware_monitor_manager = 1
@@ -3408,6 +3487,7 @@ screen_shot_queue = None
 screen_process_queue = None
 desktop_hwnd = 0
 all_windows = None
+all_cameras = None
 
 row_np_zero = None
 column_np_zero = None
