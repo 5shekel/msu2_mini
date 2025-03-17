@@ -1852,7 +1852,7 @@ def clear_queue(queue):
 
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
-    global config_obj, all_cameras, MG_screen_thread_running, screen_shot_queue, desktop_hwnd
+    global config_obj, all_cameras, MG_screen_thread_running, Device_State, screen_shot_queue, desktop_hwnd
     if not isWindows:
         from mss import mss
 
@@ -1876,7 +1876,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
-        if screen_shot_queue.full():
+        if screen_shot_queue.full() or Device_State != 1:
             time.sleep(1.0 / config_obj.fps_var)  # 队列满时暂停一个周期
             continue
 
@@ -1903,8 +1903,9 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                         width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
                         height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
                         last_time = time.monotonic()
-                        while (MG_screen_thread_running and config_obj.state_machine == CAMERA_VIDEO_ID and
-                               camera_name == config_obj.camera_var):
+                        while (MG_screen_thread_running and Device_State == 1
+                               and config_obj.state_machine == CAMERA_VIDEO_ID
+                               and camera_name == config_obj.camera_var):
                             suc, frame = cap.read()
                             if not suc:
                                 raise Exception("cap.read() failed")
@@ -1951,7 +1952,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 
 # geezmo: 流水线 第二步 处理图像
 def screen_process_task():
-    global config_obj, MG_screen_thread_running, screen_process_queue, screen_shot_queue
+    global config_obj, MG_screen_thread_running, Device_State, screen_process_queue, screen_shot_queue
     while MG_screen_thread_running:
         if config_obj.state_machine != SCREEN_PAGE_ID and config_obj.state_machine != CAMERA_VIDEO_ID:
             if not screen_process_queue.empty():
@@ -1959,7 +1960,7 @@ def screen_process_task():
                 clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
-        if screen_process_queue.full():
+        if screen_process_queue.full() or Device_State != 1:
             time.sleep(1.0 / config_obj.fps_var)  # 队列满时暂停一个周期
             continue
 
