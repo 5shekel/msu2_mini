@@ -3288,13 +3288,29 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             recv = SER_rw(hex_use)  # 发出指令
             # 确保为MSN设备
             if recv[-6:] == hex_use:
+                PAGE_ID_tmp = {
+                    GIF_PAGE_ID: "动图",
+                    PCTIME_PAGE_ID: "时间",
+                    PHOTO_PAGE_ID: "单个相册图片",
+                    SCREEN_PAGE_ID: "屏幕镜像",
+                    CAMERA_VIDEO_ID: "相机视频",
+                    STATE_PAGE_ID: "电脑CPU/内存/磁盘/电池使用率监控",
+                    NETSPEED_PAGE_ID: "网络流量监控",
+                    CUSTOM1_PAGE_ID: "自定义显示两项图表",
+                    CUSTOM2_PAGE_ID: "自定义显示多项数值"
+                }
+
                 # 对MSN设备进行登记
                 My_MSN_Device = MSN_Device(port.device, msn_version)
                 print(get_formatted_time_string(datetime.now()), end=' ')
                 if port.location is None:
-                    insert_text_message("连接成功：%s" % port.device, cleanNext=False)
+                    insert_text_message("连接成功：%s\n当前页面：%s\n显示方向：%s" % (
+                        port.device, PAGE_ID_tmp[config_obj.state_machine],
+                        LCD_STATE_MESSAGE[config_obj.lcd_change]))
                 else:
-                    insert_text_message("连接成功：%s@%s" % (port.device, port.location), cleanNext=False)
+                    insert_text_message("连接成功：%s@%s\n当前页面：%s\n显示方向：%s" % (
+                        port.device, port.location, PAGE_ID_tmp[config_obj.state_machine],
+                        LCD_STATE_MESSAGE[config_obj.lcd_change]))
                 break  # 退出当前for循环
             else:
                 print("设备无法连接，请检查连接是否正常：%s" % recv)
@@ -3318,8 +3334,6 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     # 配置按键阈值
     ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) // 3
     ADC_det = ADC_det - 200  # 根据125的阈值判断是否被按下
-    insert_text_message("当前页面：%s" % PAGE_ID[config_obj.state_machine], cleanNext=False)
-    insert_text_message("显示方向：%s" % LCD_STATE_MESSAGE[config_obj.lcd_change])
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
