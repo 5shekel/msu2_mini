@@ -5,7 +5,7 @@ set "mainfilename=MSU2_MINI_DemoV1.6_dchg"
 rem mkdir %mainfilename%.dist 2>nul
 
 set "datenow=%date:~5,2%%date:~8,2%"
-set "outfilename=MSU2_MINI_MG(by nuitka£¬ÎÈ¶¨²»±¨¶¾)-%datenow%.exe"
+set "outfilename=MSU2_MINI_MG(by nuitka)-%datenow%.exe"
 move /y "%outfilename%" "%outfilename%.bak" 2>nul 1>nul
 
 setlocal enabledelayedexpansion

@@ -1,6 +1,10 @@
 @echo off
 cd /D "%~dp0"
 
+set "datenow=%date:~5,2%%date:~8,2%"
+set "outfilename=MSU2_MINI_MG(by pyinstaller)-%datenow%.exe"
+move /y "%outfilename%" "%outfilename%.bak" 2>nul 1>nul
+
 setlocal enabledelayedexpansion
 
 for /f "delims=" %%i in ('where pyinstaller') do (
@@ -15,9 +19,9 @@ pyinstaller -F -w -y --distpath=dist ^
     --add-data "resource;resource" ^
     --add-binary="%dllpath%;HardwareMonitor\lib" ^
     --icon "resource/icon.ico" ^
-    -n MSU2_MINI_DemoV1.6 MSU2_MINI_DemoV1.6_dchg.py
+    -n "%outfilename%" MSU2_MINI_DemoV1.6_dchg.py
 
 endlocal
 
-copy /Y MSU2_MINI.json dist\MSU2_MINI_DemoV1.6
+move /Y "dist\%outfilename%" .
 pause

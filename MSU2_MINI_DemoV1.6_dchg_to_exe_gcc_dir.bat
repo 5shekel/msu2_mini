@@ -5,7 +5,7 @@ set "mainfilename=MSU2_MINI_DemoV1.6_dchg"
 rem mkdir %mainfilename%.dist 2>nul
 
 set "datenow=%date:~5,2%%date:~8,2%"
-set "outfilename=MSU2_MINI_MG(by nuitka，稳定不报毒版本还报毒就用这个)-%datenow%"
+set "outfilename=MSU2_MINI_MG(by nuitka，单文件版本报毒就用这个)-%datenow%"
 move /y "%outfilename%" "%outfilename%.bak" 2>nul 1>nul
 
 setlocal enabledelayedexpansion
