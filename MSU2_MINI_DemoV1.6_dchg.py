@@ -1895,13 +1895,14 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                     if cap.isOpened():
                         # print(cap.get(cv2.CAP_PROP_CONVERT_RGB))
                         # cap.set(cv2.CAP_PROP_FPS, config_obj.fps_var)
-                        cap.set(cv2.CAP_PROP_FRAME_WIDTH, SHOW_WIDTH)
+                        cap.set(cv2.CAP_PROP_FRAME_WIDTH, SHOW_WIDTH)  # 这个设置不一定生效，cv2会使用摄像头支持的最近的分辨率
                         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, SHOW_HEIGHT)
                         cap.set(cv2.CAP_PROP_EXPOSURE, -4)  # 曝光度调节
                         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # 缓冲帧数量大小
                         cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))  # 设置视频编码为MJPG
                         width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
                         height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+                        cap.read()  # 丢掉第一个包，解决在开机后第一次读取数据时，会有延迟问题
                         last_time = time.monotonic()
                         while (MG_screen_thread_running and Device_State == 1
                                and config_obj.state_machine == CAMERA_VIDEO_ID
