@@ -3077,6 +3077,15 @@ def UI_Page():  # 进行图像界面显示
         style.configure(style_name, postoffset=(0, 0, width, 0))
         combo.configure(style=style_name)
 
+    def update_camera_list(event):
+        global config_obj, all_cameras
+        all_cameras = get_all_cameras()
+        event.widget["value"] = list(all_cameras.keys())
+        if config_obj.camera_var not in all_cameras.keys():
+            config_obj.camera_var = list(all_cameras.keys())[0]
+            event.widget.set(config_obj.camera_var)
+        combo_configure(event)
+
     def update_select_camera(event):
         global config_obj, all_cameras, State_change, sleep_event, screen_shot_queue, screen_process_queue
         event.widget.selection_clear()
@@ -3108,7 +3117,7 @@ def UI_Page():  # 进行图像界面显示
 
     camera_combobox = ttk.Combobox(root, textvariable=camera_var, width=4, values=list(all_cameras.keys()))
     camera_combobox.bind('<Configure>', combo_configure)
-    camera_combobox.bind('<ButtonPress>', combo_configure)
+    camera_combobox.bind('<ButtonPress>', update_camera_list)
     camera_combobox.bind("<<ComboboxSelected>>", update_select_camera)
     camera_combobox.grid(row=5, column=4, columnspan=1, sticky=tk.EW, padx=5, pady=5)
     camera_combobox.configure(state="readonly")  # 设置选择框不可编辑
