@@ -1897,6 +1897,9 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                         # cap.set(cv2.CAP_PROP_FPS, config_obj.fps_var)
                         cap.set(cv2.CAP_PROP_FRAME_WIDTH, SHOW_WIDTH)
                         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, SHOW_HEIGHT)
+                        cap.set(cv2.CAP_PROP_EXPOSURE, -4)  # 曝光度调节
+                        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # 缓冲帧数量大小
+                        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))  # 设置视频编码为MJPG
                         width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
                         height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
                         last_time = time.monotonic()
@@ -1909,7 +1912,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                             if current_time - last_time > 5.0:  # 解决待机恢复后图像异常问题
                                 raise Exception("cap.read() timeout")
                             last_time = current_time
-                            image = Win32_Image(rgb=frame, size=(width, height))
+                            image = Win32_Image(rgb=frame[:, :, [2, 1, 0]], size=(width, height))
                             if screen_shot_queue.full():
                                 time.sleep(1.0 / config_obj.fps_var)
                                 if screen_shot_queue.full():
