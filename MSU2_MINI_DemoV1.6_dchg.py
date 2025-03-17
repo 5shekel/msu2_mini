@@ -272,10 +272,6 @@ def get_window_image(hWnd=None):
         # im_PIL.save("im_PIL.png")  # 保存
         image = Win32_Image(bgra=bmpstr, size=(bmpinfo['bmWidth'], bmpinfo['bmHeight']))
         return image
-    except Exception as e:
-        print(traceback.format_exc())
-        time.sleep(0.2)
-        return Win32_Image(rgb=bytes(6), size=(2, 1))  # 异常时初始化为黑色背景
     finally:
         # 内存释放
         try:
@@ -1890,7 +1886,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 if camera_id is None:
                     # 没有图像时显示黑色背景
                     image = Win32_Image(rgb=bytes(6), size=(2, 1))
-                    screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=3)
+                    screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=1)
                     time.sleep(0.5)
                     continue
                 camera_name = config_obj.camera_var
@@ -1914,24 +1910,36 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                                 raise Exception("cap.read() timeout")
                             last_time = current_time
                             image = Win32_Image(rgb=frame, size=(width, height))
-                            screen_shot_queue.put((image, {"width": width, "height": height}), timeout=3)
+                            if screen_shot_queue.full():
+                                time.sleep(1.0 / config_obj.fps_var)
+                                if screen_shot_queue.full():
+                                    screen_shot_queue.get()
+                            screen_shot_queue.put((image, {"width": width, "height": height}), timeout=1)
                     else:
                         raise Exception("capture open failed")
                 finally:
                     cap.release()
             elif isWindows:
                 sct_img = get_window_image(config_obj.select_window_hwnd)
-                screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=3)
+                if screen_shot_queue.full():
+                    time.sleep(1.0 / config_obj.fps_var)
+                    if screen_shot_queue.full():
+                        screen_shot_queue.get()
+                screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=1)
             else:
                 sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
-                screen_shot_queue.put((sct_img, cropped_monitor), timeout=1.0)
+                if screen_shot_queue.full():
+                    time.sleep(1.0 / config_obj.fps_var)
+                    if screen_shot_queue.full():
+                        screen_shot_queue.get()
+                screen_shot_queue.put((sct_img, cropped_monitor), timeout=1)
         except queue.Full:
             continue
         except Exception as e:
             print("获取图像失败 %s" % traceback.format_exc())
             # 没有图像时显示黑色背景
             image = Win32_Image(rgb=bytes(6), size=(2, 1))
-            screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=3)
+            screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=1)
             time.sleep(0.5)
 
     # stop
@@ -1953,7 +1961,7 @@ def screen_process_task():
             continue
 
         try:
-            sct_img, monitor = screen_shot_queue.get(timeout=1.0)
+            sct_img, monitor = screen_shot_queue.get(timeout=1)
             if sct_img.rgb is not None:
                 rgb = sct_img.rgb
                 if type(rgb) == bytes:
@@ -2006,7 +2014,11 @@ def screen_process_task():
             # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
             hexstream = Screen_Date_Process(rgb565.flatten())
 
-            screen_process_queue.put(hexstream, timeout=1.0)
+            if screen_process_queue.full():
+                time.sleep(1.0 / config_obj.fps_var)
+                if screen_process_queue.full():
+                    screen_process_queue.get()
+            screen_process_queue.put(hexstream, timeout=1)
         except (queue.Empty, queue.Full):
             continue
         except Exception as e:
@@ -2048,7 +2060,7 @@ def show_PC_Screen():  # 显示照片
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     try:
-        hexstream = screen_process_queue.get(timeout=1.0)
+        hexstream = screen_process_queue.get(timeout=1)
     except queue.Empty:
         return
     SER_rw(hexstream, read=False)  # 发出指令
