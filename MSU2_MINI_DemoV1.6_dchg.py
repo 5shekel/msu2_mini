@@ -2552,10 +2552,6 @@ def UI_Page():  # 进行图像界面显示
     global config_obj, Text1, interval_var, all_windows, all_cameras, windows_combobox
     global State_change, Label1, Label3, Label4, Label5, Label6, PAGE_ID
 
-    # 这两个线程尽早启动
-    daemon_thread.start()
-    load_thread.start()
-
     config_obj = load_config()
 
     # 创建主窗口
@@ -2575,6 +2571,14 @@ def UI_Page():  # 进行图像界面显示
     # 设备连接状态标签
     Label1 = tk.Label(root, text="设备未连接", fg="white", bg="red")
     Label1.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+
+    # 信息显示文本框
+    Text1 = tk.Text(root, state=tk.DISABLED, width=22, height=4, padx=5, pady=5)
+    Text1.grid(row=5, column=0, rowspan=3, columnspan=1, sticky=tk.NS, padx=5, pady=5)
+
+    # 这两个线程尽早启动
+    daemon_thread.start()
+    load_thread.start()
 
     # 隐藏按钮
 
@@ -3187,10 +3191,6 @@ def UI_Page():  # 进行图像界面显示
     windows_combobox.grid(row=7, column=2, columnspan=3, sticky=tk.EW, padx=5, pady=5)
     windows_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
-    # 创建信息显示文本框
-    Text1 = tk.Text(root, state=tk.DISABLED, width=22, height=4, padx=5, pady=5)
-    Text1.grid(row=5, column=0, rowspan=3, columnspan=1, sticky=tk.NS, padx=5, pady=5)
-
     def on_closing():
         global MG_screen_thread_running, MG_daemon_running, sleep_event
         MG_screen_thread_running = False
@@ -3292,9 +3292,9 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                 My_MSN_Device = MSN_Device(port.device, msn_version)
                 print(get_formatted_time_string(datetime.now()), end=' ')
                 if port.location is None:
-                    insert_text_message("%s连接成功" % port.device)
+                    insert_text_message("%s连接成功" % port.device, cleanNext=False)
                 else:
-                    insert_text_message("%s@%s连接成功" % (port.device, port.location))
+                    insert_text_message("%s@%s连接成功" % (port.device, port.location), cleanNext=False)
                 break  # 退出当前for循环
             else:
                 print("设备无法连接，请检查连接是否正常：%s" % recv)
@@ -3313,11 +3313,13 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     # Read_MSN_Data(My_MSN_Data)  # 从设备读取更详细的数据，如序列号等
     LCD_Change_now = config_obj.lcd_change
     LCD_State(LCD_Change_now)  # 配置显示方向
+    State_change = 1  # 状态发生变化
+    set_device_state(1)  # 可以正常连接
     # 配置按键阈值
     ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) // 3
     ADC_det = ADC_det - 200  # 根据125的阈值判断是否被按下
-    State_change = 1  # 状态发生变化
-    set_device_state(1)  # 可以正常连接
+    insert_text_message("当前页面：%s" % PAGE_ID[config_obj.state_machine], cleanNext=False)
+    insert_text_message("显示方向：%s" % LCD_STATE_MESSAGE[config_obj.lcd_change])
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
