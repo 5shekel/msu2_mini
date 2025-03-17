@@ -3292,9 +3292,9 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                 My_MSN_Device = MSN_Device(port.device, msn_version)
                 print(get_formatted_time_string(datetime.now()), end=' ')
                 if port.location is None:
-                    insert_text_message("%s连接成功" % port.device, cleanNext=False)
+                    insert_text_message("连接成功：%s" % port.device, cleanNext=False)
                 else:
-                    insert_text_message("%s@%s连接成功" % (port.device, port.location), cleanNext=False)
+                    insert_text_message("连接成功：%s@%s" % (port.device, port.location), cleanNext=False)
                 break  # 退出当前for循环
             else:
                 print("设备无法连接，请检查连接是否正常：%s" % recv)
