@@ -3108,6 +3108,7 @@ def UI_Page():  # 进行图像界面显示
 
     camera_combobox = ttk.Combobox(root, textvariable=camera_var, width=4, values=list(all_cameras.keys()))
     camera_combobox.bind('<Configure>', combo_configure)
+    camera_combobox.bind('<ButtonPress>', combo_configure)
     camera_combobox.bind("<<ComboboxSelected>>", update_select_camera)
     camera_combobox.grid(row=5, column=4, columnspan=1, sticky=tk.EW, padx=5, pady=5)
     camera_combobox.configure(state="readonly")  # 设置选择框不可编辑
