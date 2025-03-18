@@ -1540,6 +1540,7 @@ def show_gif():  # 显示GIF动图
 
     LCD_Photo(gif_num * 100)
 
+    # 因为设备超过5秒没有发送图片，就会认为断开了，所以这里每秒发送一次同一张图片
     if config_obj.second_times != 0:
         if second_pass < config_obj.second_times:
             second_pass += 1
@@ -1902,7 +1903,6 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                         cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'))  # 设置视频编码为MJPG
                         width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
                         height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-                        cap.read()  # 丢掉第一个包，解决在开机后第一次读取数据时，会有延迟问题
                         last_time = time.monotonic()
                         while (MG_screen_thread_running and Device_State == 1
                                and config_obj.state_machine == CAMERA_VIDEO_ID
