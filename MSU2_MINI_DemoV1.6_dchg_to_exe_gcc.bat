@@ -17,7 +17,7 @@ rem --lto=yes
 rem --standalone
 rem --onefile
 rem --windows-console-mode=disable
-python -m nuitka --onefile --windows-console-mode=disable ^
+python -m nuitka --onefile --clean-cache=all --windows-console-mode=disable ^
 	--enable-plugin=tk-inter --remove-output ^
 	--include-data-files="%~dp0/resource/*"="resource/" ^
 	--include-data-files="%pypath%../Lib/site-packages/HardwareMonitor/lib/*.dll"="HardwareMonitor/lib/" ^
