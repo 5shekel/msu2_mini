@@ -2612,11 +2612,14 @@ def UI_Page():  # 进行图像界面显示
         "自定义显示多项数值：使用“自定义内容”按钮来修改，详情见“说明”按钮",
     ])
     helpimage = MiniMark.load_image("resource/ios-8-Help-icon_43821.ico")
-    Label1.update()  # 获取大小前需要强制刷新，不然大小只能是1
-    helpimage = helpimage.resize((Label1.winfo_height(), Label1.winfo_height()), Image.Resampling.LANCZOS)
+    # Label1.update()  # 获取大小前需要强制刷新，不然大小只能得到1
+    # print(Label1.winfo_height())
+    # linespace是行高，2是边框，10是因为pady设置为0，两边各空出5
+    help_image_height = tkfont.nametofont(str(Label1.cget('font'))).metrics("linespace") + 12
+    helpimage = helpimage.resize((help_image_height, help_image_height), Image.Resampling.LANCZOS)
     helpicon = ImageTk.PhotoImage(helpimage)
     help_instruction_btn = tk.Button(root, image=helpicon, relief=tk.FLAT, command=help_instruction)
-    help_instruction_btn.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+    help_instruction_btn.grid(row=0, column=1, padx=0, pady=0, sticky=tk.W)
 
     # 隐藏按钮
 
