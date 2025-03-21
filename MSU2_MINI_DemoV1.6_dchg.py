@@ -2579,11 +2579,44 @@ def UI_Page():  # 进行图像界面显示
 
     # 信息显示文本框
     Text1 = tk.Text(root, state=tk.DISABLED, width=22, height=4, padx=5, pady=5)
-    Text1.grid(row=5, column=0, rowspan=3, columnspan=1, sticky=tk.NS, padx=5, pady=5)
+    Text1.grid(row=5, column=0, rowspan=3, columnspan=2, sticky=tk.NS, padx=5, pady=5)
 
     # 这两个线程尽早启动
     daemon_thread.start()
     load_thread.start()
+
+    def help_instruction():
+        tk.messagebox.showinfo(title="帮助", message=help_msg, parent=root)
+
+    help_msg = '\n'.join([
+        "该工具配套USB小屏幕使用。这是增强版，原版见群文件MSU2_MINI_DemoV1.6_Output.py",
+        "功能主要分两部分：烧写和显示。",
+        "\n烧写有：",
+        "闪存固件：这个是闪存固件，包括背景图像、相册图像、动图文件、LOGO、",
+        "\t字体图像等。不包括主控固件，主控固件烧写方法见群文件",
+        "背景图像：时钟背景图像，支持大部分图像格式",
+        "相册图像：单个相册图像，支持大部分图像格式",
+        "动图文件：支持两种烧写方式：36张图片或者gif文件",
+        "\t36张图片需要自己设置“动图间隔”，设置大于1秒时可作为相册",
+        "\tgif文件需要是动图文件，烧写后会自动更新“动图间隔”",
+        "\n显示有9个页面：",
+        "动图：使用“动图间隔”调整播放速度，“动图间隔”设置较大时可作为相册",
+        "时间：显示实时时间，背景使用烧写的背景图像，用“文字颜色”调整颜色",
+        "单个相册图片：显示烧写的相册图像",
+        "屏幕镜像：使用“屏幕镜像窗口”选择窗口，使用“最大FPS”设置刷新率",
+        "相机视频：使用“相机名称”选择摄像头，使用“最大FPS”设置刷新率",
+        "\t注意：没有摄像头将不显示该页面。刷新率越高CPU消耗会越大",
+        "电脑CPU/内存/磁盘/电池使用率监控：每秒刷新，用“文字颜色”调整颜色",
+        "网络流量监控：用图表显示网络速度，单位Byte/s，用“文字颜色”调整颜色",
+        "自定义显示两项图表：使用“自定义内容”按钮来修改，详情见“说明”按钮",
+        "自定义显示多项数值：使用“自定义内容”按钮来修改，详情见“说明”按钮",
+    ])
+    helpimage = MiniMark.load_image("resource/ios-8-Help-icon_43821.ico")
+    Label1.update()  # 获取大小前需要强制刷新，不然大小只能是1
+    helpimage = helpimage.resize((Label1.winfo_height(), Label1.winfo_height()), Image.Resampling.LANCZOS)
+    helpicon = ImageTk.PhotoImage(helpimage)
+    help_instruction_btn = tk.Button(root, image=helpicon, relief=tk.FLAT, command=help_instruction)
+    help_instruction_btn.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
 
     # 隐藏按钮
 
@@ -2612,38 +2645,38 @@ def UI_Page():  # 进行图像界面显示
             insert_text_message("Failed to use pystray to hide to tray, %s" % e)
 
     hide_btn = ttk.Button(root, text="隐藏", width=12, command=hide_to_tray)
-    hide_btn.grid(row=0, column=1, padx=5, pady=5)
+    hide_btn.grid(row=0, column=2, padx=5, pady=5)
     hide_btn.focus_set()  # 设置默认焦点
 
     # 选择和烧写按钮
 
     Label3 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
-    Label3.grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+    Label3.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
     btn3 = ttk.Button(root, text="选择背景图像", width=12, command=lambda: Get_Photo_Path(1))
-    btn3.grid(row=1, column=1, padx=5, pady=5)
+    btn3.grid(row=1, column=2, padx=5, pady=5)
     btn5 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(1))
-    btn5.grid(row=1, column=2, padx=5, pady=5)
+    btn5.grid(row=1, column=3, padx=5, pady=5)
 
     Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
-    Label4.grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+    Label4.grid(row=2, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
     btn4 = ttk.Button(root, text="选择闪存固件", width=12, command=lambda: Get_Photo_Path(2))
-    btn4.grid(row=2, column=1, padx=5, pady=5)
+    btn4.grid(row=2, column=2, padx=5, pady=5)
     btn6 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(2))
-    btn6.grid(row=2, column=2, padx=5, pady=5)
+    btn6.grid(row=2, column=3, padx=5, pady=5)
 
     Label5 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
-    Label5.grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+    Label5.grid(row=3, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
     btn10 = ttk.Button(root, text="选择相册图像", width=12, command=lambda: Get_Photo_Path(3))
-    btn10.grid(row=3, column=1, padx=5, pady=5)
+    btn10.grid(row=3, column=2, padx=5, pady=5)
     btn8 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(3))
-    btn8.grid(row=3, column=2, padx=5, pady=5)
+    btn8.grid(row=3, column=3, padx=5, pady=5)
 
     Label6 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
-    Label6.grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
+    Label6.grid(row=4, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
     btn11 = ttk.Button(root, text="选择动图文件", width=12, command=lambda: Get_Photo_Path(4))
-    btn11.grid(row=4, column=1, padx=5, pady=5)
+    btn11.grid(row=4, column=2, padx=5, pady=5)
     btn9 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(4))
-    btn9.grid(row=4, column=2, padx=5, pady=5)
+    btn9.grid(row=4, column=3, padx=5, pady=5)
 
     # 创建颜色滑块
 
@@ -2674,15 +2707,15 @@ def UI_Page():  # 进行图像界面显示
         update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     scale_desc = tk.Label(root, text="文字颜色")
-    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
+    scale_desc.grid(row=0, column=4, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
     Label2 = tk.Label(root, width=2)  # 颜色预览框
-    Label2.grid(row=0, column=4, columnspan=1, padx=5, pady=5, sticky=tk.W)
+    Label2.grid(row=0, column=5, columnspan=1, padx=5, pady=5, sticky=tk.W)
 
     update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     color_frame = ttk.Frame(root, padding="0")
-    color_frame.grid(row=1, column=3, rowspan=3, columnspan=2, padx=5, pady=0, sticky=tk.NSEW)
+    color_frame.grid(row=1, column=4, rowspan=3, columnspan=2, padx=5, pady=0, sticky=tk.NSEW)
     color_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
     color_frame.grid_propagate(0)  # 禁止被内部控件撑大
 
@@ -2947,6 +2980,9 @@ def UI_Page():  # 进行图像界面显示
         example_btn_2 = ttk.Button(btn_frame, text="简单", width=15, command=lambda: example(2))
         example_btn_2.grid(row=0, column=2, padx=5, pady=5, sticky=tk.EW)
 
+        def show_instruction():
+            tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window)
+
         instruction = '\n'.join([
             "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
             "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
@@ -2960,10 +2996,6 @@ def UI_Page():  # 进行图像界面显示
             "v <序号> <格式> \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
             "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
         ])
-
-        def show_instruction():
-            tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window)
-
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, command=show_instruction)
         show_instruction_btn.grid(row=0, column=3, padx=5, pady=5, sticky=tk.EW)
 
@@ -3018,18 +3050,18 @@ def UI_Page():  # 进行图像界面显示
         center_window(sub_window)
 
     show_custom_btn = ttk.Button(root, text="自定义内容", width=12, command=show_custom)
-    show_custom_btn.grid(row=5, column=1, padx=5, pady=5)
+    show_custom_btn.grid(row=5, column=2, padx=5, pady=5)
 
     # 方向和翻页按钮
 
     btn7 = ttk.Button(root, text="切换显示方向", width=12, command=LCD_Change)
-    btn7.grid(row=6, column=1, padx=5, pady=5)
+    btn7.grid(row=6, column=2, padx=5, pady=5)
 
     btn1 = ttk.Button(root, text="上翻页", width=8, command=Page_UP)
-    btn1.grid(row=5, column=2, padx=5, pady=5)
+    btn1.grid(row=5, column=3, padx=5, pady=5)
 
     btn2 = ttk.Button(root, text="下翻页", width=8, command=Page_Down)
-    btn2.grid(row=6, column=2, padx=5, pady=5)
+    btn2.grid(row=6, column=3, padx=5, pady=5)
 
     # 动图间隔
 
@@ -3058,10 +3090,10 @@ def UI_Page():  # 进行图像界面显示
     interval_var.set(config_obj.photo_interval_var + config_obj.second_times)
 
     label_screen_number = ttk.Label(root, text="动图间隔")
-    label_screen_number.grid(row=4, column=3, sticky=tk.E, padx=5, pady=5)
+    label_screen_number.grid(row=4, column=4, sticky=tk.E, padx=5, pady=5)
 
     number_entry = ttk.Entry(root, textvariable=interval_var, width=4)
-    number_entry.grid(row=4, column=4, sticky=tk.EW, padx=5, pady=5)
+    number_entry.grid(row=4, column=5, sticky=tk.EW, padx=5, pady=5)
 
     # 相机编号
 
@@ -3110,7 +3142,7 @@ def UI_Page():  # 进行图像界面显示
                 save_config()
 
     label_camera_number = ttk.Label(root, text="相机名称")
-    label_camera_number.grid(row=5, column=3, sticky=tk.E, padx=5, pady=5)
+    label_camera_number.grid(row=5, column=4, sticky=tk.E, padx=5, pady=5)
 
     all_cameras = get_all_cameras()
     if len(all_cameras) > 1:
@@ -3128,7 +3160,7 @@ def UI_Page():  # 进行图像界面显示
     camera_combobox.bind('<Configure>', combo_configure)
     camera_combobox.bind('<ButtonPress>', update_camera_list)
     camera_combobox.bind("<<ComboboxSelected>>", update_select_camera)
-    camera_combobox.grid(row=5, column=4, columnspan=1, sticky=tk.EW, padx=5, pady=5)
+    camera_combobox.grid(row=5, column=5, columnspan=1, sticky=tk.EW, padx=5, pady=5)
     camera_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
     # fps
@@ -3151,10 +3183,10 @@ def UI_Page():  # 进行图像界面显示
     fps_var.set(config_obj.fps_var)
 
     label = ttk.Label(root, text="最大 FPS")
-    label.grid(row=6, column=3, sticky=tk.E, padx=5, pady=5)
+    label.grid(row=6, column=4, sticky=tk.E, padx=5, pady=5)
 
     fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
-    fps_entry.grid(row=6, column=4, sticky=tk.EW, padx=5, pady=5)
+    fps_entry.grid(row=6, column=5, sticky=tk.EW, padx=5, pady=5)
 
     def update_windows_list(event):
         global config_obj, all_windows
@@ -3180,7 +3212,7 @@ def UI_Page():  # 进行图像界面显示
                 save_config()
 
     label = ttk.Label(root, text="屏幕镜像窗口:")
-    label.grid(row=7, column=1, columnspan=1, sticky=tk.E, padx=5, pady=5)
+    label.grid(row=7, column=2, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
     select_windows = get_hwnd_desc(config_obj.select_window_hwnd)
     if select_windows is None:
@@ -3193,7 +3225,7 @@ def UI_Page():  # 进行图像界面显示
     windows_combobox.bind('<Configure>', combo_configure)
     windows_combobox.bind('<ButtonPress>', update_windows_list)
     windows_combobox.bind("<<ComboboxSelected>>", update_select_hwnd)
-    windows_combobox.grid(row=7, column=2, columnspan=3, sticky=tk.EW, padx=5, pady=5)
+    windows_combobox.grid(row=7, column=3, columnspan=3, sticky=tk.EW, padx=5, pady=5)
     windows_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
     def on_closing():
