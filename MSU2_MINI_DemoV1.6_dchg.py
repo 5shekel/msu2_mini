@@ -347,12 +347,12 @@ def convertImageToRGB(image):
     if image.mode != "RGB":
         image = image.convert("RGB")  # 转换为RGB格式。虽然转换再缩放会降低效率，但是能够提升缩小后的图片质量
     if image.width > (image.height * 2):  # 图片长宽比例超过2:1
-        im2 = image.resize((SHOW_HEIGHT * image.width // image.height, SHOW_HEIGHT))
+        im2 = image.resize((SHOW_HEIGHT * image.width // image.height, SHOW_HEIGHT), Image.Resampling.LANCZOS)
         # 定义需要裁剪的空间
         box = ((im2.width - SHOW_WIDTH) // 2, 0, (im2.width + SHOW_WIDTH) // 2, SHOW_HEIGHT)
         im2 = im2.crop(box)
     else:
-        im2 = image.resize((SHOW_WIDTH, SHOW_WIDTH * image.height // image.width))
+        im2 = image.resize((SHOW_WIDTH, SHOW_WIDTH * image.height // image.width), Image.Resampling.LANCZOS)
         # 定义需要裁剪的空间
         box = (0, (im2.height - SHOW_HEIGHT) // 2, SHOW_WIDTH, (im2.height + SHOW_HEIGHT) // 2)
         im2 = im2.crop(box)
@@ -372,11 +372,11 @@ def Get_Photo_Path(index):  # 获取文件路径
     global Label3, Label4, Label5, Label6
     if index == 1:
         photo_path = tk.filedialog.askopenfilename(
-            title="选择文件", filetypes=IMAGE_FILE_TYPES + [("Image file", "*.gif")])
+            title="选择文件", filetypes=[("Bin file", "*.bin")])
         insert_text_message(photo_path, item=Label3)
     elif index == 2:
         photo_path = tk.filedialog.askopenfilename(
-            title="选择文件", filetypes=[("Bin file", "*.bin")])
+            title="选择文件", filetypes=IMAGE_FILE_TYPES + [("Image file", "*.gif")])
         insert_text_message(photo_path, item=Label4)
     elif index == 3:
         photo_path = tk.filedialog.askopenfilename(
@@ -401,8 +401,23 @@ def Start_Write_Photo_Path(index):  # 写入文件
 
 
 def Write_Photo_Path1():  # 写入文件
-    global config_obj, Label3, write_path_index, Img_data_use, sleep_event
+    global Label3, write_path_index, sleep_event
     photo_path = Label3.get("1.0", tk.END).rstrip()
+    if not photo_path:
+        insert_text_message("闪存固件未选择")
+        return
+    insert_text_message("准备烧写Flash固件...", cleanNext=False)
+
+    if write_path_index != 0:  # 确保上次执行写入完毕
+        insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
+        return
+    write_path_index = 1
+    state_change_set(save=False)
+
+
+def Write_Photo_Path2():  # 写入文件
+    global config_obj, Label4, write_path_index, Img_data_use, sleep_event
+    photo_path = Label4.get("1.0", tk.END).rstrip()
     if not photo_path:
         insert_text_message("背景图像未选择")
         return
@@ -413,24 +428,9 @@ def Write_Photo_Path1():  # 写入文件
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
-    write_path_index = 1
+    write_path_index = 2
     if config_obj.state_machine == PCTIME_PAGE_ID:
         state_change_set(save=False)
-
-
-def Write_Photo_Path2():  # 写入文件
-    global Label4, write_path_index, sleep_event
-    photo_path = Label4.get("1.0", tk.END).rstrip()
-    if not photo_path:
-        insert_text_message("闪存固件未选择")
-        return
-    insert_text_message("准备烧写Flash固件...", cleanNext=False)
-
-    if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
-        return
-    write_path_index = 2
-    state_change_set(save=False)
 
 
 def Write_Photo_Path3():  # 写入文件
@@ -1987,32 +1987,33 @@ def screen_process_task():
                         (sct_img.size[1], len(bgra) // (sct_img.size[1] * 4), 4))
                     rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
-            # 方法1：裁剪
-            # if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
-            #     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
-            #     im1 = im1[:, 0: SHOW_WIDTH]
-            # else:  # 纵向裁剪
-            #     im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
-            #     im1 = im1[0: SHOW_HEIGHT, :]
-
-            # 方法2：填充
-            if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
-                im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
-                total = SHOW_HEIGHT - len(im1)
-                np_fill_zero = row_np_zero.repeat(total // 2, axis=0)
-                if total % 2:
-                    im1 = np.row_stack((np_fill_zero, im1, np_fill_zero, row_np_zero))
-                else:
-                    im1 = np.row_stack((np_fill_zero, im1, np_fill_zero))
-            else:  # 纵向充满
-                im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
-                if monitor["width"] != monitor["height"] * 2:
-                    total = SHOW_WIDTH - len(im1[0])
-                    np_fill_zero = column_np_zero.repeat(total // 2, axis=1)
+            if config_obj.state_machine == CAMERA_VIDEO_ID:
+                # 相机使用方法1：裁剪
+                if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
+                    im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
+                    im1 = im1[:, 0: SHOW_WIDTH]
+                else:  # 纵向裁剪
+                    im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
+                    im1 = im1[0: SHOW_HEIGHT, :]
+            else:
+                # 屏幕镜像使用方法2：填充
+                if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
+                    im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
+                    total = SHOW_HEIGHT - len(im1)
+                    np_fill_zero = row_np_zero.repeat(total // 2, axis=0)
                     if total % 2:
-                        im1 = np.column_stack((np_fill_zero, im1, np_fill_zero, column_np_zero))
+                        im1 = np.row_stack((np_fill_zero, im1, np_fill_zero, row_np_zero))
                     else:
-                        im1 = np.column_stack((np_fill_zero, im1, np_fill_zero))
+                        im1 = np.row_stack((np_fill_zero, im1, np_fill_zero))
+                else:  # 纵向充满
+                    im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
+                    if monitor["width"] != monitor["height"] * 2:
+                        total = SHOW_WIDTH - len(im1[0])
+                        np_fill_zero = column_np_zero.repeat(total // 2, axis=1)
+                        if total % 2:
+                            im1 = np.column_stack((np_fill_zero, im1, np_fill_zero, column_np_zero))
+                        else:
+                            im1 = np.column_stack((np_fill_zero, im1, np_fill_zero))
 
             # rgb888 = np.asarray(im1)
             rgb565 = rgb888_to_rgb565(im1)
@@ -2656,14 +2657,14 @@ def UI_Page():  # 进行图像界面显示
 
     Label3 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label3.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
-    btn3 = ttk.Button(root, text="选择背景图像", width=12, command=lambda: Get_Photo_Path(1))
+    btn3 = ttk.Button(root, text="选择闪存固件", width=12, command=lambda: Get_Photo_Path(1))
     btn3.grid(row=1, column=2, padx=5, pady=5)
     btn5 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(1))
     btn5.grid(row=1, column=3, padx=5, pady=5)
 
     Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label4.grid(row=2, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
-    btn4 = ttk.Button(root, text="选择闪存固件", width=12, command=lambda: Get_Photo_Path(2))
+    btn4 = ttk.Button(root, text="选择背景图像", width=12, command=lambda: Get_Photo_Path(2))
     btn4.grid(row=2, column=2, padx=5, pady=5)
     btn6 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(2))
     btn6.grid(row=2, column=3, padx=5, pady=5)
@@ -3378,15 +3379,15 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
-    global config_obj, State_change, LCD_Change_now, Label4
+    global config_obj, State_change, LCD_Change_now, Label3
     global write_path_index, Img_data_use, color_use
 
     if write_path_index != 0:
         if write_path_index == 1:
-            Write_Flash_hex_fast(3826, Img_data_use)
-        elif write_path_index == 2:
-            photo_path = Label4.get("1.0", tk.END).rstrip()
+            photo_path = Label3.get("1.0", tk.END).rstrip()
             Write_Flash_Photo_fast(0, photo_path)
+        elif write_path_index == 2:
+            Write_Flash_hex_fast(3826, Img_data_use)
         elif write_path_index == 3:
             Write_Flash_hex_fast(3926, Img_data_use)
         elif write_path_index == 4:
