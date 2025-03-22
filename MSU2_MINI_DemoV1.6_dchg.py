@@ -1991,10 +1991,12 @@ def screen_process_task():
                 # 相机使用方法1：裁剪 填充
                 if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
-                    im1 = im1[:, 0: SHOW_WIDTH]
+                    offset = (im1.shape[1] - SHOW_WIDTH) // 2
+                    im1 = im1[:, offset: SHOW_WIDTH + offset]
                 else:  # 纵向裁剪
                     im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
-                    im1 = im1[0: SHOW_HEIGHT, :]
+                    offset = (im1.shape[0] - SHOW_HEIGHT) // 2
+                    im1 = im1[offset: SHOW_HEIGHT + offset, :]
             else:
                 # 屏幕镜像使用方法2：填充 适应
                 if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
