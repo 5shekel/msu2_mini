@@ -1988,7 +1988,7 @@ def screen_process_task():
                     rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
             if config_obj.shrink_type == 1:
-                # 相机使用方法1：裁剪 填充
+                # 相机使用方法1：裁剪以 填充屏幕
                 if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
                     offset = (im1.shape[1] - SHOW_WIDTH) // 2
@@ -1998,7 +1998,7 @@ def screen_process_task():
                     offset = (im1.shape[0] - SHOW_HEIGHT) // 2
                     im1 = im1[offset: SHOW_HEIGHT + offset, :]
             else:
-                # 屏幕镜像使用方法2：填充 适应
+                # 屏幕镜像使用方法2：填充空白以 适应屏幕
                 if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
                     total = SHOW_HEIGHT - len(im1)
@@ -2596,7 +2596,7 @@ def UI_Page():  # 进行图像界面显示
         "该工具配套USB小屏幕使用。",
         "这是增强版，原版见群文件MSU2_MINI_DemoV1.6_Output.py",
         "功能主要分两部分：烧写和显示。",
-        "\n烧写包括：",
+        "\n“烧写”包括：",
         "闪存固件：包括背景图像、相册图像、动图文件、LOGO、字体图像等。",
         "\t不包括主控固件，主控固件烧写方法见群文件",
         "背景图像：时钟背景图像，支持大部分图像格式",
@@ -2604,7 +2604,7 @@ def UI_Page():  # 进行图像界面显示
         "动图文件：支持两种烧写方式：36张图片或者gif文件",
         "\t36张图片需要自己设置“动图间隔”，设置大于1秒可作为相册",
         "\tgif文件需要是动图文件，烧写后会自动更新“动图间隔”",
-        "\n显示有9个页面：",
+        "\n“显示”包含如下页面，使用“上翻页”、“下翻页”切换。",
         "动图：使用“动图间隔”调整播放速度，“动图间隔”设置较大时可作为相册",
         "时间：显示实时时间，背景使用烧写的背景图像，用“文字颜色”调整颜色",
         "单个相册图片：显示烧写的相册图像",
@@ -2615,6 +2615,9 @@ def UI_Page():  # 进行图像界面显示
         "网络流量监控：用图表显示网络速度，单位Byte/s，用“文字颜色”调整颜色",
         "自定义显示两项图表：使用“自定义内容”按钮来修改，详情见“说明”按钮",
         "自定义显示多项数值：使用“自定义内容”按钮来修改，详情见“说明”按钮",
+        "\n屏幕镜像、相机视频处理方式：",
+        "填充：裁剪掉多余部分以使图像填充满屏幕，部分图像会被裁剪掉",
+        "适应：保持图像完整显示时适应整个屏幕，图像不会占满整个屏幕"
     ])
     helpimage = MiniMark.load_image("resource/ios-8-Help-icon_43821.ico")
     # Label1.update()  # 获取大小前需要强制刷新，不然大小只能得到1
@@ -3080,7 +3083,7 @@ def UI_Page():  # 进行图像界面显示
             save_config()
 
     shrink_type = tk.IntVar(root, config_obj.shrink_type)
-    shrink_type_button1 = tk.Radiobutton(root, text="裁剪", anchor="center", value=1, variable=shrink_type,
+    shrink_type_button1 = tk.Radiobutton(root, text="填充", anchor="center", value=1, variable=shrink_type,
                                          command=lambda: change_shrink_type(shrink_type.get()))
     shrink_type_button1.grid(row=3, column=4, sticky=tk.EW, padx=5, pady=5)
     shrink_type_button2 = tk.Radiobutton(root, text="适应", anchor="center", value=2, variable=shrink_type,
