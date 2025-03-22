@@ -3069,6 +3069,22 @@ def UI_Page():  # 进行图像界面显示
     btn2 = ttk.Button(root, text="下翻页", width=9, command=Page_Down)
     btn2.grid(row=6, column=3, sticky=tk.EW, padx=5, pady=5)
 
+    # 镜像视频填充方式：裁剪/适应
+
+    def change_shrink_type(value):
+        global config_obj
+        if value != config_obj.shrink_type:
+            config_obj.shrink_type = value
+            save_config()
+
+    shrink_type = tk.IntVar(root, config_obj.shrink_type)
+    shrink_type_button1 = tk.Radiobutton(root, text="适应", anchor="center", value=1, variable=shrink_type,
+                                         command=lambda: change_shrink_type(shrink_type.get()))
+    shrink_type_button1.grid(row=3, column=4, sticky=tk.EW, padx=5, pady=5)
+    shrink_type_button2 = tk.Radiobutton(root, text="裁剪", anchor="center", value=2, variable=shrink_type,
+                                         command=lambda: change_shrink_type(shrink_type.get()))
+    shrink_type_button2.grid(row=3, column=5, sticky=tk.EW, padx=5, pady=5)
+
     # 动图间隔
 
     def change_photo_interval(*args):
@@ -3096,10 +3112,10 @@ def UI_Page():  # 进行图像界面显示
     interval_var.set(config_obj.photo_interval_var + config_obj.second_times)
 
     label_screen_number = ttk.Label(root, text="动图间隔")
-    label_screen_number.grid(row=3, column=4, sticky=tk.E, padx=5, pady=5)
+    label_screen_number.grid(row=4, column=4, sticky=tk.E, padx=5, pady=5)
 
     number_entry = ttk.Entry(root, textvariable=interval_var, width=4)
-    number_entry.grid(row=3, column=5, sticky=tk.EW, padx=5, pady=5)
+    number_entry.grid(row=4, column=5, sticky=tk.EW, padx=5, pady=5)
 
     # fps
 
@@ -3121,26 +3137,10 @@ def UI_Page():  # 进行图像界面显示
     fps_var.set(config_obj.fps_var)
 
     label = ttk.Label(root, text="最大 FPS")
-    label.grid(row=4, column=4, sticky=tk.E, padx=5, pady=5)
+    label.grid(row=5, column=4, sticky=tk.E, padx=5, pady=5)
 
     fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
-    fps_entry.grid(row=4, column=5, sticky=tk.EW, padx=5, pady=5)
-
-    # 镜像视频填充方式：裁剪/适应
-
-    def change_shrink_type(value):
-        global config_obj
-        if value != config_obj.shrink_type:
-            config_obj.shrink_type = value
-            save_config()
-
-    shrink_type = tk.IntVar(root, config_obj.shrink_type)
-    shrink_type_button1 = tk.Radiobutton(root, text="适应", anchor="center", value=1, variable=shrink_type,
-                                         command=lambda: change_shrink_type(shrink_type.get()))
-    shrink_type_button1.grid(row=5, column=4, sticky=tk.EW, padx=5, pady=5)
-    shrink_type_button2 = tk.Radiobutton(root, text="裁剪", anchor="center", value=2, variable=shrink_type,
-                                         command=lambda: change_shrink_type(shrink_type.get()))
-    shrink_type_button2.grid(row=5, column=5, sticky=tk.EW, padx=5, pady=5)
+    fps_entry.grid(row=5, column=5, sticky=tk.EW, padx=5, pady=5)
 
     # 相机编号
 
