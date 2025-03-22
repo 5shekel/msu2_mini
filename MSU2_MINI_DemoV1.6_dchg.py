@@ -1987,7 +1987,7 @@ def screen_process_task():
                         (sct_img.size[1], len(bgra) // (sct_img.size[1] * 4), 4))
                     rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
-            if config_obj.shrink_type == 2:
+            if config_obj.shrink_type == 1:
                 # 相机使用方法1：裁剪 填充
                 if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
@@ -3080,10 +3080,10 @@ def UI_Page():  # 进行图像界面显示
             save_config()
 
     shrink_type = tk.IntVar(root, config_obj.shrink_type)
-    shrink_type_button1 = tk.Radiobutton(root, text="适应", anchor="center", value=1, variable=shrink_type,
+    shrink_type_button1 = tk.Radiobutton(root, text="裁剪", anchor="center", value=1, variable=shrink_type,
                                          command=lambda: change_shrink_type(shrink_type.get()))
     shrink_type_button1.grid(row=3, column=4, sticky=tk.EW, padx=5, pady=5)
-    shrink_type_button2 = tk.Radiobutton(root, text="裁剪", anchor="center", value=2, variable=shrink_type,
+    shrink_type_button2 = tk.Radiobutton(root, text="适应", anchor="center", value=2, variable=shrink_type,
                                          command=lambda: change_shrink_type(shrink_type.get()))
     shrink_type_button2.grid(row=3, column=5, sticky=tk.EW, padx=5, pady=5)
 
