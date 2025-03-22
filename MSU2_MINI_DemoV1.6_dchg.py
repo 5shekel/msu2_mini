@@ -1887,7 +1887,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 if camera_id is None:
                     # 没有图像时显示黑色背景
                     image = Win32_Image(rgb=bytes(6), size=(2, 1))
-                    screen_shot_queue.put((image, {"width": 2, "height": 1}, CAMERA_VIDEO_ID), timeout=1)
+                    screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=1)
                     time.sleep(0.5)
                     continue
                 camera_name = config_obj.camera_var
@@ -1919,8 +1919,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                                 time.sleep(1.0 / config_obj.fps_var)
                                 if screen_shot_queue.full():
                                     screen_shot_queue.get()
-                            screen_shot_queue.put((image, {"width": width, "height": height}, CAMERA_VIDEO_ID),
-                                                  timeout=1)
+                            screen_shot_queue.put((image, {"width": width, "height": height}), timeout=1)
                     else:
                         raise Exception("capture open failed")
                 finally:
@@ -1931,22 +1930,21 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                     time.sleep(1.0 / config_obj.fps_var)
                     if screen_shot_queue.full():
                         screen_shot_queue.get()
-                screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}, SCREEN_PAGE_ID),
-                                      timeout=1)
+                screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=1)
             else:
                 sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
                 if screen_shot_queue.full():
                     time.sleep(1.0 / config_obj.fps_var)
                     if screen_shot_queue.full():
                         screen_shot_queue.get()
-                screen_shot_queue.put((sct_img, cropped_monitor, SCREEN_PAGE_ID), timeout=1)
+                screen_shot_queue.put((sct_img, cropped_monitor), timeout=1)
         except queue.Full:
             continue
         except Exception as e:
             print("获取图像失败 %s" % traceback.format_exc())
             # 没有图像时显示黑色背景
             image = Win32_Image(rgb=bytes(6), size=(2, 1))
-            screen_shot_queue.put((image, {"width": 2, "height": 1}, SCREEN_PAGE_ID), timeout=1)
+            screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=1)
             time.sleep(0.5)
 
     # stop
@@ -1968,9 +1966,7 @@ def screen_process_task():
             continue
 
         try:
-            sct_img, monitor, state_type = screen_shot_queue.get(timeout=1)
-            if state_type != config_obj.state_machine:
-                continue  # 已切换，丢弃之前的截图
+            sct_img, monitor = screen_shot_queue.get(timeout=1)
             if sct_img.rgb is not None:
                 rgb = sct_img.rgb
                 if type(rgb) == bytes:
@@ -1991,8 +1987,8 @@ def screen_process_task():
                         (sct_img.size[1], len(bgra) // (sct_img.size[1] * 4), 4))
                     rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
-            if config_obj.state_machine == CAMERA_VIDEO_ID:
-                # 相机使用方法1：裁剪
+            if config_obj.shrink_type == 2:
+                # 相机使用方法1：裁剪 填充
                 if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
                     im1 = im1[:, 0: SHOW_WIDTH]
@@ -2000,7 +1996,7 @@ def screen_process_task():
                     im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
                     im1 = im1[0: SHOW_HEIGHT, :]
             else:
-                # 屏幕镜像使用方法2：填充
+                # 屏幕镜像使用方法2：填充 适应
                 if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
                     total = SHOW_HEIGHT - len(im1)
@@ -2028,7 +2024,7 @@ def screen_process_task():
                 time.sleep(1.0 / config_obj.fps_var)
                 if screen_process_queue.full():
                     screen_process_queue.get()
-            screen_process_queue.put((hexstream, state_type), timeout=1)
+            screen_process_queue.put(hexstream, timeout=1)
         except (queue.Empty, queue.Full):
             continue
         except Exception as e:
@@ -2070,9 +2066,7 @@ def show_PC_Screen():  # 显示照片
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     try:
-        hexstream, state_type = screen_process_queue.get(timeout=1)
-        if state_type != config_obj.state_machine:
-            return  # 已切换，丢弃之前的截图
+        hexstream = screen_process_queue.get(timeout=1)
     except queue.Empty:
         return
     SER_rw(hexstream, read=False)  # 发出指令
@@ -2554,6 +2548,7 @@ class sys_config(object):
         self.camera_var = ""  # 相机编号
         self.select_window_hwnd = 0
         self.fps_var = 5
+        self.shrink_type = 1
         self.custom_selected_names = [""] * 2
         self.custom_selected_displayname = [""] * 2
         self.custom_selected_names_tech = [""] * 6
@@ -2665,29 +2660,29 @@ def UI_Page():  # 进行图像界面显示
     Label3.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
     btn3 = ttk.Button(root, text="选择闪存固件", width=12, command=lambda: Get_Photo_Path(1))
     btn3.grid(row=1, column=2, padx=5, pady=5)
-    btn5 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(1))
-    btn5.grid(row=1, column=3, padx=5, pady=5)
+    btn5 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(1))
+    btn5.grid(row=1, column=3, sticky=tk.EW, padx=5, pady=5)
 
     Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label4.grid(row=2, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
     btn4 = ttk.Button(root, text="选择背景图像", width=12, command=lambda: Get_Photo_Path(2))
     btn4.grid(row=2, column=2, padx=5, pady=5)
-    btn6 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(2))
-    btn6.grid(row=2, column=3, padx=5, pady=5)
+    btn6 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(2))
+    btn6.grid(row=2, column=3, sticky=tk.EW, padx=5, pady=5)
 
     Label5 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label5.grid(row=3, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
     btn10 = ttk.Button(root, text="选择相册图像", width=12, command=lambda: Get_Photo_Path(3))
     btn10.grid(row=3, column=2, padx=5, pady=5)
-    btn8 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(3))
-    btn8.grid(row=3, column=3, padx=5, pady=5)
+    btn8 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(3))
+    btn8.grid(row=3, column=3, sticky=tk.EW, padx=5, pady=5)
 
     Label6 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label6.grid(row=4, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
     btn11 = ttk.Button(root, text="选择动图文件", width=12, command=lambda: Get_Photo_Path(4))
     btn11.grid(row=4, column=2, padx=5, pady=5)
-    btn9 = ttk.Button(root, text="烧写", width=8, command=lambda: Start_Write_Photo_Path(4))
-    btn9.grid(row=4, column=3, padx=5, pady=5)
+    btn9 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(4))
+    btn9.grid(row=4, column=3, sticky=tk.EW, padx=5, pady=5)
 
     # 创建颜色滑块
 
@@ -2718,15 +2713,15 @@ def UI_Page():  # 进行图像界面显示
         update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     scale_desc = tk.Label(root, text="文字颜色")
-    scale_desc.grid(row=0, column=4, columnspan=1, sticky=tk.E, padx=5, pady=5)
+    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=5, pady=5)
 
     Label2 = tk.Label(root, width=2)  # 颜色预览框
-    Label2.grid(row=0, column=5, columnspan=1, padx=5, pady=5, sticky=tk.W)
+    Label2.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
 
     update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     color_frame = ttk.Frame(root, padding="0")
-    color_frame.grid(row=1, column=4, rowspan=3, columnspan=2, padx=5, pady=0, sticky=tk.NSEW)
+    color_frame.grid(row=0, column=4, rowspan=3, columnspan=2, padx=5, pady=0, sticky=tk.NSEW)
     color_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
     color_frame.grid_propagate(0)  # 禁止被内部控件撑大
 
@@ -3068,11 +3063,11 @@ def UI_Page():  # 进行图像界面显示
     btn7 = ttk.Button(root, text="切换显示方向", width=12, command=LCD_Change)
     btn7.grid(row=6, column=2, padx=5, pady=5)
 
-    btn1 = ttk.Button(root, text="上翻页", width=8, command=Page_UP)
-    btn1.grid(row=5, column=3, padx=5, pady=5)
+    btn1 = ttk.Button(root, text="上翻页", width=9, command=Page_UP)
+    btn1.grid(row=5, column=3, sticky=tk.EW, padx=5, pady=5)
 
-    btn2 = ttk.Button(root, text="下翻页", width=8, command=Page_Down)
-    btn2.grid(row=6, column=3, padx=5, pady=5)
+    btn2 = ttk.Button(root, text="下翻页", width=9, command=Page_Down)
+    btn2.grid(row=6, column=3, sticky=tk.EW, padx=5, pady=5)
 
     # 动图间隔
 
@@ -3101,10 +3096,51 @@ def UI_Page():  # 进行图像界面显示
     interval_var.set(config_obj.photo_interval_var + config_obj.second_times)
 
     label_screen_number = ttk.Label(root, text="动图间隔")
-    label_screen_number.grid(row=4, column=4, sticky=tk.E, padx=5, pady=5)
+    label_screen_number.grid(row=3, column=4, sticky=tk.E, padx=5, pady=5)
 
     number_entry = ttk.Entry(root, textvariable=interval_var, width=4)
-    number_entry.grid(row=4, column=5, sticky=tk.EW, padx=5, pady=5)
+    number_entry.grid(row=3, column=5, sticky=tk.EW, padx=5, pady=5)
+
+    # fps
+
+    def change_fps(*args):
+        global config_obj
+        screenshot_limit_fps_tmp = 0
+        try:
+            screenshot_limit_fps_tmp = int(fps_var.get())
+        except ValueError as e:
+            if len(fps_var.get()) > 0:
+                insert_text_message("Invalid number entered: %s" % e)
+            return
+        if 0 < screenshot_limit_fps_tmp != config_obj.fps_var:
+            config_obj.fps_var = screenshot_limit_fps_tmp
+            save_config()
+
+    fps_var = tk.StringVar(root, "5")
+    fps_var.trace_add("write", change_fps)
+    fps_var.set(config_obj.fps_var)
+
+    label = ttk.Label(root, text="最大 FPS")
+    label.grid(row=4, column=4, sticky=tk.E, padx=5, pady=5)
+
+    fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
+    fps_entry.grid(row=4, column=5, sticky=tk.EW, padx=5, pady=5)
+
+    # 镜像视频填充方式：裁剪/适应
+
+    def change_shrink_type(value):
+        global config_obj
+        if value != config_obj.shrink_type:
+            config_obj.shrink_type = value
+            save_config()
+
+    shrink_type = tk.IntVar(root, config_obj.shrink_type)
+    shrink_type_button1 = tk.Radiobutton(root, text="适应", anchor="center", value=1, variable=shrink_type,
+                                         command=lambda: change_shrink_type(shrink_type.get()))
+    shrink_type_button1.grid(row=5, column=4, sticky=tk.EW, padx=5, pady=5)
+    shrink_type_button2 = tk.Radiobutton(root, text="裁剪", anchor="center", value=2, variable=shrink_type,
+                                         command=lambda: change_shrink_type(shrink_type.get()))
+    shrink_type_button2.grid(row=5, column=5, sticky=tk.EW, padx=5, pady=5)
 
     # 相机编号
 
@@ -3153,7 +3189,7 @@ def UI_Page():  # 进行图像界面显示
                 save_config()
 
     label_camera_number = ttk.Label(root, text="相机名称")
-    label_camera_number.grid(row=5, column=4, sticky=tk.E, padx=5, pady=5)
+    label_camera_number.grid(row=6, column=4, sticky=tk.E, padx=5, pady=5)
 
     all_cameras = get_all_cameras()
     if len(all_cameras) > 1:
@@ -3171,33 +3207,8 @@ def UI_Page():  # 进行图像界面显示
     camera_combobox.bind('<Configure>', combo_configure)
     camera_combobox.bind('<ButtonPress>', update_camera_list)
     camera_combobox.bind("<<ComboboxSelected>>", update_select_camera)
-    camera_combobox.grid(row=5, column=5, columnspan=1, sticky=tk.EW, padx=5, pady=5)
+    camera_combobox.grid(row=6, column=5, columnspan=1, sticky=tk.EW, padx=5, pady=5)
     camera_combobox.configure(state="readonly")  # 设置选择框不可编辑
-
-    # fps
-
-    def change_fps(*args):
-        global config_obj
-        screenshot_limit_fps_tmp = 0
-        try:
-            screenshot_limit_fps_tmp = int(fps_var.get())
-        except ValueError as e:
-            if len(fps_var.get()) > 0:
-                insert_text_message("Invalid number entered: %s" % e)
-            return
-        if 0 < screenshot_limit_fps_tmp != config_obj.fps_var:
-            config_obj.fps_var = screenshot_limit_fps_tmp
-            save_config()
-
-    fps_var = tk.StringVar(root, "5")
-    fps_var.trace_add("write", change_fps)
-    fps_var.set(config_obj.fps_var)
-
-    label = ttk.Label(root, text="最大 FPS")
-    label.grid(row=6, column=4, sticky=tk.E, padx=5, pady=5)
-
-    fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
-    fps_entry.grid(row=6, column=5, sticky=tk.EW, padx=5, pady=5)
 
     def update_windows_list(event):
         global config_obj, all_windows
