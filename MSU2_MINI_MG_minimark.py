@@ -168,9 +168,9 @@ if __name__ == "__main__":
 
     # Sample dictionary for the 'v' command
     sample_dict = {
-        "name": ("Alice"),
-        "age": ("30"),
-        "city": ("Wonderland")
+        "name": "Alice",
+        "age": "30",
+        "city": "Wonderland"
     }
 
     commands = [
