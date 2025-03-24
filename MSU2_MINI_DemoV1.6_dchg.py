@@ -1988,7 +1988,7 @@ def screen_process_task():
                     rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
             if config_obj.shrink_type == 1:
-                # 相机使用方法1：裁剪以 填充屏幕
+                # 方法1：裁剪以 填充屏幕
                 if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
                     offset = (im1.shape[1] - SHOW_WIDTH) // 2
@@ -1998,7 +1998,7 @@ def screen_process_task():
                     offset = (im1.shape[0] - SHOW_HEIGHT) // 2
                     im1 = im1[offset: SHOW_HEIGHT + offset, :]
             else:
-                # 屏幕镜像使用方法2：填充空白以 适应屏幕
+                # 方法2：填充空白以 适应屏幕
                 if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
                     total = SHOW_HEIGHT - len(im1)
