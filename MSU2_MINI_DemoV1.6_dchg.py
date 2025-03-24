@@ -1871,14 +1871,12 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
         cropped_monitor["mon"] = 0
 
     while MG_screen_thread_running:
-        if config_obj.state_machine != SCREEN_PAGE_ID and config_obj.state_machine != CAMERA_VIDEO_ID:
+        if Device_State != 1 or (config_obj.state_machine != SCREEN_PAGE_ID
+                                 and config_obj.state_machine != CAMERA_VIDEO_ID):
             if not screen_shot_queue.empty():
                 time.sleep(0.5)  # 等一下再清空，防止页面切换缓慢
                 clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
-            continue
-        if screen_shot_queue.full() or Device_State != 1:
-            time.sleep(1.0 / config_obj.fps_var)  # 队列满时暂停一个周期
             continue
 
         try:
@@ -1907,6 +1905,10 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                         while (MG_screen_thread_running and Device_State == 1
                                and config_obj.state_machine == CAMERA_VIDEO_ID
                                and camera_name == config_obj.camera_var):
+                            if screen_shot_queue.full():
+                                time.sleep(1.0 / config_obj.fps_var)
+                                if screen_shot_queue.full():
+                                    screen_shot_queue.get()
                             suc, frame = cap.read()
                             if not suc:
                                 raise Exception("cap.read() failed")
@@ -1915,28 +1917,24 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                                 raise Exception("cap.read() timeout")
                             last_time = current_time
                             image = Win32_Image(rgb=frame[:, :, [2, 1, 0]], size=(width, height))
-                            if screen_shot_queue.full():
-                                time.sleep(1.0 / config_obj.fps_var)
-                                if screen_shot_queue.full():
-                                    screen_shot_queue.get()
                             screen_shot_queue.put((image, {"width": width, "height": height}), timeout=1)
                     else:
                         raise Exception("capture open failed")
                 finally:
                     cap.release()
             elif isWindows:
-                sct_img = get_window_image(config_obj.select_window_hwnd)
                 if screen_shot_queue.full():
                     time.sleep(1.0 / config_obj.fps_var)
                     if screen_shot_queue.full():
                         screen_shot_queue.get()
+                sct_img = get_window_image(config_obj.select_window_hwnd)
                 screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=1)
             else:
-                sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
                 if screen_shot_queue.full():
                     time.sleep(1.0 / config_obj.fps_var)
                     if screen_shot_queue.full():
                         screen_shot_queue.get()
+                sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
                 screen_shot_queue.put((sct_img, cropped_monitor), timeout=1)
         except queue.Full:
             continue
@@ -1955,24 +1953,27 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 def screen_process_task():
     global config_obj, MG_screen_thread_running, Device_State, screen_process_queue, screen_shot_queue
     while MG_screen_thread_running:
-        if config_obj.state_machine != SCREEN_PAGE_ID and config_obj.state_machine != CAMERA_VIDEO_ID:
+        if Device_State != 1 or (config_obj.state_machine != SCREEN_PAGE_ID
+                                 and config_obj.state_machine != CAMERA_VIDEO_ID):
             if not screen_process_queue.empty():
                 time.sleep(0.5)  # 等一下再清空，防止页面切换缓慢
                 clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
-        if screen_process_queue.full() or Device_State != 1:
-            time.sleep(1.0 / config_obj.fps_var)  # 队列满时暂停一个周期
-            continue
 
         try:
+            if screen_process_queue.full():
+                time.sleep(1.0 / config_obj.fps_var)
+                if screen_process_queue.full():
+                    screen_process_queue.get()
+
             sct_img, monitor = screen_shot_queue.get(timeout=1)
             if sct_img.rgb is not None:
-                rgb = sct_img.rgb
-                if type(rgb) == bytes:
+                rgb = sct_img.rgb  # 相机视频
+                if type(rgb) == bytes:  # sct.grab截图
                     rgb = np.frombuffer(rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
             else:
-                bgra = sct_img.bgra
+                bgra = sct_img.bgra  # win32gui截图
                 remain = sct_img.size[1] * sct_img.size[0] * 4 - len(bgra)
                 if remain >= 0:
                     if remain > 0:
@@ -2022,10 +2023,6 @@ def screen_process_task():
             # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
             hexstream = Screen_Date_Process(rgb565.flatten())
 
-            if screen_process_queue.full():
-                time.sleep(1.0 / config_obj.fps_var)
-                if screen_process_queue.full():
-                    screen_process_queue.get()
             screen_process_queue.put(hexstream, timeout=1)
         except (queue.Empty, queue.Full):
             continue
