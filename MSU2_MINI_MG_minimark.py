@@ -43,7 +43,7 @@ def load_image(image_path):
         image = None
         try:
             image = Image.open(get_resource(image_path))
-            # Convert to RGBA
+            # 图标需要透明，所以是RGBA四通道不是RGB
             image_cache[image_path] = image.convert("RGBA")
         except FileNotFoundError as e:
             print("Warning: image %s load failed: %s" % (image_path, e))
