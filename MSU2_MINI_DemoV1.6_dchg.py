@@ -1889,7 +1889,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                     time.sleep(0.5)
                     continue
                 camera_name = config_obj.camera_var
-                cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
+                cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)  # 默认媒体类型是CAP_MSMF，可能会导致设置分辨率失败，所以改为CAP_DSHOW
                 try:
                     if cap.isOpened():
                         # print(cap.get(cv2.CAP_PROP_CONVERT_RGB))
