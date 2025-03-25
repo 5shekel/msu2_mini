@@ -1892,7 +1892,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)  # 默认媒体类型是CAP_MSMF，可能会导致设置分辨率失败，所以改为CAP_DSHOW
                 try:
                     if cap.isOpened():
-                        # print(cap.get(cv2.CAP_PROP_CONVERT_RGB))
+                        # cap.set(cv2.CAP_PROP_CONVERT_RGB, 1)  # 是否将图像转为RGB，取值0/1
                         # cap.set(cv2.CAP_PROP_FPS, config_obj.fps_var)
                         # cap.set(cv2.CAP_PROP_FRAME_WIDTH, SHOW_WIDTH)  # 这个设置不一定生效，cv2会使用摄像头支持的最近的分辨率
                         # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, SHOW_HEIGHT)
@@ -2994,14 +2994,14 @@ def UI_Page():  # 进行图像界面显示
         instruction = '\n'.join([
             "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
             "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
-            "p <文本>   \t绘制文本，会自动移动坐标",
-            "a <锚点>   \t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
-            "m <x> <y>  \t移动到坐标(x,y)",
-            "t <x> <y>  \t相对当前位置移动(x,y)",
-            "f <文件名> <字号> \t更换字体，文件名如 arial.ttf",
-            "c <hex码>  \t更改文字颜色，如 c #ffff00",
-            "i <文件名> \t绘制图片",
-            "v <序号> <格式> \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
+            "p [文本] \t\t绘制文本，会自动移动坐标",
+            "a [锚点] \t\t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
+            "m [x] [y] \t\t移动到坐标(x,y)",
+            "t [x] [y] \t\t相对当前位置移动(x,y)",
+            "f [文件名] [字号] \t更换字体，文件名如 arial.ttf",
+            "c [hex码] \t\t更改文字颜色，如 c #ffff00",
+            "i [文件名] \t\t绘制图片",
+            "v [序号] [格式] \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
             "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
         ])
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, command=show_instruction)
