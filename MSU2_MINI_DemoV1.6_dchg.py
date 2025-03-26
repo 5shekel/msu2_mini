@@ -1889,6 +1889,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                     time.sleep(0.5)
                     continue
                 camera_name = config_obj.camera_var
+                # 偶尔会出现打开很慢的情况，暂无法解决
                 cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)  # 默认媒体类型是CAP_MSMF，可能会导致设置分辨率失败，所以改为CAP_DSHOW
                 try:
                     if cap.isOpened():
@@ -1905,6 +1906,11 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                         while (MG_screen_thread_running and Device_State == 1
                                and config_obj.state_machine == CAMERA_VIDEO_ID
                                and camera_name == config_obj.camera_var):
+                            # 色调应该在0-360之间，摄像头断开时先返回13，然后返回-1。但是有些摄像头不支持该参数始终返回-1
+                            cap_hue = cap.get(cv2.CAP_PROP_HUE)
+                            if cap_hue == 13:
+                                time.sleep(1)
+                                raise Exception("get CAP_PROP_HUE failed")
                             if screen_shot_queue.full():
                                 time.sleep(1.0 / config_obj.fps_var)
                                 if screen_shot_queue.full():
