@@ -2692,74 +2692,6 @@ def UI_Page():  # 进行图像界面显示
     btn9 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(4))
     btn9.grid(row=4, column=3, sticky=tk.EW, padx=5, pady=5)
 
-    # 创建颜色滑块
-
-    def update_label_color(r1, g1, b1):
-        global config_obj, color_use, State_change
-        if Label2:
-            color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
-            Label2.config(bg=color_La)
-        # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
-        color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
-        save_config()
-        if config_obj.state_machine in [PCTIME_PAGE_ID, STATE_PAGE_ID]:
-            State_change = 1
-
-    def update_label_color_red():
-        global config_obj
-        config_obj.text_color_r = int(text_color_red_scale.get())
-        update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
-
-    def update_label_color_green():
-        global config_obj
-        config_obj.text_color_g = int(text_color_green_scale.get())
-        update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
-
-    def update_label_color_blue():
-        global config_obj
-        config_obj.text_color_b = int(text_color_blue_scale.get())
-        update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
-
-    scale_desc = tk.Label(root, text="文字颜色")
-    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=5, pady=5)
-
-    Label2 = tk.Label(root, width=2)  # 颜色预览框
-    Label2.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
-
-    update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
-
-    color_frame = ttk.Frame(root, padding="0")
-    color_frame.grid(row=0, column=4, rowspan=3, columnspan=2, padx=5, pady=0, sticky=tk.NSEW)
-    color_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
-    color_frame.grid_propagate(0)  # 禁止被内部控件撑大
-
-    scale_ind_r = tk.Label(color_frame, text="R")
-    scale_ind_r.grid(row=0, column=0, padx=0, pady=0, sticky=tk.SW)
-
-    text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
-                                    takefocus=1, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
-    text_color_red_scale.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
-    text_color_red_scale.set(config_obj.text_color_r)
-    text_color_red_scale.config(command=lambda x: update_label_color_red())
-
-    scale_ind_g = tk.Label(color_frame, text="G")
-    scale_ind_g.grid(row=1, column=0, padx=0, pady=0, sticky=tk.SW)
-
-    text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
-                                      takefocus=1, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
-    text_color_green_scale.grid(row=1, column=1, sticky=tk.EW, padx=0, pady=0)
-    text_color_green_scale.set(config_obj.text_color_g)
-    text_color_green_scale.config(command=lambda x: update_label_color_green())
-
-    scale_ind_b = tk.Label(color_frame, text="B")
-    scale_ind_b.grid(row=2, column=0, padx=0, pady=0, sticky=tk.SW)
-
-    text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
-                                     takefocus=1, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
-    text_color_blue_scale.grid(row=2, column=1, sticky=tk.EW, padx=0, pady=0)
-    text_color_blue_scale.set(config_obj.text_color_b)
-    text_color_blue_scale.config(command=lambda x: update_label_color_blue())
-
     # 自定义显示内容
 
     def change_netspeed_font():
@@ -2851,6 +2783,7 @@ def UI_Page():  # 进行图像界面显示
         sub_window.title("自定义显示内容")
         sub_window.resizable(0, 0)  # 锁定窗口大小不能改变
         sub_window.protocol("WM_DELETE_WINDOW", sub_on_closing)
+        sub_window.bind("<Escape>", lambda event: sub_on_closing())  # 按Esc按钮关闭
         window.attributes("-disabled", True)  # 禁用主窗口
         sub_window.transient(window)  # 置于主窗口前面
 
@@ -3076,6 +3009,74 @@ def UI_Page():  # 进行图像界面显示
 
     btn2 = ttk.Button(root, text="下翻页", width=9, command=Page_Down)
     btn2.grid(row=6, column=3, sticky=tk.EW, padx=5, pady=5)
+
+    # 创建颜色滑块
+
+    def update_label_color(r1, g1, b1):
+        global config_obj, color_use, State_change
+        if Label2:
+            color_La = "#{:02x}{:02x}{:02x}".format(r1, g1, b1)
+            Label2.config(bg=color_La)
+        # color_use = rgb888_to_rgb565(np.asarray((((r1, g1, b1),),), dtype=np.uint32))[0][0]
+        color_use = ((r1 & 0xF8) << 8) | ((g1 & 0xFC) << 3) | ((b1 & 0xF8) >> 3)
+        save_config()
+        if config_obj.state_machine in [PCTIME_PAGE_ID, STATE_PAGE_ID]:
+            State_change = 1
+
+    def update_label_color_red():
+        global config_obj
+        config_obj.text_color_r = int(text_color_red_scale.get())
+        update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
+
+    def update_label_color_green():
+        global config_obj
+        config_obj.text_color_g = int(text_color_green_scale.get())
+        update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
+
+    def update_label_color_blue():
+        global config_obj
+        config_obj.text_color_b = int(text_color_blue_scale.get())
+        update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
+
+    scale_desc = tk.Label(root, text="文字颜色")
+    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=5, pady=5)
+
+    Label2 = tk.Label(root, width=2)  # 颜色预览框
+    Label2.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
+
+    update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
+
+    color_frame = ttk.Frame(root, padding="0")
+    color_frame.grid(row=0, column=4, rowspan=3, columnspan=2, padx=5, pady=0, sticky=tk.NSEW)
+    color_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
+    color_frame.grid_propagate(0)  # 禁止被内部控件撑大
+
+    scale_ind_r = tk.Label(color_frame, text="R")
+    scale_ind_r.grid(row=0, column=0, padx=0, pady=0, sticky=tk.SW)
+
+    text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
+                                    takefocus=1, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
+    text_color_red_scale.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
+    text_color_red_scale.set(config_obj.text_color_r)
+    text_color_red_scale.config(command=lambda x: update_label_color_red())
+
+    scale_ind_g = tk.Label(color_frame, text="G")
+    scale_ind_g.grid(row=1, column=0, padx=0, pady=0, sticky=tk.SW)
+
+    text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
+                                      takefocus=1, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
+    text_color_green_scale.grid(row=1, column=1, sticky=tk.EW, padx=0, pady=0)
+    text_color_green_scale.set(config_obj.text_color_g)
+    text_color_green_scale.config(command=lambda x: update_label_color_green())
+
+    scale_ind_b = tk.Label(color_frame, text="B")
+    scale_ind_b.grid(row=2, column=0, padx=0, pady=0, sticky=tk.SW)
+
+    text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
+                                     takefocus=1, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
+    text_color_blue_scale.grid(row=2, column=1, sticky=tk.EW, padx=0, pady=0)
+    text_color_blue_scale.set(config_obj.text_color_b)
+    text_color_blue_scale.config(command=lambda x: update_label_color_blue())
 
     # 镜像视频填充方式：裁剪/适应
 
