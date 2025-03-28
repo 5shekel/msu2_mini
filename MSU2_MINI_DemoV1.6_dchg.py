@@ -3367,18 +3367,20 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                     CUSTOM1_PAGE_ID: "自定义显示两项图表",
                     CUSTOM2_PAGE_ID: "自定义显示多项数值"
                 }
+                if config_obj.state_machine < len(PAGE_ID_tmp):
+                    page_index = config_obj.state_machine
+                else:
+                    page_index = 0
 
                 # 对MSN设备进行登记
                 My_MSN_Device = MSN_Device(port.device, msn_version)
                 print(get_formatted_time_string(datetime.now()), end=' ')
                 if port.location is None:
                     insert_text_message("连接成功：%s\n当前页面：%s\n显示方向：%s" % (
-                        port.device, PAGE_ID_tmp[config_obj.state_machine],
-                        LCD_STATE_MESSAGE[config_obj.lcd_change]))
+                        port.device, PAGE_ID_tmp[page_index], LCD_STATE_MESSAGE[config_obj.lcd_change]))
                 else:
                     insert_text_message("连接成功：%s@%s\n当前页面：%s\n显示方向：%s" % (
-                        port.device, port.location, PAGE_ID_tmp[config_obj.state_machine],
-                        LCD_STATE_MESSAGE[config_obj.lcd_change]))
+                        port.device, port.location, PAGE_ID_tmp[page_index], LCD_STATE_MESSAGE[config_obj.lcd_change]))
                 break  # 退出当前for循环
             else:
                 print("设备无法连接，请检查连接是否正常：%s" % recv)
