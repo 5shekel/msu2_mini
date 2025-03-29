@@ -3273,13 +3273,6 @@ def UI_Page():  # 进行图像界面显示
     windows_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
     def on_closing():
-        global MG_screen_thread_running, MG_daemon_running, sleep_event
-        MG_screen_thread_running = False
-        MG_daemon_running = False
-        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
-
-        # 结束时保存配置
-        save_config(True)
         window.destroy()
 
     window.protocol("WM_DELETE_WINDOW", on_closing)
@@ -3731,10 +3724,14 @@ if __name__ == "__main__":
         print(message)
         tk.messagebox.showerror(title="错误", message=message)
     finally:
-        # reap threads
+        MG_screen_thread_running = False
+        MG_daemon_running = False
+        sleep_event.set()  # 取消sleep, 使sleep_event.wait无效
         if ser is not None and ser.is_open:
             print("%s close" % ser.name)
             ser.close()  # 正常关闭串口。串口先于线程关闭，可能会出现访问串口异常，不过能够加快整体关闭速度
+        # 结束时保存配置
+        save_config(True)
         if load_thread.is_alive():
             load_thread.join(timeout=5.0)
         if manager_thread.is_alive():
