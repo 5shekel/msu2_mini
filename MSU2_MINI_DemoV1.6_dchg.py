@@ -1870,6 +1870,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
         cropped_monitor = monitor
         cropped_monitor["mon"] = 0
 
+    print("Start screenshot")
     while MG_screen_thread_running:
         if Device_State != 1 or (config_obj.state_machine != SCREEN_PAGE_ID
                                  and config_obj.state_machine != CAMERA_VIDEO_ID):
@@ -1958,6 +1959,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
 # geezmo: 流水线 第二步 处理图像
 def screen_process_task():
     global config_obj, MG_screen_thread_running, Device_State, screen_process_queue, screen_shot_queue
+    print("Start screen process")
     while MG_screen_thread_running:
         if Device_State != 1 or (config_obj.state_machine != SCREEN_PAGE_ID
                                  and config_obj.state_machine != CAMERA_VIDEO_ID):
@@ -2044,27 +2046,31 @@ def screen_process_task():
 def screenshot_panic(clean_queue=True):
     global MG_screen_thread_running, screen_shot_thread, screen_process_thread, screen_shot_queue, screen_process_queue
     MG_screen_thread_running = False
-    if screen_shot_thread.is_alive():
-        screen_shot_thread.join()
-    if screen_process_thread.is_alive():
-        screen_process_thread.join()
+    screen_shot_thread_old = screen_shot_thread
+    screen_process_thread_old = screen_process_thread
+    screen_shot_thread = threading.Thread(target=screen_shot_task, daemon=True)
+    screen_process_thread = threading.Thread(target=screen_process_task, daemon=True)
 
     if clean_queue:
         clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
         clear_queue(screen_process_queue)  # 清空缓存，防止显示旧的窗口
+    if screen_shot_thread_old.is_alive():
+        screen_shot_thread_old.join()
+    if screen_process_thread_old.is_alive():
+        screen_process_thread_old.join()
 
     MG_screen_thread_running = True
-    screen_shot_thread = threading.Thread(target=screen_shot_task, daemon=True)
-    screen_process_thread = threading.Thread(target=screen_process_task, daemon=True)
     screen_shot_thread.start()
     screen_process_thread.start()
 
 
 def show_PC_Screen():  # 显示照片
     global config_obj, State_change, screen_process_queue, screenshot_last_limit_time, wait_time, sleep_event
-    global screenshot_test_time, screenshot_test_frame  # 用于计算串流FPS
+    global screen_shot_queue, screenshot_test_time, screenshot_test_frame  # 用于计算串流FPS
     current_monoto_time = time.monotonic()
     if State_change == 1:
+        clear_queue(screen_shot_queue)  # 清空缓存
+        clear_queue(screen_process_queue)  # 清空缓存
         state_change_clear()
         wait_time = 0
         screenshot_last_limit_time = current_monoto_time
@@ -3473,6 +3479,7 @@ def daemon_task():
 
     wch_port_list_old = None
     retry_times = 0
+    print("Start daemon")
     while MG_daemon_running:
         try:
             if Device_State_Labelen == 2:
@@ -3537,6 +3544,7 @@ def manage_task():
     double_key_limit = 0.7  # 双击间隔时长，同时影响单击反应时间
     last_check_time = now - check_limit
     first_press_time = 0  # 按下起始时间，未按下0，按下且已触发事件1
+    print("Start manager")
     while MG_daemon_running:
         if Device_State == 0:
             time.sleep(0.3)
