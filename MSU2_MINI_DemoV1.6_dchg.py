@@ -593,10 +593,10 @@ def Page_UP():  # 上一页
             index = index + 1
     except:
         index = 0
-    if config_obj.state_machine == SCREEN_PAGE_ID:
+    config_obj.state_machine = list(PAGE_ID.keys())[index]
+    if config_obj.state_machine == CAMERA_VIDEO_ID:
         clear_queue(screen_shot_queue)  # 清空缓存
         clear_queue(screen_process_queue)  # 清空缓存
-    config_obj.state_machine = list(PAGE_ID.keys())[index]
     state_change_set(PAGE_ID[config_obj.state_machine])
 
 
@@ -610,10 +610,10 @@ def Page_Down():  # 下一页
             index = index - 1
     except:
         index = 0
-    if config_obj.state_machine == CAMERA_VIDEO_ID:
+    config_obj.state_machine = list(PAGE_ID.keys())[index]
+    if config_obj.state_machine == SCREEN_PAGE_ID:
         clear_queue(screen_shot_queue)  # 清空缓存
         clear_queue(screen_process_queue)  # 清空缓存
-    config_obj.state_machine = list(PAGE_ID.keys())[index]
     state_change_set(PAGE_ID[config_obj.state_machine])
 
 
