@@ -593,6 +593,9 @@ def Page_UP():  # 上一页
             index = index + 1
     except:
         index = 0
+    if config_obj.state_machine == SCREEN_PAGE_ID:
+        clear_queue(screen_shot_queue)  # 清空缓存
+        clear_queue(screen_process_queue)  # 清空缓存
     config_obj.state_machine = list(PAGE_ID.keys())[index]
     state_change_set(PAGE_ID[config_obj.state_machine])
 
@@ -607,6 +610,9 @@ def Page_Down():  # 下一页
             index = index - 1
     except:
         index = 0
+    if config_obj.state_machine == CAMERA_VIDEO_ID:
+        clear_queue(screen_shot_queue)  # 清空缓存
+        clear_queue(screen_process_queue)  # 清空缓存
     config_obj.state_machine = list(PAGE_ID.keys())[index]
     state_change_set(PAGE_ID[config_obj.state_machine])
 
@@ -2069,8 +2075,6 @@ def show_PC_Screen():  # 显示照片
     global screen_shot_queue, screenshot_test_time, screenshot_test_frame  # 用于计算串流FPS
     current_monoto_time = time.monotonic()
     if State_change == 1:
-        clear_queue(screen_shot_queue)  # 清空缓存
-        clear_queue(screen_process_queue)  # 清空缓存
         state_change_clear()
         wait_time = 0
         screenshot_last_limit_time = current_monoto_time
