@@ -2593,35 +2593,35 @@ def UI_Page():  # 进行图像界面显示
     load_thread.start()
 
     def help_instruction():
+        help_msg = '\n'.join([
+            "该工具配套USB小屏幕使用。",
+            "这是增强版，原版见群文件MSU2_MINI_DemoV1.6_Output.py",
+            "功能主要分两部分：烧写和显示。",
+            "\n“烧写”包括：",
+            "闪存固件：包括背景图像、相册图像、动图文件、LOGO、字体图像等。",
+            "\t不包括主控固件，主控固件烧写方法见群文件",
+            "背景图像：时钟背景图像，支持大部分图像格式",
+            "相册图像：单个相册图像，支持大部分图像格式",
+            "动图文件：支持两种烧写方式：36张图片或者gif文件",
+            "\t36张图片需要自己设置“动图间隔”，设置大于1秒可作为相册",
+            "\tgif文件需要是动图文件，烧写后会自动更新“动图间隔”",
+            "\n“显示”包含如下页面，使用“上翻页”、“下翻页”切换。",
+            "动图：使用“动图间隔”调整播放速度，“动图间隔”设置较大时可作为相册",
+            "时间：显示实时时间，背景使用烧写的背景图像，用“文字颜色”调整颜色",
+            "单个相册图片：显示烧写的相册图像",
+            "屏幕镜像：使用“屏幕镜像窗口”选择窗口，使用“最大FPS”设置刷新率",
+            "相机视频：使用“相机名称”选择摄像头，使用“最大FPS”设置刷新率",
+            "\t没有摄像头将不显示该页面。刷新率越高CPU消耗会越大",
+            "电脑CPU/内存/磁盘/电池使用率监控：每秒刷新，用“文字颜色”调整颜色",
+            "网络流量监控：图表显示网络速度，单位Byte/s，用“文字颜色”调整颜色",
+            "自定义显示两项图表：使用“自定义内容”按钮来修改，详情见“说明”按钮",
+            "自定义显示多项数值：使用“自定义内容”按钮来修改，详情见“说明”按钮",
+            "\n屏幕镜像、相机视频处理方式：",
+            "填充：裁剪掉多余部分以使图像填充满屏幕，部分图像会被裁剪掉",
+            "适应：保持图像完整显示时适应屏幕，图像可能不会占满整个屏幕"
+        ])
         tk.messagebox.showinfo(title="帮助", message=help_msg, parent=root)
 
-    help_msg = '\n'.join([
-        "该工具配套USB小屏幕使用。",
-        "这是增强版，原版见群文件MSU2_MINI_DemoV1.6_Output.py",
-        "功能主要分两部分：烧写和显示。",
-        "\n“烧写”包括：",
-        "闪存固件：包括背景图像、相册图像、动图文件、LOGO、字体图像等。",
-        "\t不包括主控固件，主控固件烧写方法见群文件",
-        "背景图像：时钟背景图像，支持大部分图像格式",
-        "相册图像：单个相册图像，支持大部分图像格式",
-        "动图文件：支持两种烧写方式：36张图片或者gif文件",
-        "\t36张图片需要自己设置“动图间隔”，设置大于1秒可作为相册",
-        "\tgif文件需要是动图文件，烧写后会自动更新“动图间隔”",
-        "\n“显示”包含如下页面，使用“上翻页”、“下翻页”切换。",
-        "动图：使用“动图间隔”调整播放速度，“动图间隔”设置较大时可作为相册",
-        "时间：显示实时时间，背景使用烧写的背景图像，用“文字颜色”调整颜色",
-        "单个相册图片：显示烧写的相册图像",
-        "屏幕镜像：使用“屏幕镜像窗口”选择窗口，使用“最大FPS”设置刷新率",
-        "相机视频：使用“相机名称”选择摄像头，使用“最大FPS”设置刷新率",
-        "\t注意：没有摄像头将不显示该页面。刷新率越高CPU消耗会越大",
-        "电脑CPU/内存/磁盘/电池使用率监控：每秒刷新，用“文字颜色”调整颜色",
-        "网络流量监控：用图表显示网络速度，单位Byte/s，用“文字颜色”调整颜色",
-        "自定义显示两项图表：使用“自定义内容”按钮来修改，详情见“说明”按钮",
-        "自定义显示多项数值：使用“自定义内容”按钮来修改，详情见“说明”按钮",
-        "\n屏幕镜像、相机视频处理方式：",
-        "填充：裁剪掉多余部分以使图像填充满屏幕，部分图像会被裁剪掉",
-        "适应：保持图像完整显示时适应屏幕，图像可能不会占满整个屏幕"
-    ])
     helpimage = MiniMark.load_image("resource/ios-8-Help-icon_43821.ico")
     # Label1.update()  # 获取大小前需要强制刷新，不然大小只能得到1
     # print(Label1.winfo_height())
@@ -2666,31 +2666,31 @@ def UI_Page():  # 进行图像界面显示
 
     Label3 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label3.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
-    btn3 = ttk.Button(root, text="选择闪存固件", width=12, command=lambda: Get_Photo_Path(1))
-    btn3.grid(row=1, column=2, padx=5, pady=5)
-    btn5 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(1))
-    btn5.grid(row=1, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn31 = ttk.Button(root, text="选择闪存固件", width=12, command=lambda: Get_Photo_Path(1))
+    btn31.grid(row=1, column=2, padx=5, pady=5)
+    btn32 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(1))
+    btn32.grid(row=1, column=3, sticky=tk.EW, padx=5, pady=5)
 
     Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label4.grid(row=2, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
-    btn4 = ttk.Button(root, text="选择背景图像", width=12, command=lambda: Get_Photo_Path(2))
-    btn4.grid(row=2, column=2, padx=5, pady=5)
-    btn6 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(2))
-    btn6.grid(row=2, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn41 = ttk.Button(root, text="选择背景图像", width=12, command=lambda: Get_Photo_Path(2))
+    btn41.grid(row=2, column=2, padx=5, pady=5)
+    btn42 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(2))
+    btn42.grid(row=2, column=3, sticky=tk.EW, padx=5, pady=5)
 
     Label5 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label5.grid(row=3, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
-    btn10 = ttk.Button(root, text="选择相册图像", width=12, command=lambda: Get_Photo_Path(3))
-    btn10.grid(row=3, column=2, padx=5, pady=5)
-    btn8 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(3))
-    btn8.grid(row=3, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn51 = ttk.Button(root, text="选择相册图像", width=12, command=lambda: Get_Photo_Path(3))
+    btn51.grid(row=3, column=2, padx=5, pady=5)
+    btn52 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(3))
+    btn52.grid(row=3, column=3, sticky=tk.EW, padx=5, pady=5)
 
     Label6 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
     Label6.grid(row=4, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
-    btn11 = ttk.Button(root, text="选择动图文件", width=12, command=lambda: Get_Photo_Path(4))
-    btn11.grid(row=4, column=2, padx=5, pady=5)
-    btn9 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(4))
-    btn9.grid(row=4, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn61 = ttk.Button(root, text="选择动图文件", width=12, command=lambda: Get_Photo_Path(4))
+    btn61.grid(row=4, column=2, padx=5, pady=5)
+    btn62 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(4))
+    btn62.grid(row=4, column=3, sticky=tk.EW, padx=5, pady=5)
 
     # 自定义显示内容
 
@@ -2784,8 +2784,8 @@ def UI_Page():  # 进行图像界面显示
         sub_window.resizable(0, 0)  # 锁定窗口大小不能改变
         sub_window.protocol("WM_DELETE_WINDOW", sub_on_closing)
         sub_window.bind("<Escape>", lambda event: sub_on_closing())  # 按Esc按钮关闭
-        window.attributes("-disabled", True)  # 禁用主窗口
         sub_window.transient(window)  # 置于主窗口前面
+        window.attributes("-disabled", True)  # 禁用主窗口
 
         sensor_vars = []
         sensor_displayname_vars = []
@@ -2928,21 +2928,21 @@ def UI_Page():  # 进行图像界面显示
         example_btn_2.grid(row=0, column=2, padx=5, pady=5, sticky=tk.EW)
 
         def show_instruction():
+            instruction = '\n'.join([
+                "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
+                "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
+                "p [文本] \t\t绘制文本，会自动移动坐标",
+                "a [锚点] \t\t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
+                "m [x] [y] \t\t移动到坐标(x,y)",
+                "t [x] [y] \t\t相对当前位置移动(x,y)",
+                "f [文件名] [字号] \t更换字体，文件名如 arial.ttf",
+                "c [hex码] \t\t更改文字颜色，如 c #ffff00",
+                "i [文件名] \t\t绘制图片",
+                "v [序号] [格式] \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
+                "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
+            ])
             tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window)
 
-        instruction = '\n'.join([
-            "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
-            "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
-            "p [文本] \t\t绘制文本，会自动移动坐标",
-            "a [锚点] \t\t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
-            "m [x] [y] \t\t移动到坐标(x,y)",
-            "t [x] [y] \t\t相对当前位置移动(x,y)",
-            "f [文件名] [字号] \t更换字体，文件名如 arial.ttf",
-            "c [hex码] \t\t更改文字颜色，如 c #ffff00",
-            "i [文件名] \t\t绘制图片",
-            "v [序号] [格式] \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
-            "\n* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
-        ])
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, command=show_instruction)
         show_instruction_btn.grid(row=0, column=3, padx=5, pady=5, sticky=tk.EW)
 
