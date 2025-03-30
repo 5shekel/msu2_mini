@@ -2145,13 +2145,15 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
 
     # 因为刷新间隔刚好是1秒，所以不需要除时间
     sent_per_second = (current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent) / seconds_elapsed
-    netspeed_plot_data["sent"].pop(0)
     recv_per_second = (current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv) / seconds_elapsed
-    netspeed_plot_data["recv"].pop(0)
     new_data_half = (sent_per_second // 2, recv_per_second // 2)
-    netspeed_plot_data["sent"].append(last_data_half[0] + new_data_half[0])
-    netspeed_plot_data["recv"].append(last_data_half[1] + new_data_half[1])
+    sent_per_second = last_data_half[0] + new_data_half[0]
+    recv_per_second = last_data_half[1] + new_data_half[1]
     last_data_half = new_data_half
+    netspeed_plot_data["sent"].pop(0)
+    netspeed_plot_data["recv"].pop(0)
+    netspeed_plot_data["sent"].append(sent_per_second)
+    netspeed_plot_data["recv"].append(recv_per_second)
 
     last_refresh_time = current_monoto_time
     netspeed_last_refresh_snetio = current_snetio
