@@ -2120,13 +2120,16 @@ def sizeof_fmt(num, suffix="B", base=1024.0):
     return "%3.1fY%s" % (num, suffix)
 
 
+BAR_WIDTH = 2  # 每个点宽度
+IMAGE_HEIGHT = SHOW_HEIGHT // 4  # 高度
+last_data_half = (0, 0)
+
+
 def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
                   bar2_color=(146, 211, 217), back_color=(0, 0, 0)):
     global last_refresh_time, netspeed_last_refresh_snetio, netspeed_plot_data
-    global default_font, State_change, wait_time, sleep_event
+    global default_font, State_change, wait_time, sleep_event, last_data_half
     current_monoto_time = time.monotonic()
-    bar_width = 2  # 每个点宽度
-    image_height = SHOW_HEIGHT // 4  # 高度
 
     current_snetio = psutil.net_io_counters()
     # geezmo: 预渲染图片，显示网速
@@ -2143,10 +2146,12 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
     # 因为刷新间隔刚好是1秒，所以不需要除时间
     sent_per_second = (current_snetio.bytes_sent - netspeed_last_refresh_snetio.bytes_sent) / seconds_elapsed
     netspeed_plot_data["sent"].pop(0)
-    netspeed_plot_data["sent"].append(sent_per_second)
     recv_per_second = (current_snetio.bytes_recv - netspeed_last_refresh_snetio.bytes_recv) / seconds_elapsed
     netspeed_plot_data["recv"].pop(0)
-    netspeed_plot_data["recv"].append(recv_per_second)
+    new_data_half = (sent_per_second // 2, recv_per_second // 2)
+    netspeed_plot_data["sent"].append(last_data_half[0] + new_data_half[0])
+    netspeed_plot_data["recv"].append(last_data_half[1] + new_data_half[1])
+    last_data_half = new_data_half
 
     last_refresh_time = current_monoto_time
     netspeed_last_refresh_snetio = current_snetio
@@ -2168,15 +2173,15 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
         sent_values = netspeed_plot_data[key]
         max_value = max(min_draw, max(sent_values))
 
-        x0 = -bar_width
+        x0 = -BAR_WIDTH
         x1 = -1
-        y1 = image_height + start_y
-        percent = image_height / max_value
-        for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
+        y1 = IMAGE_HEIGHT + start_y
+        percent = IMAGE_HEIGHT / max_value
+        for i, sent in enumerate(sent_values[-(SHOW_WIDTH // BAR_WIDTH):]):
             # Scale the sent value to the image height
             bar_height = percent * sent
-            x0 += bar_width
-            x1 += bar_width
+            x0 += BAR_WIDTH
+            x1 += BAR_WIDTH
             y0 = y1 - bar_height
 
             # Draw the bar
@@ -2315,9 +2320,6 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
         sleep_event.wait(0.2)
         return
 
-    bar_width = 2  # 每个点宽度
-    image_height = SHOW_HEIGHT // 4  # 高度
-
     if State_change == 1:
         state_change_clear()
         wait_time = 0
@@ -2373,15 +2375,15 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
         min_value = min(sent_values)  # 防止显示太满
         max_value = max(minmax_it, min_value * 2, max(sent_values))
 
-        x0 = -bar_width
+        x0 = -BAR_WIDTH
         x1 = -1
-        y1 = image_height + start_y
-        percent = image_height / max_value
-        for i, sent in enumerate(sent_values[-(SHOW_WIDTH // bar_width):]):
+        y1 = IMAGE_HEIGHT + start_y
+        percent = IMAGE_HEIGHT / max_value
+        for i, sent in enumerate(sent_values[-(SHOW_WIDTH // BAR_WIDTH):]):
             # Scale the sent value to the image height
             bar_height = percent * sent
-            x0 += bar_width
-            x1 += bar_width
+            x0 += BAR_WIDTH
+            x1 += BAR_WIDTH
             y0 = y1 - bar_height
 
             # Draw the bar
