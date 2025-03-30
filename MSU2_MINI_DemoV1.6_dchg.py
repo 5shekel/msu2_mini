@@ -123,7 +123,10 @@ def get_all_cameras():
     try:
         camera_devices = camera_device.list_video_devices()
         for camera_id, camera_name in camera_devices:
-            all_camera_devices["%s - %s" % (camera_id, camera_name)] = camera_id
+            if camera_name in all_camera_devices.keys():
+                all_camera_devices["%s%s" % (camera_name, camera_id)] = camera_id
+            else:
+                all_camera_devices[camera_name] = camera_id
     except Exception as e:
         print(e)
     return all_camera_devices
