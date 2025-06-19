@@ -20,4 +20,5 @@ pyinstaller -D -y --clean --distpath=dist ^
 endlocal
 
 copy /Y MSU2_MINI.json dist\MSU2_MINI_DemoV1.6
+rmdir /S /Q .\build\
 pause

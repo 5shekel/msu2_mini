@@ -24,4 +24,5 @@ pyinstaller -F -w -y --clean --distpath=dist ^
 endlocal
 
 move /Y "dist\%outfilename%" .
+rmdir /S /Q .\dist\ .\build\
 pause

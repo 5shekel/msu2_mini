@@ -837,7 +837,7 @@ def Print_MSN_Data(My_MSN_Data):
     # 进行数据解析
     for i in range(0, num):  # 将数据全部打印出来
         data_str = "序号：%-5d名称：%-15s单位：%-20s类型：%-12s长度：%-5d地址：%-5s" % (
-            i, My_MSN_Data[i].name.decode("gbk"), My_MSN_Data[i].unit, type_list[ord(My_MSN_Data[i].family) // 32],
+            i, My_MSN_Data[i].name.decode("utf-8"), My_MSN_Data[i].unit, type_list[ord(My_MSN_Data[i].family) // 32],
             ord(My_MSN_Data[i].family) % 32, int.from_bytes(My_MSN_Data[i].data, byteorder="big"))
         print(data_str)
 
@@ -863,7 +863,7 @@ def Read_MSN_Data(My_MSN_Data):  # 读取MSN_data中的数据
             use_data.append(My_MSN_Data[i].data)
         else:
             print("data_type error in Read_MSN_Data: %d" % data_type)
-        print("%-10s = %s" % (My_MSN_Data[i].name.decode("gbk"), use_data))
+        print("%-10s = %s" % (My_MSN_Data[i].name.decode("utf-8"), use_data))
 
 
 def Write_MSN_Data(My_MSN_Data, name_use, data_w):  # 在MSN_data写入数据
@@ -2512,16 +2512,17 @@ def save_config_thread():
         sleep_time = last_config_save_time - time.monotonic() + 5
 
     try:
-        with open(config_file, "w", encoding="utf-8") as f:
+        with open(MiniMark.get_resource(config_file), "w", encoding="utf-8") as f:
             json.dump(config_obj.__dict__, f)
     except Exception as e:
         print("写入配置失败：%s" % e)
 
 
 def load_config():
+    global config_file
     config_obj = sys_config()
     try:
-        with open(config_file, "r", encoding="utf-8") as f:
+        with open(MiniMark.get_resource(config_file), "r", encoding="utf-8") as f:
             config_obj.__dict__.update(json.load(f))
     except FileNotFoundError:
         save_config()
@@ -3286,8 +3287,9 @@ def UI_Page():  # 进行图像界面显示
     window.resizable(0, 0)  # 锁定窗口大小不能改变
     # 点击最小化按钮时隐藏窗口
     # window.bind("<Unmap>", lambda event: hide_to_tray() if window.state() == "iconic" else False)
-    if len(sys.argv) > 1 and sys.argv[1] == "hide":
-        hide_to_tray()  # 命令行启动时设置隐藏
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "hide" or sys.argv[1] == "-hide" or sys.argv[1] == "-h":
+            hide_to_tray()  # 命令行启动时设置隐藏
 
     # 参数全部获取后再启动截图线程
     screen_shot_thread.start()
