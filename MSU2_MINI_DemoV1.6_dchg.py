@@ -392,6 +392,10 @@ def Get_Photo_Path(index):  # 获取文件路径
 
 
 def Start_Write_Photo_Path(index):  # 写入文件
+    global Device_State
+    if Device_State == 0:
+        insert_text_message("设备未连接，烧录失败")
+        return
     if index == 1:
         target = Write_Photo_Path1
     elif index == 2:
@@ -2617,7 +2621,7 @@ def UI_Page():  # 进行图像界面显示
             "",
             "“烧写”包括：",
             "闪存固件：包括背景图像、相册图像、动图文件、LOGO、字体图像等。",
-            "\t不包括主控固件，主控固件烧写方法见群文件",
+            "\t不包括主控固件，主控固件烧写方法需联系商家",
             "背景图像：时钟背景图像，支持大部分图像格式",
             "相册图像：单个相册图像，支持大部分图像格式",
             "动图文件：支持两种烧写方式：36张图片或者gif文件",
@@ -2638,7 +2642,13 @@ def UI_Page():  # 进行图像界面显示
             "",
             "屏幕镜像、相机视频处理方式：",
             "填充：裁剪掉多余部分以使图像填充满屏幕，部分图像会被裁剪掉",
-            "适应：保持图像完整显示时适应屏幕，图像可能不会占满整个屏幕"
+            "适应：保持图像完整显示时适应屏幕，图像可能不会占满整个屏幕",
+            "",
+            "板载触摸按键：",
+            "单击：下翻页，双击：上翻页，长按：切换显示方向",
+            "",
+            "启动时隐藏：",
+            "支持启动既隐藏，可在快捷方式中或启动命令后增加参数-h或-hide"
         ])
         tk.messagebox.showinfo(title="帮助", message=help_msg, parent=root)
 
@@ -3288,7 +3298,8 @@ def UI_Page():  # 进行图像界面显示
     # 点击最小化按钮时隐藏窗口
     # window.bind("<Unmap>", lambda event: hide_to_tray() if window.state() == "iconic" else False)
     if len(sys.argv) > 1:
-        if sys.argv[1] == "hide" or sys.argv[1] == "-hide" or sys.argv[1] == "-h":
+        arg = sys.argv[1].lstrip('-').lower()
+        if arg == "h" or arg == "hide":
             hide_to_tray()  # 命令行启动时设置隐藏
 
     # 参数全部获取后再启动截图线程
