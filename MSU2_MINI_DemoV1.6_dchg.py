@@ -2602,9 +2602,15 @@ def UI_Page():  # 进行图像界面显示
                     highlightbackground="lightgray")
     root.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
+    # 创建一个容纳帮助按钮和状态的框
+    state_frame = ttk.Frame(root, padding="0")
+    state_frame.grid(row=0, column=0, rowspan=1, columnspan=2, padx=0, pady=0, sticky=tk.NSEW)
+    state_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
+    state_frame.grid_propagate(0)  # 禁止被内部控件撑大
+
     # 设备连接状态标签
-    Label1 = tk.Label(root, text="设备未连接", fg="white", bg="red")
-    Label1.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+    Label1 = tk.Label(state_frame, text="设备未连接", fg="white", bg="red")
+    Label1.grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
 
     # 信息显示文本框
     Text1 = tk.Text(root, state=tk.DISABLED, width=22, height=4, padx=5, pady=5)
@@ -2652,6 +2658,7 @@ def UI_Page():  # 进行图像界面显示
         ])
         tk.messagebox.showinfo(title="帮助", message=help_msg, parent=root)
 
+    # 帮助按钮
     helpimage = MiniMark.load_image("resource/ios-8-Help-icon_43821.ico")
     # Label1.update()  # 获取大小前需要强制刷新，不然大小只能得到1
     # print(Label1.winfo_height())
@@ -2659,8 +2666,8 @@ def UI_Page():  # 进行图像界面显示
     help_image_height = tkfont.nametofont(str(Label1.cget('font'))).metrics("linespace") + 12
     helpimage = helpimage.resize((help_image_height, help_image_height), Image.Resampling.LANCZOS)
     helpicon = ImageTk.PhotoImage(helpimage)
-    help_instruction_btn = tk.Button(root, image=helpicon, relief=tk.FLAT, command=help_instruction)
-    help_instruction_btn.grid(row=0, column=1, padx=0, pady=0, sticky=tk.W)
+    help_instruction_btn = tk.Button(state_frame, image=helpicon, relief=tk.FLAT, command=help_instruction)
+    help_instruction_btn.grid(row=0, column=0, padx=0, pady=0, sticky=tk.W)
 
     # 隐藏按钮
 
@@ -3069,11 +3076,11 @@ def UI_Page():  # 进行图像界面显示
         config_obj.text_color_b = int(text_color_blue_scale.get())
         update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
-    scale_desc = tk.Label(root, text="文字颜色")
-    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=5, pady=5)
-
     Label2 = tk.Label(root, width=2)  # 颜色预览框
     Label2.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
+
+    scale_desc = tk.Label(root, text="文字颜色")
+    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=5, pady=5)
 
     update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
