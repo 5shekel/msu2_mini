@@ -114,7 +114,24 @@ IMAGE_FILE_TYPES = [
     ("Image file", "*.jpe"),
     ("Image file", "*.tiff"),
     ("Image file", "*.tif"),
-    ("Image file", "*.dib")
+    ("Image file", "*.dib"),
+    ("Image file", "*.pcx"),
+    ("Image file", "*.tga"),
+    ("Image file", "*.dds"),
+    ("Image file", "*.psd"),
+    # ("Image file", "*.pcl"), # 不支持
+    # ("Image file", "*.svg"), # 不支持
+    # ("Image file", "*.eps"), # 不支持
+    # ("Image file", "*.jxr"), # 不支持
+    # ("Image file", "*.heic"),  # 不支持
+    # ("Image file", "*.heif"), # 不支持
+    # ("Image file", "*.heics"), # 不支持
+    # ("Image file", "*.heifs"), # 不支持
+    # ("Image file", "*.avci"), # 不确定
+    # ("Image file", "*.avcs"), # 不确定
+    # ("Image file", "*.avif"), # 不支持
+    # ("Image file", "*.avifs"), # 不确定
+    # ("Image file", "*.wdp") # 不支持
 ]
 
 
@@ -1602,12 +1619,27 @@ def show_PC_state(FC, BC):  # 显示PC状态
         BAT = round(battery.percent)
     else:
         BAT = 100
-    # 磁盘使用率
+
+    # 获取所有分区磁盘使用率
+    # disk_partitions = psutil.disk_partitions()
+    # usage_total = 0
+    # usage_used = 0
+    # for partition in disk_partitions:
+    #     try:
+    #         usage = psutil.disk_usage(partition.mountpoint)
+    #         usage_total += usage.total
+    #         usage_used += usage.used
+    #     except PermissionError:
+    #         # 跳过无权访问的分区
+    #         pass
+    # if usage_total == 0:
+    #     FRQ = 100
+    # else:
+    #     FRQ = round(usage_used * 100 / usage_total)
+
+    # 获取软件启动所在分区使用率
     disk_info = psutil.disk_usage("/")
-    if disk_info.total == 0:
-        FRQ = 100
-    else:
-        FRQ = round(disk_info.used * 100 / disk_info.total)
+    FRQ = round(disk_info.percent)
 
     # # 磁盘IO
     # FRQ = 0
@@ -2439,7 +2471,7 @@ def get_full_custom_im():
 
     # 绘制图片
 
-    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), (255, 255, 255))
+    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), (255, 255, 255))  # 默认全黑
 
     draw = ImageDraw.Draw(im1)
     error_line = ""
@@ -2456,7 +2488,7 @@ def get_full_custom_im():
             full_custom_error = "OK"
     except Exception as e:
         full_custom_error = "%s\nerror line: %s" % (traceback.format_exc(), error_line)
-        im1.paste((255, 0, 255), (0, 0, im1.size[0], im1.size[1]))
+        im1.paste((255, 0, 255), (0, 0, im1.size[0], im1.size[1]))  # 异常时显示粉色
 
     return im1
 
@@ -3427,6 +3459,8 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     if My_MSN_Device is None:  # 没有找到可用的设备
         return
 
+    ser.reset_input_buffer()
+    ser.reset_output_buffer()
     # My_MSN_Data = Read_M_SFR_Data(256)  # 读取u8在0x0100之后的128字节
     # Print_MSN_Data(My_MSN_Data)  # 解析字节中的数据格式
     # Read_MSN_Data(My_MSN_Data)  # 从设备读取更详细的数据，如序列号等
