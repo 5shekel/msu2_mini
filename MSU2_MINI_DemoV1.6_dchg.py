@@ -1899,6 +1899,8 @@ def clear_queue(queue):
 
 def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理转换数据
     global config_obj, all_cameras, MG_screen_thread_running, Device_State, screen_shot_queue, desktop_hwnd
+    global screenshot_last_limit_time, wait_time, sleep_event  # 用于控制TPS
+    global screen_shot_queue, screenshot_test_time, screenshot_test_frame  # 用于计算串流FPS
     if not isWindows:
         from mss import mss
 
@@ -1915,6 +1917,8 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
         cropped_monitor = monitor
         cropped_monitor["mon"] = 0
 
+    wait_time = 0
+    screenshot_last_limit_time = time.monotonic()
     print("Start screenshot")
     while MG_screen_thread_running:
         if Device_State != 1 or (config_obj.state_machine != SCREEN_PAGE_ID
@@ -1997,6 +2001,28 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
             screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=1)
             time.sleep(0.5)
 
+        # 精确控制FPS
+        current_monoto_time = time.monotonic()
+        elapse_time = current_monoto_time - screenshot_last_limit_time
+        if elapse_time > 5:  # 有切换，重置参数
+            wait_time = 0
+            elapse_time = 1.0 / config_obj.fps_var  # 第一次不需要wait
+
+        #     # 这段用于计算串流FPS，不需要可以注释掉（缩进格式就是这样的，不需要改动）
+        #     screenshot_test_frame = 0
+        #     screenshot_test_time = current_monoto_time - 1
+        # elif screenshot_test_frame % config_obj.fps_var == 0:
+        #     # 测试用：显示帧率
+        #     real_fps = config_obj.fps_var / (current_monoto_time - screenshot_test_time)
+        #     print("串流FPS: %s" % real_fps)
+        #     screenshot_test_time = current_monoto_time
+        # screenshot_test_frame += 1
+
+        screenshot_last_limit_time = current_monoto_time
+        wait_time += 1.0 / config_obj.fps_var - elapse_time
+        if wait_time > 0:
+            sleep_event.wait(wait_time)  # 精确控制FPS
+
     # stop
     print("Stop screenshot")
 
@@ -2020,7 +2046,7 @@ def screen_process_task():
                 if screen_process_queue.full():
                     screen_process_queue.get()
 
-            sct_img, monitor = screen_shot_queue.get(timeout=1)
+            sct_img, monitor = screen_shot_queue.get(timeout=1.2)
             if sct_img.rgb is not None:
                 rgb = sct_img.rgb  # 相机视频
                 if type(rgb) == bytes:  # sct.grab截图
@@ -2110,40 +2136,16 @@ def screenshot_panic(clean_queue=True):
 
 
 def show_PC_Screen():  # 显示照片
-    global config_obj, State_change, screen_process_queue, screenshot_last_limit_time, wait_time, sleep_event
-    global screen_shot_queue, screenshot_test_time, screenshot_test_frame  # 用于计算串流FPS
-    current_monoto_time = time.monotonic()
+    global State_change, screen_process_queue
     if State_change == 1:
         state_change_clear()
-        wait_time = 0
-        screenshot_last_limit_time = current_monoto_time
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     try:
-        hexstream = screen_process_queue.get(timeout=1)
+        hexstream = screen_process_queue.get(timeout=1.2)
     except queue.Empty:
         return
     SER_rw(hexstream, read=False)  # 发出指令
-
-    elapse_time = current_monoto_time - screenshot_last_limit_time
-    if elapse_time > 5:  # 有切换，重置参数
-        wait_time = 0
-        elapse_time = 1.0 / config_obj.fps_var  # 第一次不需要wait
-
-    #     # 这段用于计算串流FPS，不需要可以注释掉（缩进格式就是这样的，不需要改动）
-    #     screenshot_test_frame = 0
-    #     screenshot_test_time = current_monoto_time
-    # elif screenshot_test_frame % config_obj.fps_var == 0:
-    #     # 测试用：显示帧率
-    #     real_fps = config_obj.fps_var / (current_monoto_time - screenshot_test_time)
-    #     print("串流FPS: %s" % real_fps)
-    #     screenshot_test_time = current_monoto_time
-    # screenshot_test_frame += 1
-
-    screenshot_last_limit_time = current_monoto_time
-    wait_time += 1.0 / config_obj.fps_var - elapse_time
-    if wait_time > 0:
-        sleep_event.wait(wait_time)  # 精确控制FPS
 
 
 def sizeof_fmt(num, suffix="B", base=1024.0):
