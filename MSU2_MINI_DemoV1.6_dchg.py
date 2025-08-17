@@ -2142,7 +2142,7 @@ def show_PC_Screen():  # 显示照片
         LCD_ADD(0, 0, SHOW_WIDTH, SHOW_HEIGHT)
 
     try:
-        hexstream = screen_process_queue.get(timeout=1.2)
+        hexstream = screen_process_queue.get(timeout=0.3)  # timeout设置较小，用于增加页面切换效率
     except queue.Empty:
         return
     SER_rw(hexstream, read=False)  # 发出指令
