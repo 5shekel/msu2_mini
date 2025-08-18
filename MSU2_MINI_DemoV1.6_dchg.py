@@ -1182,6 +1182,13 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
         return 0
 
 
+def LCD_BLACK():
+    # 填充黑色背景
+    rgb565 = np.frombuffer(bytes(SHOW_WIDTH * SHOW_HEIGHT), dtype=np.uint8)
+    hex_use = Screen_Date_Process(rgb565.flatten())
+    SER_rw(hex_use, read=False)  # 发出指令
+
+
 def LCD_State(LCD_S):
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
@@ -1193,6 +1200,7 @@ def LCD_State(LCD_S):
 
     recv = SER_rw(hex_use)  # 发出指令
     if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+        LCD_BLACK()  # 切换方向后屏幕会变白，改成黑色
         # print("LCD towards change to: %s" % LCD_S)
         return 1
     else:
