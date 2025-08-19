@@ -1937,7 +1937,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                     # 没有图像时显示黑色背景
                     rgb888 = get_draw_text("请选择相机…")
                     image = Win32_Image(rgb=rgb888, size=(SHOW_WIDTH, SHOW_HEIGHT))
-                    screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=1)
+                    screen_shot_queue.put((image, {"width": SHOW_WIDTH, "height": SHOW_HEIGHT}), timeout=1)
                     time.sleep(0.5)
                     continue
                 camera_name = config_obj.camera_var
