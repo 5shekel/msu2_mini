@@ -1935,7 +1935,8 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 camera_id = all_cameras.get(config_obj.camera_var)
                 if camera_id is None:
                     # 没有图像时显示黑色背景
-                    image = Win32_Image(rgb=bytes(6), size=(2, 1))
+                    rgb888 = get_draw_text("请选择相机…")
+                    image = Win32_Image(rgb=rgb888, size=(SHOW_WIDTH, SHOW_HEIGHT))
                     screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=1)
                     time.sleep(0.5)
                     continue
@@ -2364,6 +2365,30 @@ def load_hardware_monitor():
     return HardwareMonitorManager
 
 
+def get_draw_text(text, font_size=20, front_color=None, back_color=(0, 0, 0)):
+    global config_obj
+
+    if not front_color:
+        front_color = (config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
+    # 绘制图片
+    im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), back_color)
+    draw = ImageDraw.Draw(im1)
+    # 绘制文字
+    font = MiniMark.load_font("./simhei.ttf", font_size)
+    font_l = font.getlength(text)
+    draw.text(((SHOW_WIDTH - font_l) / 2, (SHOW_HEIGHT - font_size) / 2), text, fill=front_color, font=font)
+
+    rgb888 = np.asarray(im1, dtype=np.uint32)
+    return rgb888
+
+
+def draw_text(text, font_size=20, front_color=None, back_color=(0, 0, 0)):
+    rgb888 = get_draw_text(text, font_size, front_color, back_color)
+    rgb565 = rgb888_to_rgb565(rgb888)
+    hex_use = Screen_Date_Process(rgb565.flatten())
+    SER_rw(hex_use, read=False)
+
+
 def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
                          bar2_color=(146, 211, 217), back_color=(0, 0, 0)):
     # geezmo: 预渲染图片，显示两个 hardwaremonitor 里的项目
@@ -2371,7 +2396,8 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
     global custom_plot_data, hardware_monitor_manager, netspeed_font, sleep_event
     current_monoto_time = time.monotonic()
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
-        sleep_event.wait(0.2)
+        draw_text("加载中…")
+        sleep_event.wait(0.5)
         return
 
     if State_change == 1:
@@ -2511,7 +2537,8 @@ def show_full_custom():
     global last_refresh_time, State_change, wait_time, hardware_monitor_manager, sleep_event
     current_monoto_time = time.monotonic()
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
-        sleep_event.wait(0.2)
+        draw_text("加载中…")
+        sleep_event.wait(0.5)
         return
 
     if State_change == 1:
