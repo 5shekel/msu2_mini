@@ -1460,7 +1460,7 @@ def LCD_ASCII_32X64(LCD_X, LCD_Y, Txt, Num_Page):
     hex_use.append(Num_Page % 256)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if len(recv) > 1 and recv[0] == 2 and recv[1] == 3:
         return 1
     else:
         print("LCD_ASCII_32X64 failed: %s" % recv)
@@ -1479,7 +1479,7 @@ def LCD_GB2312_16X16(LCD_X, LCD_Y, Txt):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if len(recv) > 1 and recv[0] == 2 and recv[1] == 3:
         return 1
     else:
         print("LCD_GB2312_16X16 failed: %s" % recv)
@@ -1498,7 +1498,7 @@ def LCD_Photo_wb_MIX(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, Page_Add):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if len(recv) > 1 and recv[0] == 2 and recv[1] == 3:
         return 1
     else:
         print("LCD_Photo_wb_MIX failed: %s" % recv)
@@ -1529,7 +1529,7 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt):
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if len(recv) > 1 and recv[0] == 2 and recv[1] == 3:
         return 1
     else:
         print("LCD_GB2312_16X16_MIX failed: %s" % recv)
@@ -2376,7 +2376,7 @@ def get_draw_text(text, font_size=20, front_color=None, back_color=(0, 0, 0)):
     # 绘制文字
     font = MiniMark.load_font("./simhei.ttf", font_size)
     font_l = font.getlength(text)
-    draw.text(((SHOW_WIDTH - font_l) / 2, (SHOW_HEIGHT - font_size) / 2), text, fill=front_color, font=font)
+    draw.text(((SHOW_WIDTH - font_l) // 2, (SHOW_HEIGHT - font_size) // 2), text, fill=front_color, font=font)
 
     rgb888 = np.asarray(im1, dtype=np.uint32)
     return rgb888
