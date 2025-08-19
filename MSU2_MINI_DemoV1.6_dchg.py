@@ -1182,13 +1182,6 @@ def LCD_ADD(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size):
         return 0
 
 
-def LCD_BLACK():
-    # 填充黑色背景
-    rgb565 = np.frombuffer(bytes(SHOW_WIDTH * SHOW_HEIGHT), dtype=np.uint8)
-    hex_use = Screen_Date_Process(rgb565.flatten())
-    SER_rw(hex_use, read=False)  # 发出指令
-
-
 def LCD_State(LCD_S):
     hex_use = bytearray()
     hex_use.append(2)  # 对LCD多次写入
@@ -1200,7 +1193,7 @@ def LCD_State(LCD_S):
 
     recv = SER_rw(hex_use)  # 发出指令
     if len(recv) > 5 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
-        LCD_BLACK()  # 切换方向后屏幕会变白，改成黑色
+        LCD_Color_set(0, 0, SHOW_WIDTH, SHOW_HEIGHT, (0, 0, 0))  # 切换方向后屏幕会变白，改成黑色
         # print("LCD towards change to: %s" % LCD_S)
         return 1
     else:
@@ -1546,17 +1539,18 @@ def LCD_GB2312_16X16_MIX(LCD_X, LCD_Y, Txt):
 
 # 对指定区域进行颜色填充
 def LCD_Color_set(LCD_X, LCD_Y, LCD_X_Size, LCD_Y_Size, F_Color):
+    rgb565 = ((F_Color[0] & 0xF8) << 8) | ((F_Color[1] & 0xFC) << 3) | ((F_Color[2] & 0xF8) >> 3)
     hex_use = LCD_Set_XY(LCD_X, LCD_Y)
     hex_use.extend(LCD_Set_Size(LCD_X_Size, LCD_Y_Size))
     hex_use.append(2)  # 对LCD多次写入
     hex_use.append(3)  # 设置指令
     hex_use.append(11)  # 显示彩色图片
-    hex_use.append(F_Color // 256)
-    hex_use.append(F_Color % 256)
+    hex_use.append(rgb565 // 256)
+    hex_use.append(rgb565 % 256)
     hex_use.append(0)
 
     recv = SER_rw(hex_use)  # 发出指令
-    if len(recv) > 1 and recv[0] == hex_use[0] and recv[1] == hex_use[1]:
+    if len(recv) > 1 and recv[0] == 2 and recv[1] == 3:
         return 1
     else:
         print("LCD_Color_set failed: %s" % recv)
