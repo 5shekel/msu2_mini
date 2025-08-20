@@ -26,15 +26,14 @@ from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
 from PyCameraList import camera_device
 
 import MSU2_MINI_MG_minimark as MiniMark
+from ContinuousCapture import ContinuousCapture
 from MSU2_MINI_MG_minimark import MiniMarkParser
 
 isWindows = True if os.name == "nt" else False
 
 if isWindows:
     from ctypes import windll
-    import win32con
     import win32gui
-    import win32ui
     import win32process
 
     # 使用高dpi缩放适配高分屏。0：不使用缩放 1：所有屏幕 2：当前屏幕
@@ -217,104 +216,23 @@ class Win32_Image:
         self.size = size
 
 
-# 根据dpi获取窗口实际大小
-def get_rect_by_dpi(rect, hWnd):
-    app_dpi = windll.user32.GetDpiForWindow(hWnd)
-    if app_dpi != system_dpi:
-        dpi = app_dpi / system_dpi
-        rect = [int(x * dpi) for x in rect]
-    width = rect[2] - rect[0]
-    height = rect[3] - rect[1]
-    return rect[0], rect[1], width, height
+default_capture = ContinuousCapture()
 
 
 def get_window_image(hWnd=None):
     global desktop_hwnd
 
-    # if win32gui.IsIconic(hWnd):  # 判断窗口是否最小化
-    #     print("最小化")
-    #     return
     while not win32gui.IsWindow(hWnd):  # 只需要窗口在，不需要可见，比如最小化或者隐藏到任务栏
         hWnd = get_parent(hWnd)
         if hWnd == 0:
             hWnd = desktop_hwnd
         set_select_hwnd(hWnd)
-    # 将窗口置于最前端
-    # win32gui.SetForegroundWindow(hWnd)
 
-    try:
-        # 获取窗口设备上下文
-        hWndDC = win32gui.GetWindowDC(hWnd)
-        mfcDC = win32ui.CreateDCFromHandle(hWndDC)
-        saveDC = mfcDC.CreateCompatibleDC()
-        # 创建位图对象
-        saveBitMap = win32ui.CreateBitmap()
-
-        # # 获取窗口位置和大小，包含标题栏和工具栏
-        # get_rect = win32gui.GetWindowRect(hWnd)
-        # print_mode = 0b10
-        # 获取窗口大小，不包含标题栏和工具栏
-        get_rect = win32gui.GetClientRect(hWnd)
-        print_mode = 0b11
-
-        if hWnd == desktop_hwnd:  # PrintWindow不能截取桌面，需要用BitBlt
-            # 获取窗口长宽
-            width = get_rect[2] - get_rect[0]
-            height = get_rect[3] - get_rect[1]
-
-            # 使用win32gui截屏
-            saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
-            # 将位图选入设备上下文
-            saveDC.SelectObject(saveBitMap)
-
-            try:
-                # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
-                saveDC.BitBlt((0, 0), (width, height), mfcDC, (get_rect[0], get_rect[1]), win32con.SRCCOPY)
-            except:
-                pass
-        else:
-            # 获取窗口实际大小
-            get_rect = get_rect_by_dpi(get_rect, hWnd)
-
-            # 使用win32gui截屏
-            saveBitMap.CreateCompatibleBitmap(mfcDC, get_rect[2], get_rect[3])
-            saveDC.SelectObject(saveBitMap)
-
-            # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
-            result = windll.user32.PrintWindow(hWnd, saveDC.GetSafeHdc(), print_mode)
-            # if not result:
-            #     print("PrintWindow failed: %s" % result)
-            #     return Win32_Image(rgb=bytes(6), size=(2, 1))  # 异常时初始化为黑色背景
-
-        # 获取位图信息
-        bmpinfo = saveBitMap.GetInfo()
-        bmpstr = saveBitMap.GetBitmapBits(True)
-        # # 生成图像
-        # im_PIL = Image.frombuffer('RGB', (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
-        #                           bmpstr, 'raw', 'BGRX', 0, 1)
-        # im_PIL = Image.frombuffer('RGB', (len(bmpstr) // (bmpinfo['bmHeight'] * 4), bmpinfo['bmHeight']),
-        #                           bmpstr, 'raw', 'BGRX', 0, 1)
-        # im_PIL.save("im_PIL.png")  # 保存
-        image = Win32_Image(bgra=bmpstr, size=(bmpinfo['bmWidth'], bmpinfo['bmHeight']))
-        return image
-    finally:
-        # 内存释放
-        try:
-            win32gui.DeleteObject(saveBitMap.GetHandle())
-        except:
-            pass
-        try:
-            saveDC.DeleteDC()
-        except:
-            pass
-        try:
-            mfcDC.DeleteDC()
-        except:
-            pass
-        try:
-            win32gui.ReleaseDC(hWnd, hWndDC)
-        except:
-            pass
+    # 获取截图
+    default_capture.set_hwnd(hWnd)
+    default_capture.set_capture_type(hWnd == desktop_hwnd)
+    bmpstr, width, height = default_capture.capture_to_pil()
+    return Win32_Image(bgra=bmpstr, size=(width, height))
 
 
 def insert_text_message(text, cleanNext=True, item=None):
