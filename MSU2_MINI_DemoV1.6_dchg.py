@@ -136,7 +136,7 @@ IMAGE_FILE_TYPES = [
 
 
 def get_all_cameras():
-    all_camera_devices = {"": None}
+    all_camera_devices = {"": None}  # 考虑隐私，默认不打开相机，所以这里放一个空的作为默认值
     try:
         camera_devices = camera_device.list_video_devices()
         for camera_id, camera_name in camera_devices:
@@ -243,13 +243,14 @@ def get_window_image(hWnd=None):
     # win32gui.SetForegroundWindow(hWnd)
 
     try:
-        # 初始化截屏所需内存
+        # 获取窗口设备上下文
         hWndDC = win32gui.GetWindowDC(hWnd)
         mfcDC = win32ui.CreateDCFromHandle(hWndDC)
         saveDC = mfcDC.CreateCompatibleDC()
+        # 创建位图对象
         saveBitMap = win32ui.CreateBitmap()
 
-        # # 获取窗口大小，包含标题栏和工具栏
+        # # 获取窗口位置和大小，包含标题栏和工具栏
         # get_rect = win32gui.GetWindowRect(hWnd)
         # print_mode = 0b10
         # 获取窗口大小，不包含标题栏和工具栏
@@ -263,10 +264,14 @@ def get_window_image(hWnd=None):
 
             # 使用win32gui截屏
             saveBitMap.CreateCompatibleBitmap(mfcDC, width, height)
+            # 将位图选入设备上下文
             saveDC.SelectObject(saveBitMap)
 
-            # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
-            saveDC.BitBlt((0, 0), (width, height), mfcDC, (get_rect[0], get_rect[1]), win32con.SRCCOPY)
+            try:
+                # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
+                saveDC.BitBlt((0, 0), (width, height), mfcDC, (get_rect[0], get_rect[1]), win32con.SRCCOPY)
+            except:
+                pass
         else:
             # 获取窗口实际大小
             get_rect = get_rect_by_dpi(get_rect, hWnd)
