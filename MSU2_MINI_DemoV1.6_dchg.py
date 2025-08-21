@@ -1856,6 +1856,10 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 clear_queue(screen_shot_queue)  # 清空缓存，防止显示旧的窗口
             time.sleep(0.5)  # 不需要截图时
             continue
+        if screen_shot_queue.full():
+            time.sleep(1.0 / config_obj.fps_var)
+            if screen_shot_queue.full():
+                screen_shot_queue.get()
 
         try:
             if config_obj.state_machine == CAMERA_VIDEO_ID:
@@ -1911,17 +1915,9 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 finally:
                     cap.release()
             elif isWindows:
-                if screen_shot_queue.full():
-                    time.sleep(1.0 / config_obj.fps_var)
-                    if screen_shot_queue.full():
-                        screen_shot_queue.get()
                 sct_img = get_window_image(config_obj.select_window_hwnd)
                 screen_shot_queue.put((sct_img, {"width": sct_img.size[0], "height": sct_img.size[1]}), timeout=1)
             else:
-                if screen_shot_queue.full():
-                    time.sleep(1.0 / config_obj.fps_var)
-                    if screen_shot_queue.full():
-                        screen_shot_queue.get()
                 sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
                 screen_shot_queue.put((sct_img, cropped_monitor), timeout=1)
         except queue.Full:
@@ -1993,22 +1989,23 @@ def screen_process_task():
             else:
                 bgra = sct_img.bgra  # win32gui截图
                 remain = sct_img.size[1] * sct_img.size[0] * 4 - len(bgra)
-                if remain >= 0:
-                    if remain > 0:
-                        bgra += bytes(remain)
-                    # rgb = np.frombuffer(sct_img.rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
+                if remain == 0:  # 正常窗口
                     bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
-                    # rgb = bgra[:, :, :3]
-                    # rgb = rgb[:, :, ::-1]
+                    rgb = bgra[:, :, [2, 1, 0]]
+                elif remain > 0:  # 不完全窗口，如最小化窗口
+                    bgra += bytes(remain)
+                    bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
                     rgb = bgra[:, :, [2, 1, 0]]
                 else:  # 针对windows管理控制台框架的窗口，如服务管理
                     bgra = np.frombuffer(bgra, dtype=np.uint8).reshape(
                         (sct_img.size[1], len(bgra) // (sct_img.size[1] * 4), 4))
                     rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
+            width = monitor["width"]
+            height2 = monitor["height"] * 2
             if config_obj.shrink_type == 1:
                 # 方法1：裁剪以 填充屏幕
-                if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
+                if width > height2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
                     offset = (im1.shape[1] - SHOW_WIDTH) // 2
                     im1 = im1[:, offset: SHOW_WIDTH + offset]
@@ -2018,7 +2015,7 @@ def screen_process_task():
                     im1 = im1[offset: SHOW_HEIGHT + offset, :]
             else:
                 # 方法2：填充空白以 适应屏幕
-                if monitor["width"] > monitor["height"] * 2:  # 图片长宽比例超过2:1
+                if width > height2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
                     total = SHOW_HEIGHT - len(im1)
                     np_fill_zero = row_np_zero.repeat(total // 2, axis=0)
@@ -2026,15 +2023,16 @@ def screen_process_task():
                         im1 = np.row_stack((np_fill_zero, im1, np_fill_zero, row_np_zero))
                     else:
                         im1 = np.row_stack((np_fill_zero, im1, np_fill_zero))
-                else:  # 纵向充满
+                elif width == height2:  # 纵向充满
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
-                    if monitor["width"] != monitor["height"] * 2:
-                        total = SHOW_WIDTH - len(im1[0])
-                        np_fill_zero = column_np_zero.repeat(total // 2, axis=1)
-                        if total % 2:
-                            im1 = np.column_stack((np_fill_zero, im1, np_fill_zero, column_np_zero))
-                        else:
-                            im1 = np.column_stack((np_fill_zero, im1, np_fill_zero))
+                else:
+                    im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
+                    total = SHOW_WIDTH - len(im1[0])
+                    np_fill_zero = column_np_zero.repeat(total // 2, axis=1)
+                    if total % 2:
+                        im1 = np.column_stack((np_fill_zero, im1, np_fill_zero, column_np_zero))
+                    else:
+                        im1 = np.column_stack((np_fill_zero, im1, np_fill_zero))
 
             # rgb888 = np.asarray(im1)
             rgb565 = rgb888_to_rgb565(im1)
