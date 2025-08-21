@@ -1858,8 +1858,8 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
             continue
         if screen_shot_queue.full():
             time.sleep(1.0 / config_obj.fps_var)
-            if screen_shot_queue.full():
-                screen_shot_queue.get()
+            # if screen_shot_queue.full():  # 这儿用于防止队列堆积，但是因为队列长度只有2，所以也不怕，所以注释掉
+            #     screen_shot_queue.get()
 
         try:
             if config_obj.state_machine == CAMERA_VIDEO_ID:
@@ -1896,8 +1896,8 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                                 raise Exception("get CAP_PROP_HUE failed")
                             if screen_shot_queue.full():
                                 time.sleep(1.0 / config_obj.fps_var)
-                                if screen_shot_queue.full():
-                                    screen_shot_queue.get()
+                                # if screen_shot_queue.full():
+                                #     screen_shot_queue.get()
                             suc, frame = cap.read()
                             if not suc:
                                 raise Exception("cap.read() failed")
@@ -1921,6 +1921,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 sct_img = sct.grab(cropped_monitor)  # geezmo: 截屏已优化
                 screen_shot_queue.put((sct_img, cropped_monitor), timeout=1)
         except queue.Full:
+            time.sleep(1.0 / config_obj.fps_var)
             continue
         except Exception as e:
             print("获取图像失败 %s" % traceback.format_exc())
@@ -1978,10 +1979,10 @@ def screen_process_task():
         try:
             if screen_process_queue.full():
                 time.sleep(1.0 / config_obj.fps_var)
-                if screen_process_queue.full():
-                    screen_process_queue.get()
+                # if screen_process_queue.full():  # 这儿用于防止队列堆积，但是因为队列长度只有2，所以也不怕，所以注释掉
+                #     screen_process_queue.get()
 
-            sct_img, monitor = screen_shot_queue.get(timeout=1.2)
+            sct_img, monitor = screen_shot_queue.get(timeout=2)
             if sct_img.rgb is not None:
                 rgb = sct_img.rgb  # 相机视频
                 if type(rgb) == bytes:  # sct.grab截图
