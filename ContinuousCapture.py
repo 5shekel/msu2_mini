@@ -165,6 +165,7 @@ class ContinuousCapture:
             self.cleanup_resources()
             self.width = new_width
             self.height = new_height
+            self.dpi_width, self.dpi_height = self.getDpiRect()
             self.setup_resources()
         if self.capture_type:  # PrintWindow不能截取桌面，需要用BitBlt
             # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
