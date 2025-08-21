@@ -38,7 +38,7 @@ class ContinuousCapture:
 
         # 获取窗口尺寸
         self.width, self.height = self.getRect()
-        self.dpi_width, self.dpi_height = self.getDpiRect()
+        self.dpi_width, self.dpi_height = self.width, self.height
 
         # 设备上下文和位图对象（将在setup_resources中初始化）
         self.hwndDC = None
@@ -51,17 +51,19 @@ class ContinuousCapture:
             self.setup_resources()
 
     def set_hwnd(self, hwnd):
-        self.cleanup_resources()
-        self.hwnd = hwnd
-        self.width, self.height = self.getRect()
-        self.dpi_width, self.dpi_height = self.getDpiRect()
-        self.setup_resources()
+        if self.hwnd != hwnd:
+            self.cleanup_resources()
+            self.hwnd = hwnd
+            self.width, self.height = self.getRect()
+            self.setup_resources()
 
     def set_capture_type(self, capture_type):
         self.capture_type = capture_type
 
     def setup_resources(self):
-        """初始化截图所需的资源"""
+        """ 初始化截图所需的资源 """
+        self.dpi_width, self.dpi_height = self.getDpiRect()
+
         # 获取窗口设备上下文
         self.hwndDC = win32gui.GetWindowDC(self.hwnd)
         self.mfcDC = win32ui.CreateDCFromHandle(self.hwndDC)
@@ -93,11 +95,15 @@ class ContinuousCapture:
             app_dpi = windll.user32.GetDpiForWindow(self.hwnd)
             dpi = app_dpi / system_dpi
         else:
-            hdc = win32gui.GetDC(0)
-            app_width = win32ui.GetDeviceCaps(hdc, win32con.HORZRES)
-            sys_width = win32ui.GetDeviceCaps(hdc, win32con.DESKTOPHORZRES)
-            win32gui.ReleaseDC(0, hdc)
-            dpi = sys_width / app_width
+            try:
+                hdc = win32gui.GetDC(0)
+                app_width = win32ui.GetDeviceCaps(hdc, win32con.HORZRES)
+                sys_width = win32ui.GetDeviceCaps(hdc, win32con.DESKTOPHORZRES)
+                dpi = sys_width / app_width
+            except:
+                dpi = 1.0
+            finally:
+                win32gui.ReleaseDC(0, hdc)
         return int(self.width * dpi), int(self.height * dpi)
 
     @staticmethod
@@ -137,7 +143,6 @@ class ContinuousCapture:
             self.cleanup_resources()
             self.width = new_width
             self.height = new_height
-            self.dpi_width, self.dpi_height = self.getDpiRect()
             self.setup_resources()
 
         if self.capture_type:  # PrintWindow不能截取桌面，需要用BitBlt
@@ -165,7 +170,6 @@ class ContinuousCapture:
             self.cleanup_resources()
             self.width = new_width
             self.height = new_height
-            self.dpi_width, self.dpi_height = self.getDpiRect()
             self.setup_resources()
         if self.capture_type:  # PrintWindow不能截取桌面，需要用BitBlt
             # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色

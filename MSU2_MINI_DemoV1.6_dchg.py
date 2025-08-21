@@ -1957,11 +1957,11 @@ def fps_control():
     #     print("串流FPS: %s" % real_fps)
     #     screenshot_test_time = current_monoto_time
     # screenshot_test_frame += 1
-
-    screenshot_last_limit_time = current_monoto_time
-    wait_time += 1.0 / config_obj.fps_var - elapse_time
-    if wait_time > 0:
-        sleep_event.wait(wait_time)  # 精确控制FPS
+    #
+    # screenshot_last_limit_time = current_monoto_time
+    # wait_time += 1.0 / config_obj.fps_var - elapse_time
+    # if wait_time > 0:
+    #     sleep_event.wait(wait_time)  # 精确控制FPS
 
 
 # geezmo: 流水线 第二步 处理图像
