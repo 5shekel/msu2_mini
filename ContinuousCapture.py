@@ -25,15 +25,12 @@ if isWindows:
 
 
 class ContinuousCapture:
-    def __init__(self, capture_type=True, hwnd=None):
+    def __init__(self, hwnd=None):
         """
         初始化连续截图器
 
-        Args:
-            capture_type: 截图类型，True全屏截图，False窗口截图
         """
         self.print_mode = 0b11  # 用于设置截屏时是否包含标题栏和工具栏，包含0b10，不包含0b11
-        self.capture_type = capture_type
         self.hwnd = hwnd
 
         # 获取窗口尺寸
@@ -56,9 +53,6 @@ class ContinuousCapture:
             self.hwnd = hwnd
             self.width, self.height = self.getRect()
             self.setup_resources()
-
-    def set_capture_type(self, capture_type):
-        self.capture_type = capture_type
 
     def setup_resources(self):
         """ 初始化截图所需的资源 """
@@ -128,36 +122,9 @@ class ContinuousCapture:
         win32gui.EnumWindows(callback, hwnds)
         return hwnds[0] if hwnds else None
 
-    def capture_to_file(self, save_path):
+    def capture_window(self):
         """
-        执行截图操作
-
-        Args:
-            save_path: 截图保存路径
-        """
-        # 检查窗口尺寸是否变化（窗口可能被调整大小）
-        new_width, new_height = self.getRect()
-
-        # 如果窗口尺寸变化，重新初始化资源
-        if new_width != self.width or new_height != self.height:
-            self.cleanup_resources()
-            self.width = new_width
-            self.height = new_height
-            self.setup_resources()
-
-        if self.capture_type:  # PrintWindow不能截取桌面，需要用BitBlt
-            # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
-            self.saveDC.BitBlt((0, 0), (self.dpi_width, self.dpi_height), self.mfcDC, (0, 0), win32con.SRCCOPY)
-        else:
-            # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
-            windll.user32.PrintWindow(self.hwnd, self.saveDC.GetSafeHdc(), self.print_mode)
-
-        # 保存位图到文件
-        self.saveBitMap.SaveBitmapFile(self.saveDC, save_path)
-
-    def capture_to_pil(self):
-        """
-        执行截图并返回PIL图像对象
+        截取单个窗口
 
         Returns:
             PIL Image对象
@@ -171,15 +138,39 @@ class ContinuousCapture:
             self.width = new_width
             self.height = new_height
             self.setup_resources()
-        if self.capture_type:  # PrintWindow不能截取桌面，需要用BitBlt
+
+        # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
+        windll.user32.PrintWindow(self.hwnd, self.saveDC.GetSafeHdc(), self.print_mode)
+
+        # 获取位图信息
+        bmpinfo = self.saveBitMap.GetInfo()
+        bmpstr = self.saveBitMap.GetBitmapBits(True)
+
+        return bmpstr, bmpinfo['bmWidth'], bmpinfo['bmHeight']
+
+    def capture_screen(self):
+        """
+        截取整个屏幕
+
+        Returns:
+            PIL Image对象
+        """
+        # 检查窗口尺寸是否变化
+        new_width, new_height = self.getRect()
+
+        # 如果窗口尺寸变化，重新初始化资源
+        if new_width != self.width or new_height != self.height:
+            self.cleanup_resources()
+            self.width = new_width
+            self.height = new_height
+            self.setup_resources()
+
+        # PrintWindow不能截取桌面，需要用BitBlt。BitBlt截取后台窗口时部分窗口会截取不到，只有黑色
+        try:
             # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
-            try:
-                self.saveDC.BitBlt((0, 0), (self.dpi_width, self.dpi_height), self.mfcDC, (0, 0), win32con.SRCCOPY)
-            except:
-                pass
-        else:
-            # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
-            windll.user32.PrintWindow(self.hwnd, self.saveDC.GetSafeHdc(), self.print_mode)
+            self.saveDC.BitBlt((0, 0), (self.dpi_width, self.dpi_height), self.mfcDC, (0, 0), win32con.SRCCOPY)
+        except:
+            pass
 
         # 获取位图信息
         bmpinfo = self.saveBitMap.GetInfo()
@@ -207,6 +198,17 @@ class ContinuousCapture:
                 self.hwndDC = None
         except:
             pass
+
+    def capture_to_file(self, save_path):
+        """
+        执行截图操作
+
+        Args:
+            save_path: 截图保存路径
+        """
+        self.capture_screen()
+        # 保存位图到文件
+        self.saveBitMap.SaveBitmapFile(self.saveDC, save_path)
 
     def continuous_capture(self, interval=1, duration=10, output_dir="screenshots",
                            pformat="bmp", callback=None):
@@ -263,7 +265,7 @@ class ContinuousCapture:
 # 使用示例
 if __name__ == "__main__":
     # 示例1：截取整个屏幕，每2秒一次，持续20秒，保存为PNG
-    capture = ContinuousCapture(capture_type="screen")
+    capture = ContinuousCapture()
     capture.continuous_capture(
         interval=2,
         duration=20,

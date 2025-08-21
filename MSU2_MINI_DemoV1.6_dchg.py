@@ -232,8 +232,10 @@ def get_window_image(hWnd=None):
     if not default_capture:
         default_capture = ContinuousCapture()
     default_capture.set_hwnd(hWnd)
-    default_capture.set_capture_type(hWnd == desktop_hwnd)
-    bmpstr, width, height = default_capture.capture_to_pil()
+    if hWnd == desktop_hwnd:
+        bmpstr, width, height = default_capture.capture_screen()
+    else:
+        bmpstr, width, height = default_capture.capture_window()
     return Win32_Image(bgra=bmpstr, size=(width, height))
 
 
@@ -1957,11 +1959,11 @@ def fps_control():
     #     print("串流FPS: %s" % real_fps)
     #     screenshot_test_time = current_monoto_time
     # screenshot_test_frame += 1
-    #
-    # screenshot_last_limit_time = current_monoto_time
-    # wait_time += 1.0 / config_obj.fps_var - elapse_time
-    # if wait_time > 0:
-    #     sleep_event.wait(wait_time)  # 精确控制FPS
+
+    screenshot_last_limit_time = current_monoto_time
+    wait_time += 1.0 / config_obj.fps_var - elapse_time
+    if wait_time > 0:
+        sleep_event.wait(wait_time)  # 精确控制FPS
 
 
 # geezmo: 流水线 第二步 处理图像
