@@ -1,23 +1,27 @@
 import os
 import time
-from ctypes import windll
 
-import win32con
-import win32gui
-import win32ui
+isWindows = True if os.name == "nt" else False
 
-# 使用高dpi缩放适配高分屏。0：不使用缩放 1：所有屏幕 2：当前屏幕
-try:  # >= win 8.1
-    windll.shcore.SetProcessDpiAwareness(1)
-except:  # win 8.0 or less
+if isWindows:
+    from ctypes import windll
+
+    import win32con
+    import win32gui
+    import win32ui
+
+    # 使用高dpi缩放适配高分屏。0：不使用缩放 1：所有屏幕 2：当前屏幕
+    try:  # >= win 8.1
+        windll.shcore.SetProcessDpiAwareness(1)
+    except:  # win 8.0 or less
+        try:
+            windll.user32.SetProcessDPIAware()
+        except:
+            pass
     try:
-        windll.user32.SetProcessDPIAware()
+        system_dpi = windll.user32.GetDpiForSystem()
     except:
-        pass
-try:
-    system_dpi = windll.user32.GetDpiForSystem()
-except:
-    system_dpi = 1
+        system_dpi = 96.0
 
 
 class ContinuousCapture:
@@ -34,6 +38,7 @@ class ContinuousCapture:
 
         # 获取窗口尺寸
         self.width, self.height = self.getRect()
+        self.dpi_width, self.dpi_height = self.getDpiRect()
 
         # 设备上下文和位图对象（将在setup_resources中初始化）
         self.hwndDC = None
@@ -41,20 +46,16 @@ class ContinuousCapture:
         self.saveDC = None
         self.saveBitMap = None
 
-        # 初始化资源
-        self.setup_resources()
+        if not self.hwnd:
+            # 初始化资源
+            self.setup_resources()
 
     def set_hwnd(self, hwnd):
-        # if hwnd != self.hwnd:
-        # self.cleanup_resources()
-
+        self.cleanup_resources()
         self.hwnd = hwnd
-        # # 获取窗口尺寸
-        # left, top, right, bottom = win32gui.GetWindowRect(self.hwnd)
-        # self.width = right - left
-        # self.height = bottom - top
-        #
-        # self.setup_resources()
+        self.width, self.height = self.getRect()
+        self.dpi_width, self.dpi_height = self.getDpiRect()
+        self.setup_resources()
 
     def set_capture_type(self, capture_type):
         self.capture_type = capture_type
@@ -68,7 +69,7 @@ class ContinuousCapture:
 
         # 创建位图对象
         self.saveBitMap = win32ui.CreateBitmap()
-        self.saveBitMap.CreateCompatibleBitmap(self.mfcDC, self.width, self.height)
+        self.saveBitMap.CreateCompatibleBitmap(self.mfcDC, self.dpi_width, self.dpi_height)
 
         # 将位图选入设备上下文
         self.saveDC.SelectObject(self.saveBitMap)
@@ -82,15 +83,22 @@ class ContinuousCapture:
         else:
             # 0b11：获取窗口大小，不包含标题栏和工具栏
             get_rect = win32gui.GetClientRect(self.hwnd)
-
-        # 根据dpi获取窗口实际大小
-        app_dpi = windll.user32.GetDpiForWindow(self.hwnd)
-        if app_dpi != system_dpi:
-            dpi = app_dpi / system_dpi
-            get_rect = [int(x * dpi) for x in get_rect]
         width = get_rect[2] - get_rect[0]
         height = get_rect[3] - get_rect[1]
         return width, height
+
+    def getDpiRect(self):
+        """ 根据dpi获取窗口实际大小 """
+        if self.hwnd != win32gui.GetDesktopWindow():
+            app_dpi = windll.user32.GetDpiForWindow(self.hwnd)
+            dpi = app_dpi / system_dpi
+        else:
+            hdc = win32gui.GetDC(0)
+            app_width = win32ui.GetDeviceCaps(hdc, win32con.HORZRES)
+            sys_width = win32ui.GetDeviceCaps(hdc, win32con.DESKTOPHORZRES)
+            win32gui.ReleaseDC(0, hdc)
+            dpi = sys_width / app_width
+        return int(self.width * dpi), int(self.height * dpi)
 
     @staticmethod
     def find_window_by_title(window_title):
@@ -129,11 +137,12 @@ class ContinuousCapture:
             self.cleanup_resources()
             self.width = new_width
             self.height = new_height
+            self.dpi_width, self.dpi_height = self.getDpiRect()
             self.setup_resources()
 
         if self.capture_type:  # PrintWindow不能截取桌面，需要用BitBlt
             # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
-            self.saveDC.BitBlt((0, 0), (self.width, self.height), self.mfcDC, (0, 0), win32con.SRCCOPY)
+            self.saveDC.BitBlt((0, 0), (self.dpi_width, self.dpi_height), self.mfcDC, (0, 0), win32con.SRCCOPY)
         else:
             # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
             windll.user32.PrintWindow(self.hwnd, self.saveDC.GetSafeHdc(), self.print_mode)
@@ -157,11 +166,10 @@ class ContinuousCapture:
             self.width = new_width
             self.height = new_height
             self.setup_resources()
-
         if self.capture_type:  # PrintWindow不能截取桌面，需要用BitBlt
             # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
             try:
-                self.saveDC.BitBlt((0, 0), (self.width, self.height), self.mfcDC, (0, 0), win32con.SRCCOPY)
+                self.saveDC.BitBlt((0, 0), (self.dpi_width, self.dpi_height), self.mfcDC, (0, 0), win32con.SRCCOPY)
             except:
                 pass
         else:

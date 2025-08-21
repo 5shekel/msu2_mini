@@ -47,7 +47,7 @@ if isWindows:
     try:
         system_dpi = windll.user32.GetDpiForSystem()
     except:
-        system_dpi = 1
+        system_dpi = 96.0
 
     try:
         # 取消命令行窗口快速编辑模式，防止鼠标误触导致阻塞
@@ -216,11 +216,11 @@ class Win32_Image:
         self.size = size
 
 
-default_capture = ContinuousCapture()
+default_capture = None
 
 
 def get_window_image(hWnd=None):
-    global desktop_hwnd
+    global desktop_hwnd, default_capture
 
     while not win32gui.IsWindow(hWnd):  # 只需要窗口在，不需要可见，比如最小化或者隐藏到任务栏
         hWnd = get_parent(hWnd)
@@ -229,6 +229,8 @@ def get_window_image(hWnd=None):
         set_select_hwnd(hWnd)
 
     # 获取截图
+    if not default_capture:
+        default_capture = ContinuousCapture()
     default_capture.set_hwnd(hWnd)
     default_capture.set_capture_type(hWnd == desktop_hwnd)
     bmpstr, width, height = default_capture.capture_to_pil()
