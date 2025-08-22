@@ -1871,6 +1871,11 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                     screen_shot_queue.put((image, {"width": SHOW_WIDTH, "height": SHOW_HEIGHT}), timeout=1)
                     time.sleep(0.5)
                     continue
+
+                # 打开相机
+                rgb888 = get_draw_text("打开中…")
+                image = Win32_Image(rgb=rgb888, size=(SHOW_WIDTH, SHOW_HEIGHT))
+                screen_shot_queue.put((image, {"width": SHOW_WIDTH, "height": SHOW_HEIGHT}), timeout=1)
                 camera_name = config_obj.camera_var
                 # 偶尔会出现打开很慢的情况，暂无法解决
                 cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)  # 默认媒体类型是CAP_MSMF，可能会导致设置分辨率失败，所以改为CAP_DSHOW
