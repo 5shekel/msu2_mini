@@ -1904,7 +1904,11 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                                 raise Exception("cap.read() timeout")
                             last_time = current_time
                             image = Win32_Image(rgb=frame[:, :, [2, 1, 0]], size=(width, height))
-                            screen_shot_queue.put((image, {"width": width, "height": height}), timeout=1)
+                            try:
+                                screen_shot_queue.put((image, {"width": width, "height": height}), timeout=1)
+                            except queue.Full:
+                                time.sleep(1.0 / config_obj.fps_var)
+                                continue
 
                             # 精确控制FPS
                             fps_control()
@@ -1927,6 +1931,7 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
             image = Win32_Image(rgb=bytes(6), size=(2, 1))
             screen_shot_queue.put((image, {"width": 2, "height": 1}), timeout=1)
             time.sleep(0.5)
+            continue
 
         # 精确控制FPS
         fps_control()
@@ -1946,9 +1951,9 @@ def fps_control():
         elapse_time = 1.0 / config_obj.fps_var  # 第一次不需要wait
 
     #     # 这段用于计算串流FPS，不需要可以注释掉（缩进格式就是这样的，不需要改动）
-    #     screenshot_test_frame = 0
+    #     screenshot_test_frame = 1
     #     screenshot_test_time = current_monoto_time - 1
-    # elif screenshot_test_frame % config_obj.fps_var == 0:
+    # elif (screenshot_test_frame % config_obj.fps_var) == 0:
     #     # 测试用：显示帧率
     #     real_fps = config_obj.fps_var / (current_monoto_time - screenshot_test_time)
     #     print("串流FPS: %s" % real_fps)
@@ -1959,6 +1964,8 @@ def fps_control():
     wait_time += 1.0 / config_obj.fps_var - elapse_time
     if wait_time > 0:
         sleep_event.wait(wait_time)  # 精确控制FPS
+    elif wait_time < -5:
+        wait_time = 0
 
 
 # geezmo: 流水线 第二步 处理图像
@@ -2632,10 +2639,11 @@ def UI_Page():  # 进行图像界面显示
             "",
             "“显示”包含如下页面，使用“上翻页”、“下翻页”切换。",
             "动图：使用“动图间隔”调整播放速度，“动图间隔”设置较大时可作为相册",
-            "\t“动图间隔”最小支持0.02秒，最大无限制。不启动软件是0.1秒",
+            "\t“动图间隔”最小支持0.02秒，最大无限制。默认是0.1秒",
             "时间：显示实时时间，背景使用烧写的背景图像，用“文字颜色”调整颜色",
             "单个相册图片：显示烧写的相册图像",
             "屏幕镜像：使用“屏幕镜像窗口”选择窗口，使用“最大FPS”设置刷新率",
+            "\t对于最小化窗口和部分游戏窗口，镜像失败会只显示黑色",
             "相机视频：使用“相机名称”选择摄像头，使用“最大FPS”设置刷新率",
             "\t没有摄像头不显示该页面。最大FPS支持1-50，再大没有意义",
             "电脑CPU/内存/磁盘/电池使用率监控：每秒刷新，用“文字颜色”调整颜色",
@@ -3652,7 +3660,7 @@ row_np_zero = None
 column_np_zero = None
 
 screenshot_test_time = 0  # 用于计算串流FPS
-screenshot_test_frame = 0  # 用于计算串流FPS
+screenshot_test_frame = 1  # 用于计算串流FPS。初始值为1，这样开始就不会马上打印不准确的FPS值
 screenshot_last_limit_time = 0
 wait_time = 0.0
 
