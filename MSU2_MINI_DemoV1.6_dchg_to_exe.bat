@@ -25,4 +25,5 @@ endlocal
 
 move /Y "dist\%outfilename%" .
 rmdir /S /Q .\dist\ .\build\
+del /Q "%outfilename%.spec"
 pause

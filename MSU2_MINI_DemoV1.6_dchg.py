@@ -2975,6 +2975,7 @@ def UI_Page():  # 进行图像界面显示
                 "v [序号] [格式] \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
                 "",
                 "* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
+                "当选择没有权限的项目时，点击“查看模板错误”会给出错误提示。"
             ])
             tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window)
 
@@ -3443,6 +3444,7 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     global write_path_index, Img_data_use, color_use
 
     if write_path_index != 0:
+        write_path_index = 0
         if write_path_index == 1:
             photo_path = Label3.get("1.0", tk.END).rstrip()
             Write_Flash_Photo_fast(0, photo_path)
@@ -3452,7 +3454,6 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
             Write_Flash_hex_fast(3926, Img_data_use)
         elif write_path_index == 4:
             Write_Flash_hex_fast(0, Img_data_use)
-        write_path_index = 0
         state_change_set(save=False)
 
     if LCD_Change_now != config_obj.lcd_change:  # 显示方向与设置不符合

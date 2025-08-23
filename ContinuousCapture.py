@@ -57,6 +57,7 @@ class ContinuousCapture:
     def setup_resources(self):
         """ 初始化截图所需的资源 """
         self.dpi_width, self.dpi_height = self.getDpiRect()
+        # print(self.dpi_width, self.dpi_height)
 
         # 获取窗口设备上下文
         self.hwndDC = win32gui.GetWindowDC(self.hwnd)
