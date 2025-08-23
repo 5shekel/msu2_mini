@@ -363,7 +363,6 @@ def Write_Photo_Path1():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 1
-    state_change_set(save=False)
 
 
 def Write_Photo_Path2():  # 写入文件
@@ -380,8 +379,6 @@ def Write_Photo_Path2():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 2
-    if config_obj.state_machine == PCTIME_PAGE_ID:
-        state_change_set(save=False)
 
 
 def Write_Photo_Path3():  # 写入文件
@@ -398,8 +395,6 @@ def Write_Photo_Path3():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 3
-    if config_obj.state_machine == PHOTO_PAGE_ID:
-        state_change_set(save=False)
 
 
 def Write_Photo_Path4():  # 写入文件
@@ -514,8 +509,6 @@ def Write_Photo_Path4():  # 写入文件
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
         return
     write_path_index = 4
-    if config_obj.state_machine == GIF_PAGE_ID:
-        state_change_set(save=False)
 
 
 def state_change_set(message=None, save=True):
@@ -3460,6 +3453,7 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
         elif write_path_index == 4:
             Write_Flash_hex_fast(0, Img_data_use)
         write_path_index = 0
+        state_change_set(save=False)
 
     if LCD_Change_now != config_obj.lcd_change:  # 显示方向与设置不符合
         LCD_Change_now = config_obj.lcd_change
