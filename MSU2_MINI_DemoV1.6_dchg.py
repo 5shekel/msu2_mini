@@ -3131,10 +3131,10 @@ def UI_Page():  # 进行图像界面显示
             save_config()
 
     shrink_type = tk.IntVar(root, config_obj.shrink_type)
-    shrink_type_button1 = tk.Radiobutton(root, text="填充", anchor="center", value=1, variable=shrink_type,
+    shrink_type_button1 = tk.Radiobutton(root, text=" 填充", anchor="center", value=1, variable=shrink_type,
                                          command=lambda: change_shrink_type(shrink_type.get()))
     shrink_type_button1.grid(row=3, column=4, sticky=tk.EW, padx=5, pady=5)
-    shrink_type_button2 = tk.Radiobutton(root, text="适应", anchor="center", value=2, variable=shrink_type,
+    shrink_type_button2 = tk.Radiobutton(root, text=" 适应", anchor="center", value=2, variable=shrink_type,
                                          command=lambda: change_shrink_type(shrink_type.get()))
     shrink_type_button2.grid(row=3, column=5, sticky=tk.EW, padx=5, pady=5)
 
