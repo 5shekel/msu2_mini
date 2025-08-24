@@ -45,8 +45,10 @@ if isWindows:
         except:
             pass
     try:
+        scale_factor = windll.shcore.GetScaleFactorForDevice(0)
         system_dpi = windll.user32.GetDpiForSystem()
     except:
+        scale_factor = 100
         system_dpi = 96.0
 
     try:
@@ -2889,6 +2891,8 @@ def UI_Page():  # 进行图像界面显示
 
         def update_global_canvas():
             im = get_full_custom_im()
+            im = im.resize((SHOW_WIDTH * scale_factor // 150, SHOW_HEIGHT * scale_factor // 150),
+                           Image.Resampling.LANCZOS)
             tk_im = ImageTk.PhotoImage(im)
             canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
             canvas.image = tk_im
@@ -2912,7 +2916,8 @@ def UI_Page():  # 进行图像界面显示
         desc_label = tk.Label(view_frame, width=1, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=0, pady=0)
         desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
-        canvas = tk.Canvas(view_frame, width=SHOW_WIDTH, height=SHOW_HEIGHT, borderwidth=0)
+        canvas = tk.Canvas(view_frame, width=(SHOW_WIDTH * scale_factor // 150),
+                           height=(SHOW_HEIGHT * scale_factor // 150), borderwidth=0)
         canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
         text_area.bind("<KeyRelease>", update_global_text)  # 按键弹起时触发
@@ -3139,7 +3144,7 @@ def UI_Page():  # 进行图像界面显示
     shrink_type_button2.grid(row=3, column=5, sticky=tk.EW, padx=5, pady=5)
 
     # 创建自定义单选圆圈，因为默认圆圈在高分屏下不能自动调整大小，导致圆圈太小
-    font_size = tkfont.nametofont(str(shrink_type_button1.cget('font'))).measure("字")
+    font_size = 12 * scale_factor // 100
     select_img = Image.new('RGBA', (24, 24), (255, 255, 255, 0))
     draw = ImageDraw.Draw(select_img)
     draw.ellipse([2, 2, 22, 22], outline='#0078d7', width=1)
