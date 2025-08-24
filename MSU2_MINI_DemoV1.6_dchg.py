@@ -2618,7 +2618,7 @@ def UI_Page():  # 进行图像界面显示
     Label1.grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
 
     # 信息显示文本框
-    Text1 = tk.Text(root, state=tk.DISABLED, width=22, height=4, padx=5, pady=5)
+    Text1 = tk.Text(root, state=tk.DISABLED, wrap=tk.CHAR, width=22, height=4, padx=5, pady=5)
     Text1.grid(row=5, column=0, rowspan=3, columnspan=2, sticky=tk.NS, padx=5, pady=5)
 
     # 这两个线程尽早启动
