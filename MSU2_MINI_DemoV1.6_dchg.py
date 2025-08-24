@@ -597,7 +597,7 @@ def SER_Read():
 
 
 def SER_rw(data, read=True, size=0):
-    global ser
+    global ser, SER_lock
 
     result = bytearray()
     SER_lock.acquire()
@@ -2891,7 +2891,7 @@ def UI_Page():  # 进行图像界面显示
 
         def update_global_canvas():
             im = get_full_custom_im()
-            im = im.resize((SHOW_WIDTH * scale_factor // 150, SHOW_HEIGHT * scale_factor // 150),
+            im = im.resize((SHOW_WIDTH * scale_factor // 100, SHOW_HEIGHT * scale_factor // 100),
                            Image.Resampling.LANCZOS)
             tk_im = ImageTk.PhotoImage(im)
             canvas.create_image(0, 0, anchor=tk.NW, image=tk_im)
@@ -2906,7 +2906,8 @@ def UI_Page():  # 进行图像界面显示
                 save_config()
                 update_global_canvas()
 
-        text_area = tk.Text(text_frame, wrap=tk.WORD, width=10, height=10, padx=0, pady=0)
+        # wrap: WORD 按空白符如空格换行，CHAR 按字符换行，NONE 不换行
+        text_area = tk.Text(text_frame, wrap=tk.CHAR, width=10, height=10, padx=0, pady=0)
         text_area.insert(tk.END, config_obj.full_custom_template)
         text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=0, pady=0)
 
@@ -2916,8 +2917,8 @@ def UI_Page():  # 进行图像界面显示
         desc_label = tk.Label(view_frame, width=1, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=0, pady=0)
         desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
-        canvas = tk.Canvas(view_frame, width=(SHOW_WIDTH * scale_factor // 150),
-                           height=(SHOW_HEIGHT * scale_factor // 150), borderwidth=0)
+        canvas = tk.Canvas(view_frame, width=(SHOW_WIDTH * scale_factor // 100),
+                           height=(SHOW_HEIGHT * scale_factor // 100), borderwidth=0)
         canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
         text_area.bind("<KeyRelease>", update_global_text)  # 按键弹起时触发
