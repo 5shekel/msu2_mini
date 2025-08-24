@@ -3476,7 +3476,6 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
     global write_path_index, Img_data_use, color_use
 
     if write_path_index != 0:
-        write_path_index = 0
         if write_path_index == 1:
             photo_path = Label3.get("1.0", tk.END).rstrip()
             Write_Flash_Photo_fast(0, photo_path)
@@ -3486,6 +3485,7 @@ def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
             Write_Flash_hex_fast(3926, Img_data_use)
         elif write_path_index == 4:
             Write_Flash_hex_fast(0, Img_data_use)
+        write_path_index = 0
         state_change_set(save=False)
 
     if LCD_Change_now != config_obj.lcd_change:  # 显示方向与设置不符合
