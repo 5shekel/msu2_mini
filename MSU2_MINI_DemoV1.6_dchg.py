@@ -3138,6 +3138,25 @@ def UI_Page():  # 进行图像界面显示
                                          command=lambda: change_shrink_type(shrink_type.get()))
     shrink_type_button2.grid(row=3, column=5, sticky=tk.EW, padx=5, pady=5)
 
+    # 创建自定义单选圆圈，因为默认圆圈在高分屏下不能自动调整大小，导致圆圈太小
+    font_size = tkfont.nametofont(str(shrink_type_button1.cget('font'))).measure("字")
+    select_img = Image.new('RGBA', (30, 30), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(select_img)
+    draw.ellipse([(2, 2), (28, 28)], outline='black', width=2)
+    draw.ellipse([(8, 8), (22, 22)], fill='black')
+    select_img = select_img.resize((font_size, font_size), Image.Resampling.LANCZOS)
+    select_tk = ImageTk.PhotoImage(select_img)
+    unselect_img = Image.new('RGBA', (30, 30), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(unselect_img)
+    draw.ellipse([(2, 2), (28, 28)], outline='black', width=2)
+    unselect_img = unselect_img.resize((font_size, font_size), Image.Resampling.LANCZOS)
+    unselect_tk = ImageTk.PhotoImage(unselect_img)
+    # 使用自定义单选圆圈
+    shrink_type_button1.config(image=unselect_tk, selectimage=select_tk, indicatoron=0, compound=tk.LEFT, bd=0,
+                               relief=tk.FLAT, overrelief=tk.FLAT, highlightthickness=0, selectcolor='#f0f0f0')
+    shrink_type_button2.config(image=unselect_tk, selectimage=select_tk, indicatoron=0, compound=tk.LEFT, bd=0,
+                               relief=tk.FLAT, overrelief=tk.FLAT, highlightthickness=0, selectcolor='#f0f0f0')
+
     # 动图间隔
 
     def change_photo_interval(*args):
