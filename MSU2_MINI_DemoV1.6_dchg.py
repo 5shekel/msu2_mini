@@ -2628,7 +2628,6 @@ def UI_Page():  # 进行图像界面显示
     def help_instruction():
         help_msg = '\n'.join([
             "该工具配套USB小屏幕使用，功能主要分两部分：烧写和显示。",
-            "这是增强版，原版见群文件MSU2_MINI_DemoV1.6_Output.py",
             "",
             "“烧写”包括：",
             "闪存固件：包括背景图像、相册图像、动图文件、LOGO、字体图像等。",
@@ -3173,7 +3172,7 @@ def UI_Page():  # 进行图像界面显示
             if len(interval_var.get()) > 0:
                 insert_text_message("Invalid number entered: %s" % e)
             return
-        if (photo_interval_tmp >= 0 and config_obj.photo_interval_var + config_obj.second_times * 2 !=
+        if (photo_interval_tmp >= 0 and config_obj.photo_interval_var + config_obj.second_times !=
                 photo_interval_tmp):
             config_obj.second_times = int(photo_interval_tmp)  # 舍去小数部分
             config_obj.photo_interval_var = photo_interval_tmp - config_obj.second_times
