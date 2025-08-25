@@ -1989,13 +1989,14 @@ def screen_process_task():
                 # if screen_process_queue.full():  # 这儿用于防止队列堆积，但是因为队列长度只有2，所以也不怕，所以注释掉
                 #     screen_process_queue.get()
 
+            # 转换图像为rgb格式
             sct_img, monitor = screen_shot_queue.get(timeout=2)
             if sct_img.rgb is not None:
                 rgb = sct_img.rgb  # 相机视频
                 if type(rgb) == bytes:  # sct.grab截图
                     rgb = np.frombuffer(rgb, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 3))
-            else:
-                bgra = sct_img.bgra  # win32gui截图
+            else:  # win32gui截图
+                bgra = sct_img.bgra
                 remain = sct_img.size[1] * sct_img.size[0] * 4 - len(bgra)
                 if remain == 0:  # 正常窗口
                     bgra = np.frombuffer(bgra, dtype=np.uint8).reshape((sct_img.size[1], sct_img.size[0], 4))
@@ -2009,11 +2010,16 @@ def screen_process_task():
                         (sct_img.size[1], len(bgra) // (sct_img.size[1] * 4), 4))
                     rgb = bgra[:, :sct_img.size[0], [2, 1, 0]]
 
+            # 是否需要旋转90度
+            # if sct_img.size[1] > sct_img.size[0]:
+            #     rgb = np.rot90(rgb, 1)
+
+            # 压缩图像到160*80，不足的填充
             width = monitor["width"]
-            height2 = monitor["height"] * 2
+            heightx2 = monitor["height"] * 2
             if config_obj.shrink_type == 1:
                 # 方法1：裁剪以 填充屏幕
-                if width > height2:  # 图片长宽比例超过2:1
+                if width > heightx2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
                     offset = (im1.shape[1] - SHOW_WIDTH) // 2
                     im1 = im1[:, offset: SHOW_WIDTH + offset]
@@ -2023,7 +2029,7 @@ def screen_process_task():
                     im1 = im1[offset: SHOW_HEIGHT + offset, :]
             else:
                 # 方法2：填充空白以 适应屏幕
-                if width > height2:  # 图片长宽比例超过2:1
+                if width > heightx2:  # 图片长宽比例超过2:1
                     im1 = shrink_image_block_average(rgb, rgb.shape[1] / SHOW_WIDTH)
                     total = SHOW_HEIGHT - len(im1)
                     np_fill_zero = row_np_zero.repeat(total // 2, axis=0)
@@ -2031,7 +2037,7 @@ def screen_process_task():
                         im1 = np.row_stack((np_fill_zero, im1, np_fill_zero, row_np_zero))
                     else:
                         im1 = np.row_stack((np_fill_zero, im1, np_fill_zero))
-                elif width == height2:  # 纵向充满
+                elif width == heightx2:  # 纵向充满
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
                 else:
                     im1 = shrink_image_block_average(rgb, rgb.shape[0] / SHOW_HEIGHT)
@@ -2042,6 +2048,7 @@ def screen_process_task():
                     else:
                         im1 = np.column_stack((np_fill_zero, im1, np_fill_zero))
 
+            # 转化为可直接写入小屏幕的格式
             # rgb888 = np.asarray(im1)
             rgb565 = rgb888_to_rgb565(im1)
             # arr = np.frombuffer(rgb565.flatten().tobytes(),dtype=np.uint16).astype(np.uint32)
@@ -2268,6 +2275,9 @@ def load_hardware_monitor():
 
             self.sensors = {format_sensor_name(hardware, sensor): (hardware, sensor)
                             for hardware, sensor in self.visitor.sensors}
+            # 初始全部更新一遍，否则第一次获取可能是错误的数据(没必要，加载太慢且多耗内存，并且非必现)
+            # for hardware, _ in self.visitor.sensors:
+            #     hardware.Update()
 
         def get_hardware(self, sensor_name):
             if sensor_name in self.sensors:
@@ -2755,52 +2765,6 @@ def UI_Page():  # 进行图像界面显示
 
     change_netspeed_font()
 
-    def center_window(top_window):
-        # Get the dimensions of the screen
-        screen_width = top_window.winfo_screenwidth()
-        screen_height = top_window.winfo_screenheight()
-
-        # Get the dimensions of the parent window
-        parent_width = window.winfo_width()
-        parent_height = window.winfo_height()
-        parent_x = window.winfo_x()
-        parent_y = window.winfo_y()
-
-        # Get the dimensions of the child window (default size)
-        top_window.update_idletasks()  # Update the window's size information
-        child_width = top_window.winfo_width()
-        child_height = top_window.winfo_height()
-
-        # Calculate the position
-        x = parent_x + (parent_width - child_width) // 2
-        y = parent_y + (parent_height - child_height) // 2
-
-        # Check if the child window exceeds the right boundary of the screen
-        x1 = screen_width - child_width - 50
-        if x > x1:
-            x = x1
-
-        # Check if the child window exceeds the bottom boundary of the screen
-        y1 = screen_height - child_height - 200
-        if y > y1:
-            y = y1
-
-        # Ensure the child window is not positioned outside of the left or top borders of the screen
-        if x < 50:
-            if x1 >= 50:
-                x = 50
-            elif x < 0:
-                x = 0
-
-        if y < 50:
-            if y1 >= 50:
-                y = 50
-            elif y < 0:
-                y = 0
-
-        # Set the position of the child window
-        top_window.geometry("+%d+%d" % (x, y))
-
     def show_custom():
         global config_obj, sub_window
         if hardware_monitor_manager == 1:
@@ -2823,6 +2787,7 @@ def UI_Page():  # 进行图像界面显示
         #     return
 
         sub_window = tk.Toplevel(window)  # 创建一个子窗口
+        sub_window.geometry("+%d+%d" % (window.winfo_x(), window.winfo_y()))  # 移到主窗口所在位置
         sub_window.title("自定义显示内容")
         sub_window.resizable(0, 0)  # 锁定窗口大小不能改变
         sub_window.protocol("WM_DELETE_WINDOW", sub_on_closing)
@@ -3043,8 +3008,6 @@ def UI_Page():  # 进行图像界面显示
             sensor_combobox.grid(row=row + 2, column=1, sticky=tk.EW, padx=5, pady=5)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
-        center_window(sub_window)
-
     show_custom_btn = ttk.Button(root, text="自定义内容", width=12, command=show_custom)
     show_custom_btn.grid(row=5, column=2, padx=5, pady=5)
 
@@ -3231,8 +3194,11 @@ def UI_Page():  # 进行图像界面显示
         else:
             long = (max(values, key=len).rstrip() + '0')
         font = tkfont.nametofont(str(combo.cget('font')))
-        width = min(max(0, font.measure(long) - combo.winfo_width()),
-                    window.winfo_screenwidth() - combo.winfo_rootx() - combo.winfo_width())
+        if combo.winfo_screenwidth() > combo.winfo_rootx():
+            width = max(0, min(font.measure(long) - combo.winfo_width(),
+                               combo.winfo_screenwidth() - combo.winfo_rootx() - combo.winfo_width()))
+        else:
+            width = max(0, font.measure(long) - combo.winfo_width())
         # create an unique style name using widget's id
         style_name = combo.cget('style') or "TCombobox"
         # the new style must inherit from curret widget style (unless it's our custom style!)

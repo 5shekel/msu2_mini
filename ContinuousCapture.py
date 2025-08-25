@@ -86,19 +86,19 @@ class ContinuousCapture:
 
     def getDpiRect(self):
         """ 根据dpi获取窗口实际大小 """
-        if self.hwnd != win32gui.GetDesktopWindow():
-            app_dpi = windll.user32.GetDpiForWindow(self.hwnd)
-            dpi = app_dpi / system_dpi
-        else:
+        if self.hwnd == win32gui.GetDesktopWindow():
             try:
-                hdc = win32gui.GetDC(0)
+                hdc = win32gui.GetDC(self.hwnd)
                 app_width = win32ui.GetDeviceCaps(hdc, win32con.HORZRES)
                 sys_width = win32ui.GetDeviceCaps(hdc, win32con.DESKTOPHORZRES)
                 dpi = sys_width / app_width
             except:
                 dpi = 1.0
             finally:
-                win32gui.ReleaseDC(0, hdc)
+                win32gui.ReleaseDC(self.hwnd, hdc)
+        else:
+            app_dpi = windll.user32.GetDpiForWindow(self.hwnd)
+            dpi = app_dpi / system_dpi
         return int(self.width * dpi), int(self.height * dpi)
 
     @staticmethod
