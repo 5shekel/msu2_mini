@@ -2602,9 +2602,11 @@ def UI_Page():  # 进行图像界面显示
     global State_change, Label1, Label3, Label4, Label5, Label6, PAGE_ID
 
     config_obj = load_config()
+    pad_scale_xy = scale_factor * 5 / 100.0
 
     # 创建主窗口
     window = tk.Tk()  # 实例化主窗口
+    # window.tk.call('tk', 'scaling', scale_factor / 100.0)
     window.title("MG USB屏幕助手V1.0")  # 设置标题
 
     # 修改默认图标
@@ -2613,23 +2615,39 @@ def UI_Page():  # 进行图像界面显示
     window.wm_iconphoto(True, defaulticon)
 
     # 创建 Frame 容器，并将其填充到整个窗口
-    root = tk.Frame(window, padx=5, pady=5, highlightthickness=1, highlightcolor="lightgray",
+    root = tk.Frame(window, padx=pad_scale_xy, pady=pad_scale_xy, highlightthickness=1, highlightcolor="lightgray",
                     highlightbackground="lightgray")
-    root.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+    root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=pad_scale_xy * 2, pady=pad_scale_xy * 2)
+
+    # root.grid_rowconfigure(0, weight=1)
+    # root.grid_rowconfigure(1, weight=1)
+    # root.grid_rowconfigure(2, weight=1)
+    # root.grid_rowconfigure(3, weight=1)
+    # root.grid_rowconfigure(4, weight=1)
+    # root.grid_rowconfigure(5, weight=1)
+    # root.grid_rowconfigure(6, weight=1)
+    # root.grid_rowconfigure(7, weight=1)
+    # root.grid_columnconfigure(0, weight=1)
+    # root.grid_columnconfigure(1, weight=1)
+    # root.grid_columnconfigure(2, weight=1)
+    # root.grid_columnconfigure(3, weight=1)
+    # root.grid_columnconfigure(4, weight=1)
+    # root.grid_columnconfigure(5, weight=1)
 
     # 创建一个容纳帮助按钮和状态的框
     state_frame = ttk.Frame(root, padding="0")
-    state_frame.grid(row=0, column=0, rowspan=1, columnspan=2, padx=0, pady=0, sticky=tk.NSEW)
+    state_frame.grid(row=0, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=0, pady=0)
     state_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
-    state_frame.grid_propagate(0)  # 禁止被内部控件撑大
+    # state_frame.grid_propagate(0)  # 禁止被内部控件撑大
 
     # 设备连接状态标签
-    Label1 = tk.Label(state_frame, text="设备未连接", fg="white", bg="red")
-    Label1.grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
+    Label1 = tk.Label(state_frame, text="设备未连接", fg="white", bg="red", padx=0, pady=0)
+    # pad - 2 是因为state_frame框宽度是1
+    Label1.grid(row=0, column=1, sticky=tk.W, padx=pad_scale_xy * 2 - 2, pady=pad_scale_xy * 2 - 2)
 
     # 信息显示文本框
-    Text1 = tk.Text(root, state=tk.DISABLED, wrap=tk.CHAR, width=22, height=4, padx=5, pady=5)
-    Text1.grid(row=5, column=0, rowspan=3, columnspan=2, sticky=tk.NS, padx=5, pady=5)
+    Text1 = tk.Text(root, state=tk.DISABLED, wrap=tk.CHAR, width=22, height=6, padx=pad_scale_xy, pady=pad_scale_xy)
+    Text1.grid(row=5, column=0, rowspan=3, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     # 这两个线程尽早启动
     daemon_thread.start()
@@ -2679,11 +2697,11 @@ def UI_Page():  # 进行图像界面显示
     # Label1.update()  # 获取大小前需要强制刷新，不然大小只能得到1
     # print(Label1.winfo_height())
     # linespace是行高，2是边框，10是因为pady设置为0，两边各空出5
-    help_image_height = tkfont.nametofont(str(Label1.cget('font'))).metrics("linespace") + 12
+    help_image_height = tkfont.nametofont(str(Label1.cget('font'))).metrics("linespace") + 12 * scale_factor // 100
     helpimage = helpimage.resize((help_image_height, help_image_height), Image.Resampling.LANCZOS)
     helpicon = ImageTk.PhotoImage(helpimage)
     help_instruction_btn = tk.Button(state_frame, image=helpicon, relief=tk.FLAT, command=help_instruction)
-    help_instruction_btn.grid(row=0, column=0, padx=0, pady=0, sticky=tk.W)
+    help_instruction_btn.grid(row=0, column=0, sticky=tk.NSEW, padx=0, pady=0)
 
     # 隐藏按钮
 
@@ -2712,38 +2730,38 @@ def UI_Page():  # 进行图像界面显示
             insert_text_message("Failed to use pystray to hide to tray, %s" % e)
 
     hide_btn = ttk.Button(root, text="隐藏", width=12, command=hide_to_tray)
-    hide_btn.grid(row=0, column=2, padx=5, pady=5)
+    hide_btn.grid(row=0, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     hide_btn.focus_set()  # 设置默认焦点
 
     # 选择和烧写按钮
 
-    Label3 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
-    Label3.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
+    Label3 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy, pady=pad_scale_xy)
+    Label3.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     btn31 = ttk.Button(root, text="选择闪存固件", width=12, command=lambda: Get_Photo_Path(1))
-    btn31.grid(row=1, column=2, padx=5, pady=5)
+    btn31.grid(row=1, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     btn32 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(1))
-    btn32.grid(row=1, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn32.grid(row=1, column=3, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
-    Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
-    Label4.grid(row=2, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
+    Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy, pady=pad_scale_xy)
+    Label4.grid(row=2, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     btn41 = ttk.Button(root, text="选择背景图像", width=12, command=lambda: Get_Photo_Path(2))
-    btn41.grid(row=2, column=2, padx=5, pady=5)
+    btn41.grid(row=2, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     btn42 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(2))
-    btn42.grid(row=2, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn42.grid(row=2, column=3, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
-    Label5 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
-    Label5.grid(row=3, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
+    Label5 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy, pady=pad_scale_xy)
+    Label5.grid(row=3, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     btn51 = ttk.Button(root, text="选择相册图像", width=12, command=lambda: Get_Photo_Path(3))
-    btn51.grid(row=3, column=2, padx=5, pady=5)
+    btn51.grid(row=3, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     btn52 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(3))
-    btn52.grid(row=3, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn52.grid(row=3, column=3, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
-    Label6 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=5, pady=5)
-    Label6.grid(row=4, column=0, rowspan=1, columnspan=2, sticky=tk.W, padx=5, pady=5)
+    Label6 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy, pady=pad_scale_xy)
+    Label6.grid(row=4, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     btn61 = ttk.Button(root, text="选择动图文件", width=12, command=lambda: Get_Photo_Path(4))
-    btn61.grid(row=4, column=2, padx=5, pady=5)
+    btn61.grid(row=4, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     btn62 = ttk.Button(root, text="烧写", width=9, command=lambda: Start_Write_Photo_Path(4))
-    btn62.grid(row=4, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn62.grid(row=4, column=3, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     # 自定义显示内容
 
@@ -2801,7 +2819,7 @@ def UI_Page():  # 进行图像界面显示
 
         # 创建一个选项卡
         notebook = ttk.Notebook(sub_window)
-        notebook.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=tk.W)
+        notebook.grid(row=0, column=0, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy * 2, pady=pad_scale_xy * 2)
 
         # 添加“自定义多项”标签页
 
@@ -2810,9 +2828,9 @@ def UI_Page():  # 进行图像界面显示
         tech_frame.focus_set()  # 设置默认焦点
 
         desc_label = tk.Label(tech_frame, text="名称")
-        desc_label.grid(row=1, column=0, padx=5, pady=5)
+        desc_label.grid(row=1, column=0, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
         desc_label = tk.Label(tech_frame, text="项目")
-        desc_label.grid(row=1, column=1, padx=5, pady=5)
+        desc_label.grid(row=1, column=1, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
         def update_sensor_value_tech(event, tvars, i):
             global config_obj
@@ -2833,7 +2851,7 @@ def UI_Page():  # 进行图像界面显示
                 rowtype = "%d." % (row1 + 1)
 
             sensor_label = tk.Label(tech_frame, text=rowtype, width=8, anchor=tk.W)
-            sensor_label.grid(row=row1 + 2, column=0, sticky=tk.EW, padx=5, pady=5)
+            sensor_label.grid(row=row1 + 2, column=0, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
             sensor_var = tk.StringVar(tech_frame, config_obj.custom_selected_names_tech[row1])
             sensor_vars_tech.append(sensor_var)
@@ -2841,17 +2859,17 @@ def UI_Page():  # 进行图像界面显示
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
             sensor_combobox.bind("<<ComboboxSelected>>",
                                  lambda event, ii=row1: update_sensor_value_tech(event, sensor_vars_tech, ii))
-            sensor_combobox.grid(row=row1 + 2, column=1, sticky=tk.EW, padx=5, pady=5)
+            sensor_combobox.grid(row=row1 + 2, column=1, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
         row += 2
         desc_label = tk.Label(tech_frame, text="完全自定义模板代码：", anchor=tk.W, justify=tk.LEFT)
-        desc_label.grid(row=row, column=0, columnspan=2, padx=5, pady=5, sticky=tk.EW)
+        desc_label.grid(row=row, column=0, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
         # 创建自定义内容输入框
         row += 1
         text_frame = ttk.Frame(tech_frame, padding="5")
-        text_frame.grid(row=row, column=0, columnspan=2, padx=5, pady=0, sticky=tk.EW)
+        text_frame.grid(row=row, column=0, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=0)
 
         def update_global_canvas():
             im = get_full_custom_im()
@@ -2883,7 +2901,7 @@ def UI_Page():  # 进行图像界面显示
 
         canvas = tk.Canvas(view_frame, width=(SHOW_WIDTH * scale_factor // 100),
                            height=(SHOW_HEIGHT * scale_factor // 100), borderwidth=0)
-        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
+        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=0)
 
         text_area.bind("<KeyRelease>", update_global_text)  # 按键弹起时触发
         # text_area.bind("<FocusOut>", update_global_text)  # 当组件失去焦点触发
@@ -2895,7 +2913,7 @@ def UI_Page():  # 进行图像界面显示
 
         row += 1
         btn_frame = ttk.Frame(tech_frame, padding="5")
-        btn_frame.grid(row=row, column=0, columnspan=2, padx=0, pady=0, sticky=tk.EW)
+        btn_frame.grid(row=row, column=0, columnspan=2, sticky=tk.NSEW, padx=0, pady=0)
         btn_frame.grid_columnconfigure(0, weight=1)  # 设置第1列自动调整宽度
         btn_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
         btn_frame.grid_columnconfigure(2, weight=1)  # 设置第3列自动调整宽度
@@ -2910,7 +2928,7 @@ def UI_Page():  # 进行图像界面显示
                 tk.messagebox.showerror(title="错误", message=full_custom_error, parent=sub_window)
 
         show_error_btn = ttk.Button(btn_frame, text="查看模板错误", width=15, command=show_error)
-        show_error_btn.grid(row=0, column=0, padx=5, pady=5, sticky=tk.EW)
+        show_error_btn.grid(row=0, column=0, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
         def example(i):
             global config_obj
@@ -2935,9 +2953,9 @@ def UI_Page():  # 进行图像界面显示
             update_global_canvas()
 
         example_btn_1 = ttk.Button(btn_frame, text="科技", width=15, command=lambda: example(1))
-        example_btn_1.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
+        example_btn_1.grid(row=0, column=1, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
         example_btn_2 = ttk.Button(btn_frame, text="简单", width=15, command=lambda: example(2))
-        example_btn_2.grid(row=0, column=2, padx=5, pady=5, sticky=tk.EW)
+        example_btn_2.grid(row=0, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
         def show_instruction():
             instruction = '\n'.join([
@@ -2958,7 +2976,7 @@ def UI_Page():  # 进行图像界面显示
             tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window)
 
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, command=show_instruction)
-        show_instruction_btn.grid(row=0, column=3, padx=5, pady=5, sticky=tk.EW)
+        show_instruction_btn.grid(row=0, column=3, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
         # 添加“简单两项图表”标签页
 
@@ -2966,9 +2984,9 @@ def UI_Page():  # 进行图像界面显示
         notebook.add(simple_frame, text="  显示两项图表  ")
 
         desc_label = tk.Label(simple_frame, text="名称")
-        desc_label.grid(row=1, column=0, padx=5, pady=5)
+        desc_label.grid(row=1, column=0, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
         desc_label = tk.Label(simple_frame, text="项目")
-        desc_label.grid(row=1, column=1, padx=5, pady=5)
+        desc_label.grid(row=1, column=1, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
         def update_sensor_value(event, vvars, i):
             global config_obj, custom_plot_data
@@ -2997,7 +3015,7 @@ def UI_Page():  # 进行图像界面显示
             sensor_entry = ttk.Entry(simple_frame, textvariable=sensor_displayname_var, width=8)
             sensor_entry.bind("<KeyRelease>",
                               lambda event, ii=row: change_sensor_displayname(sensor_displayname_vars, ii))
-            sensor_entry.grid(row=row + 2, column=0, sticky=tk.EW, padx=5, pady=5)
+            sensor_entry.grid(row=row + 2, column=0, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
             sensor_var = tk.StringVar(simple_frame, config_obj.custom_selected_names[row])
             sensor_vars.append(sensor_var)
@@ -3005,22 +3023,22 @@ def UI_Page():  # 进行图像界面显示
                                            values=[""] + list(hardware_monitor_manager.sensors.keys()))
             sensor_combobox.bind("<<ComboboxSelected>>",
                                  lambda event, ii=row: update_sensor_value(event, sensor_vars, ii))
-            sensor_combobox.grid(row=row + 2, column=1, sticky=tk.EW, padx=5, pady=5)
+            sensor_combobox.grid(row=row + 2, column=1, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
     show_custom_btn = ttk.Button(root, text="自定义内容", width=12, command=show_custom)
-    show_custom_btn.grid(row=5, column=2, padx=5, pady=5)
+    show_custom_btn.grid(row=5, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     # 方向和翻页按钮
 
     btn7 = ttk.Button(root, text="切换显示方向", width=12, command=LCD_Change)
-    btn7.grid(row=6, column=2, padx=5, pady=5)
+    btn7.grid(row=6, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     btn1 = ttk.Button(root, text="上翻页", width=9, command=Page_UP)
-    btn1.grid(row=5, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn1.grid(row=5, column=3, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     btn2 = ttk.Button(root, text="下翻页", width=9, command=Page_Down)
-    btn2.grid(row=6, column=3, sticky=tk.EW, padx=5, pady=5)
+    btn2.grid(row=6, column=3, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     # 创建颜色滑块
 
@@ -3050,43 +3068,46 @@ def UI_Page():  # 进行图像界面显示
         config_obj.text_color_b = int(text_color_blue_scale.get())
         update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
-    Label2 = tk.Label(root, width=2)  # 颜色预览框
-    Label2.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=5, pady=5)
-
     scale_desc = tk.Label(root, text="文字颜色")
-    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=5, pady=5)
+    scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=pad_scale_xy, pady=pad_scale_xy)
+
+    Label2 = tk.Label(root, width=2)  # 颜色预览框
+    Label2.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=pad_scale_xy, pady=pad_scale_xy)
 
     update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
     color_frame = ttk.Frame(root, padding="0")
-    color_frame.grid(row=0, column=4, rowspan=3, columnspan=2, padx=5, pady=0, sticky=tk.NSEW)
+    color_frame.grid(row=0, column=4, rowspan=3, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     color_frame.grid_columnconfigure(1, weight=1)  # 设置第2列自动调整宽度
     color_frame.grid_propagate(0)  # 禁止被内部控件撑大
 
     scale_ind_r = tk.Label(color_frame, text="R")
-    scale_ind_r.grid(row=0, column=0, padx=0, pady=0, sticky=tk.SW)
+    scale_ind_r.grid(row=0, column=0, sticky=tk.NSEW, padx=0, pady=pad_scale_xy)
 
     text_color_red_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
+                                    width=scale_factor // 10, sliderlength=scale_factor // 8,
                                     takefocus=1, resolution=1, troughcolor="red", font=("TkDefaultFont", 9))
-    text_color_red_scale.grid(row=0, column=1, sticky=tk.EW, padx=0, pady=0)
+    text_color_red_scale.grid(row=0, column=1, sticky=tk.NSEW, padx=0, pady=0)
     text_color_red_scale.set(config_obj.text_color_r)
     text_color_red_scale.config(command=lambda x: update_label_color_red())
 
     scale_ind_g = tk.Label(color_frame, text="G")
-    scale_ind_g.grid(row=1, column=0, padx=0, pady=0, sticky=tk.SW)
+    scale_ind_g.grid(row=1, column=0, sticky=tk.NSEW, padx=0, pady=pad_scale_xy)
 
     text_color_green_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
+                                      width=scale_factor // 10, sliderlength=scale_factor // 8,
                                       takefocus=1, resolution=1, troughcolor="green", font=("TkDefaultFont", 9))
-    text_color_green_scale.grid(row=1, column=1, sticky=tk.EW, padx=0, pady=0)
+    text_color_green_scale.grid(row=1, column=1, sticky=tk.NSEW, padx=0, pady=0)
     text_color_green_scale.set(config_obj.text_color_g)
     text_color_green_scale.config(command=lambda x: update_label_color_green())
 
     scale_ind_b = tk.Label(color_frame, text="B")
-    scale_ind_b.grid(row=2, column=0, padx=0, pady=0, sticky=tk.SW)
+    scale_ind_b.grid(row=2, column=0, sticky=tk.NSEW, padx=0, pady=pad_scale_xy)
 
     text_color_blue_scale = tk.Scale(color_frame, from_=0, to=255, orient=tk.HORIZONTAL, borderwidth=0,
+                                     width=scale_factor // 10, sliderlength=scale_factor // 8,
                                      takefocus=1, resolution=1, troughcolor="blue", font=("TkDefaultFont", 9))
-    text_color_blue_scale.grid(row=2, column=1, sticky=tk.EW, padx=0, pady=0)
+    text_color_blue_scale.grid(row=2, column=1, sticky=tk.NSEW, padx=0, pady=0)
     text_color_blue_scale.set(config_obj.text_color_b)
     text_color_blue_scale.config(command=lambda x: update_label_color_blue())
 
@@ -3101,10 +3122,10 @@ def UI_Page():  # 进行图像界面显示
     shrink_type = tk.IntVar(root, config_obj.shrink_type)
     shrink_type_button1 = tk.Radiobutton(root, text=" 填充", anchor="center", value=1, variable=shrink_type,
                                          command=lambda: change_shrink_type(shrink_type.get()))
-    shrink_type_button1.grid(row=3, column=4, sticky=tk.EW, padx=5, pady=5)
+    shrink_type_button1.grid(row=3, column=4, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     shrink_type_button2 = tk.Radiobutton(root, text=" 适应", anchor="center", value=2, variable=shrink_type,
                                          command=lambda: change_shrink_type(shrink_type.get()))
-    shrink_type_button2.grid(row=3, column=5, sticky=tk.EW, padx=5, pady=5)
+    shrink_type_button2.grid(row=3, column=5, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     # 创建自定义单选圆圈，因为默认圆圈在高分屏下不能自动调整大小，导致圆圈太小
     font_size = 12 * scale_factor // 100
@@ -3152,10 +3173,10 @@ def UI_Page():  # 进行图像界面显示
     interval_var.set(config_obj.photo_interval_var + config_obj.second_times)
 
     label_screen_number = ttk.Label(root, text="动图间隔")
-    label_screen_number.grid(row=4, column=4, sticky=tk.E, padx=5, pady=5)
+    label_screen_number.grid(row=4, column=4, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     number_entry = ttk.Entry(root, textvariable=interval_var, width=4)
-    number_entry.grid(row=4, column=5, sticky=tk.EW, padx=5, pady=5)
+    number_entry.grid(row=4, column=5, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     # fps
 
@@ -3177,10 +3198,10 @@ def UI_Page():  # 进行图像界面显示
     fps_var.set(config_obj.fps_var)
 
     label = ttk.Label(root, text="最大 FPS")
-    label.grid(row=5, column=4, sticky=tk.E, padx=5, pady=5)
+    label.grid(row=5, column=4, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
-    fps_entry.grid(row=5, column=5, sticky=tk.EW, padx=5, pady=5)
+    fps_entry.grid(row=5, column=5, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     # 相机编号
 
@@ -3232,7 +3253,7 @@ def UI_Page():  # 进行图像界面显示
                 save_config()
 
     label_camera_number = ttk.Label(root, text="相机名称")
-    label_camera_number.grid(row=6, column=4, sticky=tk.E, padx=5, pady=5)
+    label_camera_number.grid(row=6, column=4, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
 
     all_cameras = get_all_cameras()
     if len(all_cameras) > 1:
@@ -3250,7 +3271,7 @@ def UI_Page():  # 进行图像界面显示
     camera_combobox.bind('<Configure>', combo_configure)
     camera_combobox.bind('<ButtonPress>', update_camera_list)
     camera_combobox.bind("<<ComboboxSelected>>", update_select_camera)
-    camera_combobox.grid(row=6, column=5, columnspan=1, sticky=tk.EW, padx=5, pady=5)
+    camera_combobox.grid(row=6, column=5, columnspan=1, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     camera_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
     def update_windows_list(event):
@@ -3277,7 +3298,7 @@ def UI_Page():  # 进行图像界面显示
                 save_config()
 
     label = ttk.Label(root, text="屏幕镜像窗口:")
-    label.grid(row=7, column=2, columnspan=1, sticky=tk.E, padx=5, pady=5)
+    label.grid(row=7, column=2, columnspan=1, sticky=tk.E, padx=pad_scale_xy, pady=pad_scale_xy)
 
     select_windows = get_hwnd_desc(config_obj.select_window_hwnd)
     if select_windows is None:
@@ -3290,7 +3311,7 @@ def UI_Page():  # 进行图像界面显示
     windows_combobox.bind('<Configure>', combo_configure)
     windows_combobox.bind('<ButtonPress>', update_windows_list)
     windows_combobox.bind("<<ComboboxSelected>>", update_select_hwnd)
-    windows_combobox.grid(row=7, column=3, columnspan=3, sticky=tk.EW, padx=5, pady=5)
+    windows_combobox.grid(row=7, column=3, columnspan=3, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
     windows_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
     def on_closing():
