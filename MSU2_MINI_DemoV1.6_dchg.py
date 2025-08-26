@@ -2794,8 +2794,9 @@ def UI_Page():  # 进行图像界面显示
 
         def sub_on_closing():
             window.attributes("-disabled", False)  # 启用主窗口
-            sub_window.destroy()
+            sub_window.destroy()  # 关闭并销毁子窗口
 
+        # 不销毁子窗口虽然会加快下次打开的速度，但是会多占用内存。考虑到这个窗口使用频率不高，下次重新创建即可
         #     # 点击关闭时仅隐藏子窗口，不真正关闭
         #     sub_window.withdraw()
         #
