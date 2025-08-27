@@ -2641,9 +2641,9 @@ def UI_Page():  # 进行图像界面显示
     # state_frame.grid_propagate(0)  # 禁止被内部控件撑大
 
     # 设备连接状态标签
-    Label1 = tk.Label(state_frame, text="设备未连接", fg="white", bg="red", padx=0, pady=0)
-    # pad - 2 是因为state_frame框宽度是1
-    Label1.grid(row=0, column=1, sticky=tk.W, padx=pad_scale_xy * 2 - 3, pady=pad_scale_xy * 2 - 3)
+    Label1 = tk.Label(state_frame, text="设备未连接", fg="white", bg="red", padx=0, pady=0,
+                      borderwidth=pad_scale_xy - 2)
+    Label1.grid(row=0, column=1, sticky=tk.W, padx=pad_scale_xy, pady=pad_scale_xy)
 
     # 信息显示文本框
     Text1 = tk.Text(root, state=tk.DISABLED, wrap=tk.CHAR, width=22, height=6, padx=pad_scale_xy, pady=pad_scale_xy)
@@ -2729,7 +2729,6 @@ def UI_Page():  # 进行图像界面显示
 
     hide_btn = ttk.Button(root, text="隐藏", width=12, command=hide_to_tray)
     hide_btn.grid(row=0, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
-    # hide_btn.focus_set()  # 设置默认焦点
 
     # 选择和烧写按钮
 
@@ -3070,7 +3069,7 @@ def UI_Page():  # 进行图像界面显示
     scale_desc = tk.Label(root, text="文字颜色")
     scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=pad_scale_xy, pady=pad_scale_xy)
 
-    Label2 = tk.Label(root, width=2)  # 颜色预览框
+    Label2 = tk.Label(root, width=2, borderwidth=scale_factor / 100)  # 颜色预览框
     Label2.grid(row=0, column=3, columnspan=1, sticky=tk.E, padx=pad_scale_xy, pady=pad_scale_xy)
 
     update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
