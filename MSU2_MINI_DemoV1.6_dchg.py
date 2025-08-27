@@ -2610,7 +2610,10 @@ def UI_Page():  # 进行图像界面显示
     window.title("MG USB屏幕助手V1.0")  # 设置标题
 
     # 修改默认图标
-    iconimage = MiniMark.load_image("resource/icon.ico")
+    if scale_factor < 200:
+        iconimage = MiniMark.load_image("resource/icon_small.ico")
+    else:
+        iconimage = MiniMark.load_image("resource/icon.ico")
     defaulticon = ImageTk.PhotoImage(iconimage)
     window.wm_iconphoto(True, defaulticon)
 
