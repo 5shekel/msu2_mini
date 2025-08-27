@@ -2531,7 +2531,7 @@ def save_config_thread():
         sleep_time = last_config_save_time - time.monotonic() + 5
 
     try:
-        with open(MiniMark.get_resource(config_file), "w", encoding="utf-8") as f:
+        with open(config_file, "w", encoding="utf-8") as f:
             json.dump(config_obj.__dict__, f)
     except Exception as e:
         print("写入配置失败：%s" % e)
@@ -2541,7 +2541,7 @@ def load_config():
     global config_file
     config_obj = sys_config()
     try:
-        with open(MiniMark.get_resource(config_file), "r", encoding="utf-8") as f:
+        with open(config_file, "r", encoding="utf-8") as f:
             config_obj.__dict__.update(json.load(f))
     except FileNotFoundError:
         save_config()
@@ -3374,7 +3374,7 @@ def set_device_state(state):
 
 
 def Get_MSN_Device(port_list):  # 尝试获取MSN设备
-    global config_obj, ADC_det, ser, State_change, LCD_Change_now
+    global config_file, config_obj, ADC_det, ser, State_change, LCD_Change_now
     if ser is not None and ser.is_open:
         ser.close()  # 先将异常的串口连接关闭，防止无法打开
 
@@ -3427,11 +3427,12 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                 My_MSN_Device = MSN_Device(port.device, msn_version)
                 print(get_formatted_time_string(datetime.now()), end=' ')
                 if port.location is None:
-                    insert_text_message("连接成功：%s\n当前页面：%s\n显示方向：%s" % (
-                        port.device, PAGE_ID_tmp[page_index], LCD_STATE_MESSAGE[config_obj.lcd_change]))
+                    insert_text_message("连接成功：%s\n当前页面：%s\n显示方向：%s\n配置文件：%s" % (
+                        port.device, PAGE_ID_tmp[page_index], LCD_STATE_MESSAGE[config_obj.lcd_change], config_file))
                 else:
-                    insert_text_message("连接成功：%s@%s\n当前页面：%s\n显示方向：%s" % (
-                        port.device, port.location, PAGE_ID_tmp[page_index], LCD_STATE_MESSAGE[config_obj.lcd_change]))
+                    insert_text_message("连接成功：%s@%s\n当前页面：%s\n显示方向：%s\n配置文件：%s" % (
+                        port.device, port.location, PAGE_ID_tmp[page_index], LCD_STATE_MESSAGE[config_obj.lcd_change],
+                        config_file))
                 break  # 退出当前for循环
             else:
                 print("设备无法连接，请检查连接是否正常：%s" % recv)
@@ -3745,6 +3746,7 @@ if __name__ == "__main__":
         screen_shot_queue = queue.Queue(2)
         screen_process_queue = queue.Queue(2)
 
+        config_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), config_file))
         config_obj = sys_config()
         mini_mark_parser = MiniMarkParser()
         default_font = MiniMark.load_font("./simhei.ttf", netspeed_font_size)
