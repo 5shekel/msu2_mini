@@ -2643,7 +2643,7 @@ def UI_Page():  # 进行图像界面显示
     # 设备连接状态标签
     Label1 = tk.Label(state_frame, text="设备未连接", fg="white", bg="red", padx=0, pady=0)
     # pad - 2 是因为state_frame框宽度是1
-    Label1.grid(row=0, column=1, sticky=tk.W, padx=pad_scale_xy * 2 - 2, pady=pad_scale_xy * 2 - 2)
+    Label1.grid(row=0, column=1, sticky=tk.W, padx=pad_scale_xy * 2 - 3, pady=pad_scale_xy * 2 - 3)
 
     # 信息显示文本框
     Text1 = tk.Text(root, state=tk.DISABLED, wrap=tk.CHAR, width=22, height=6, padx=pad_scale_xy, pady=pad_scale_xy)
@@ -2694,8 +2694,6 @@ def UI_Page():  # 进行图像界面显示
 
     # 帮助按钮
     helpimage = MiniMark.load_image("resource/ios-8-Help-icon_43821.ico")
-    # Label1.update()  # 获取大小前需要强制刷新，不然大小只能得到1
-    # print(Label1.winfo_height())
     # linespace是行高，2是边框，10是因为pady设置为0，两边各空出5
     help_image_height = tkfont.nametofont(str(Label1.cget('font'))).metrics("linespace") + 12 * scale_factor // 100
     helpimage = helpimage.resize((help_image_height, help_image_height), Image.Resampling.LANCZOS)
@@ -2731,7 +2729,7 @@ def UI_Page():  # 进行图像界面显示
 
     hide_btn = ttk.Button(root, text="隐藏", width=12, command=hide_to_tray)
     hide_btn.grid(row=0, column=2, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
-    hide_btn.focus_set()  # 设置默认焦点
+    # hide_btn.focus_set()  # 设置默认焦点
 
     # 选择和烧写按钮
 
