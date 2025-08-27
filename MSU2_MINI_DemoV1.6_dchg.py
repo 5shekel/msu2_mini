@@ -2696,7 +2696,7 @@ def UI_Page():  # 进行图像界面显示
         tk.messagebox.showinfo(title="帮助", message=help_msg, parent=root)
 
     # 帮助按钮
-    helpimage = MiniMark.load_image("resource/ios-8-Help-icon_43821.ico")
+    helpimage = MiniMark.load_image("resource/ios-8-Help-icon.ico")
     # linespace是行高，2是边框，10是因为pady设置为0，两边各空出5
     help_image_height = tkfont.nametofont(str(Label1.cget('font'))).metrics("linespace") + 12 * scale_factor // 100
     helpimage = helpimage.resize((help_image_height, help_image_height), Image.Resampling.LANCZOS)
