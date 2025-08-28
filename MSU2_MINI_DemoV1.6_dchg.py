@@ -3457,7 +3457,7 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
     set_device_state(1)  # 可以正常连接
     # 配置按键阈值
     ADC_det = (Read_ADC_CH(9) + Read_ADC_CH(9) + Read_ADC_CH(9)) // 3
-    ADC_det = ADC_det - 240  # 根据125的阈值判断是否被按下
+    ADC_det = ADC_det - 250  # 根据125的阈值判断是否被按下
 
 
 def MSN_Device_1_State_machine():  # MSN设备1的循环状态机
@@ -3605,8 +3605,8 @@ def manage_task():
                 if Read_ADC_CH(9) > ADC_det or Read_ADC_CH(9) > ADC_det:
                     continue  # 没有连续3次则忽略
 
-                if ADC_det - ADC_ch > 890:  # 阈值过大，校正检测阈值
-                    ADC_det = ADC_ch - 240
+                if ADC_det - ADC_ch > 900:  # 阈值过大，校正检测阈值
+                    ADC_det = ADC_ch - 250
                     print("校正按下检测阈值为：%d" % ADC_det)
                     continue
 
@@ -3637,8 +3637,8 @@ def manage_task():
                     if first_press_time == 1:
                         first_press_time = 0
                 elif now - last_check_time > check_limit:
-                    if ADC_ch - ADC_det > 40 + 240:  # 阈值过小，校正检测阈值
-                        ADC_det = (ADC_det + ADC_ch - 240) // 2
+                    if ADC_ch - ADC_det > 40 + 250:  # 阈值过小，校正检测阈值
+                        ADC_det = (ADC_det + ADC_ch - 250) // 2
                         print("校正按键检测阈值为：%d" % ADC_det)
                     time.sleep(0.1)  # 没有按键时减缓读取频率
                 else:
