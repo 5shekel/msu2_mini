@@ -3605,8 +3605,8 @@ def manage_task():
                 if Read_ADC_CH(9) > ADC_det or Read_ADC_CH(9) > ADC_det:
                     continue  # 没有连续3次则忽略
 
-                if ADC_det - ADC_ch > 2500:  # 校正检测阈值
-                    ADC_det = (ADC_det + ADC_ch - 200) // 2
+                if ADC_det - ADC_ch > 920:  # 阈值过大，校正检测阈值。900会导致反复校正，但是是经过多次测试值
+                    ADC_det = ADC_ch - 220
                     print("校正按下检测阈值为：%d" % ADC_det)
                     continue
 
@@ -3637,7 +3637,7 @@ def manage_task():
                     if first_press_time == 1:
                         first_press_time = 0
                 elif now - last_check_time > check_limit:
-                    if ADC_ch - ADC_det > 40 + 200:  # 校正检测阈值
+                    if ADC_ch - ADC_det > 40 + 200:  # 阈值过小，校正检测阈值
                         ADC_det = (ADC_det + ADC_ch - 200) // 2
                         print("校正按键检测阈值为：%d" % ADC_det)
                     time.sleep(0.1)  # 没有按键时减缓读取频率
