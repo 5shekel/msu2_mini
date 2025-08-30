@@ -2693,7 +2693,7 @@ def UI_Page():  # 进行图像界面显示
             "启动时隐藏：",
             "支持启动既隐藏，可在快捷方式中或启动命令后增加参数-h或-hide"
         ])
-        tk.messagebox.showinfo(title="帮助", message=help_msg, parent=root)
+        tk.messagebox.showinfo(title="帮助", message=help_msg, parent=root, icon='question')
 
     # 帮助按钮
     helpimage = MiniMark.load_image("resource/ios-8-Help-icon.ico")
@@ -2974,7 +2974,7 @@ def UI_Page():  # 进行图像界面显示
                 "* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
                 "当选择没有权限的项目时，点击“查看模板错误”会给出错误提示。"
             ])
-            tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window)
+            tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window, icon='question')
 
         show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, command=show_instruction)
         show_instruction_btn.grid(row=0, column=3, sticky=tk.NSEW, padx=pad_scale_xy, pady=pad_scale_xy)
