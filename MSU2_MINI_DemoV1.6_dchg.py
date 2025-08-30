@@ -162,7 +162,7 @@ def get_all_windows():
 
     def add_dict(dicts, hwnd, title, parent):
         if len(title) > 100:
-            title = title[:100] + '...'
+            title = title[:100] + ' …'
         # key需要包含hwnd，否则可能因key重复被覆盖
         dicts["[%s] - %s (%s)" % (get_process_name(hwnd), title, hwnd)] = (hwnd, parent)
 
@@ -359,7 +359,7 @@ def Write_Photo_Path1():  # 写入文件
     if not photo_path:
         insert_text_message("闪存固件未选择")
         return
-    insert_text_message("准备烧写Flash固件...", cleanNext=False)
+    insert_text_message("准备烧写Flash固件…", cleanNext=False)
 
     if write_path_index != 0:  # 确保上次执行写入完毕
         insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
@@ -374,7 +374,7 @@ def Write_Photo_Path2():  # 写入文件
         insert_text_message("背景图像未选择")
         return
 
-    insert_text_message("图像格式转换...", cleanNext=False)
+    insert_text_message("图像格式转换…", cleanNext=False)
     Img_data_use = convertImageFileToRGB(photo_path)
 
     if write_path_index != 0:  # 确保上次执行写入完毕
@@ -390,7 +390,7 @@ def Write_Photo_Path3():  # 写入文件
         insert_text_message("相册图像未选择")
         return
 
-    insert_text_message("图像格式转换...", cleanNext=False)
+    insert_text_message("图像格式转换…", cleanNext=False)
     Img_data_use = convertImageFileToRGB(photo_path)
 
     if write_path_index != 0:  # 确保上次执行写入完毕
@@ -407,7 +407,7 @@ def Write_Photo_Path4():  # 写入文件
         return
 
     Img_data_use = bytearray()
-    insert_text_message("动图格式转换中...", cleanNext=False)
+    insert_text_message("动图格式转换中…", cleanNext=False)
     Path_use1 = photo_path
     try:
         index = Path_use1.rindex(".")
@@ -940,7 +940,7 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        insert_text_message("找到\"%s\"文件，大小%dB，烧录中..." % (filepath, Fsize), cleanNext=False)
+        insert_text_message("找到\"%s\"文件，大小%dB，烧录中…" % (filepath, Fsize), cleanNext=False)
         u_time = time.time()
         Page_Count = Fsize // 256
         Data_Remain = Fsize % 256
@@ -974,7 +974,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
     if Fsize == 0:
         insert_text_message("未读到数据，取消烧录。")
         return 0
-    insert_text_message("大小%dB，烧录中..." % Fsize, cleanNext=False)
+    insert_text_message("大小%dB，烧录中…" % Fsize, cleanNext=False)
     u_time = time.time()
     Page_Count = Fsize // 256
     Data_Remain = Fsize % 256
