@@ -282,7 +282,6 @@ def convertImageFileToRGB(file_path):
     im1 = None
     try:
         im1 = Image.open(file_path)
-        ImageOps.exif_transpose(im1, in_place=True)  # 针对旋转的图片
         return convertImageToRGB(im1)
     except Exception as e:
         errstr = "图片\"%s\"打开失败：%s" % (file_path, e)
@@ -294,8 +293,12 @@ def convertImageFileToRGB(file_path):
 
 
 def convertImageToRGB(image):
+    # 处理图片旋转
+    ImageOps.exif_transpose(image, in_place=True)
+    # 转换为RGB格式
     if image.mode != "RGB":
         image = image.convert("RGB")  # 转换为RGB格式。虽然转换再缩放会降低效率，但是能够提升缩小后的图片质量
+    # 缩放到160*80，同时长宽比例修改为2:1
     if image.width > (image.height * 2):  # 图片长宽比例超过2:1
         im2 = image.resize((SHOW_HEIGHT * image.width // image.height, SHOW_HEIGHT), Image.Resampling.LANCZOS)
         # 定义需要裁剪的空间
@@ -306,8 +309,9 @@ def convertImageToRGB(image):
         # 定义需要裁剪的空间
         box = (0, (im2.height - SHOW_HEIGHT) // 2, SHOW_WIDTH, (im2.height + SHOW_HEIGHT) // 2)
         im2 = im2.crop(box)
-
     # im2 = im2.convert("RGB")  # 转换为RGB格式
+
+    # 转换为RGB565
     img_data = bytearray()
     for y in range(0, SHOW_HEIGHT):  # 逐字解析编码
         for x in range(0, SHOW_WIDTH):  # 逐字解析编码
