@@ -22,7 +22,7 @@ import psutil  # 引入psutil获取设备信息（需要额外安装）
 import pystray
 import serial  # 引入串口库（需要额外安装）
 import serial.tools.list_ports
-from PIL import Image, ImageDraw, ImageTk  # 引入PIL库进行图像处理
+from PIL import Image, ImageDraw, ImageOps, ImageTk  # 引入PIL库进行图像处理
 from PyCameraList import camera_device
 
 import MSU2_MINI_MG_minimark as MiniMark
@@ -282,6 +282,7 @@ def convertImageFileToRGB(file_path):
     im1 = None
     try:
         im1 = Image.open(file_path)
+        ImageOps.exif_transpose(im1, in_place=True)  # 针对旋转的图片
         return convertImageToRGB(im1)
     except Exception as e:
         errstr = "图片\"%s\"打开失败：%s" % (file_path, e)
