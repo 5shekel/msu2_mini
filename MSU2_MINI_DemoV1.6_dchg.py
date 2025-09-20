@@ -61,7 +61,7 @@ if isWindows:
             print("WARN：需要以管理员权限启动本程序，否则部分指标将无法获取")
             # windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
             # sys.exit(0)
-    except:
+    except Exception:
         pass
 else:  # linux
     # 命令行或后台启动需要加DISPLAY
@@ -464,7 +464,11 @@ def Write_Photo_Path4():  # 写入文件
                 curtime += realduration
 
                 gif.seek(gifseek)
-                converted = convertImageToRGB(gif)
+                converted = gif
+                # 如果长度小于宽度，则旋转90度
+                # if converted.width < converted.height:
+                #     converted = converted.transpose(Image.Transpose.ROTATE_270)
+                converted = convertImageToRGB(converted)
                 if len(converted) == 0:
                     insert_text_message("转换失败")
                     return  # 转换失败，取消写入
@@ -2752,19 +2756,19 @@ def UI_Page():  # 进行图像界面显示
     btn32 = ttk.Button(root, text="烧写", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(1))
     btn32.grid(row=1, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
-    Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    Label4.grid(row=2, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn41 = ttk.Button(root, text="选择背景图像", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(2))
-    btn41.grid(row=2, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn42 = ttk.Button(root, text="烧写", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(2))
-    btn42.grid(row=2, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-
     Label5 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    Label5.grid(row=3, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
+    Label5.grid(row=2, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
     btn51 = ttk.Button(root, text="选择相册图像", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(3))
-    btn51.grid(row=3, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
+    btn51.grid(row=2, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
     btn52 = ttk.Button(root, text="烧写", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(3))
-    btn52.grid(row=3, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
+    btn52.grid(row=2, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
+
+    Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy5, pady=pad_scale_xy5)
+    Label4.grid(row=3, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
+    btn41 = ttk.Button(root, text="选择背景图像", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(2))
+    btn41.grid(row=3, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
+    btn42 = ttk.Button(root, text="烧写", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(2))
+    btn42.grid(row=3, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     Label6 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy5, pady=pad_scale_xy5)
     Label6.grid(row=4, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
@@ -3282,6 +3286,7 @@ def UI_Page():  # 进行图像界面显示
     camera_combobox = ttk.Combobox(root, textvariable=camera_var, width=4, values=list(all_cameras.keys()))
     camera_combobox.bind('<Configure>', combo_configure)
     camera_combobox.bind('<ButtonPress>', update_camera_list)
+    camera_combobox.bind("<KeyPress>", update_camera_list)
     camera_combobox.bind("<<ComboboxSelected>>", update_select_camera)
     camera_combobox.grid(row=6, column=5, columnspan=1, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
     camera_combobox.configure(state="readonly")  # 设置选择框不可编辑
@@ -3322,6 +3327,7 @@ def UI_Page():  # 进行图像界面显示
                                     values=sorted(all_windows.keys(), key=str.lower))
     windows_combobox.bind('<Configure>', combo_configure)
     windows_combobox.bind('<ButtonPress>', update_windows_list)
+    windows_combobox.bind("<KeyPress>", update_windows_list)
     windows_combobox.bind("<<ComboboxSelected>>", update_select_hwnd)
     windows_combobox.grid(row=7, column=3, columnspan=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
     windows_combobox.configure(state="readonly")  # 设置选择框不可编辑
