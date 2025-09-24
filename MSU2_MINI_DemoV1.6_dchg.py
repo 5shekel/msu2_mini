@@ -3226,16 +3226,22 @@ def UI_Page():  # 进行图像界面显示
         values = combo.cget('values')
         if len(values) == 0:
             return
-        elif len(values) > 10:
-            long = (max(values, key=len).rstrip() + '000')
-        else:
-            long = (max(values, key=len).rstrip() + '0')
+
         font = tkfont.nametofont(str(combo.cget('font')))
-        if combo.winfo_screenwidth() > combo.winfo_rootx():
-            width = max(0, min(font.measure(long) - combo.winfo_width(),
-                               combo.winfo_screenwidth() - combo.winfo_rootx() - combo.winfo_width()))
+        maxWidth = combo.winfo_width()
+        for value in values:
+            fontw = font.measure(value)
+            if maxWidth < fontw:
+                maxWidth = fontw
+
+        if len(values) > 10:
+            maxWidth += font.measure('000') - combo.winfo_width()
         else:
-            width = max(0, font.measure(long) - combo.winfo_width())
+            maxWidth += font.measure('0') - combo.winfo_width()
+        width = combo.winfo_screenwidth() - combo.winfo_rootx() - combo.winfo_width()
+        if width < 0 or width > maxWidth:
+            width = maxWidth
+
         # create an unique style name using widget's id
         style_name = combo.cget('style') or "TCombobox"
         # the new style must inherit from curret widget style (unless it's our custom style!)
