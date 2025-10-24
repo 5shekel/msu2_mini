@@ -91,17 +91,17 @@ NETSPEED_PAGE_ID = 6
 CUSTOM1_PAGE_ID = 7
 CUSTOM2_PAGE_ID = 8
 PAGE_ID = {
-    GIF_PAGE_ID: "动图",
-    PCTIME_PAGE_ID: "时间",
-    PHOTO_PAGE_ID: "单个相册图片",
-    SCREEN_PAGE_ID: "屏幕镜像",
-    STATE_PAGE_ID: "电脑CPU/内存/磁盘/电池使用率监控",
-    NETSPEED_PAGE_ID: "网络流量监控",
+    GIF_PAGE_ID: "Animation",
+    PCTIME_PAGE_ID: "Time",
+    PHOTO_PAGE_ID: "Single Photo",
+    SCREEN_PAGE_ID: "Screen Mirror",
+    STATE_PAGE_ID: "PC CPU/Memory/Disk/Battery Monitor",
+    NETSPEED_PAGE_ID: "Network Traffic Monitor",
 }
 
 LCD_STATE_MESSAGE = [
-    "正向",
-    "反向"
+    "Normal",
+    "Reverse"
 ]
 
 IMAGE_FILE_TYPES = [
@@ -197,7 +197,7 @@ def get_all_windows():
     try:
         # 添加桌面
         desktop_hwnd = win32gui.GetDesktopWindow()
-        hwnd_titles["[%s] - 桌面" % desktop_hwnd] = (desktop_hwnd, 0)
+        hwnd_titles["[%s] - Desktop" % desktop_hwnd] = (desktop_hwnd, 0)
 
         # 遍历其他所有窗口
         win32gui.EnumWindows(get_all_hwnd, hwnd_titles)
@@ -276,7 +276,7 @@ def insert_text_message(text, cleanNext=True, item=None):
 
 def convertImageFileToRGB(file_path):
     if not os.path.exists(file_path):  # 检查文件是否存在
-        insert_text_message("文件不存在：%s" % file_path, cleanNext=False)
+        insert_text_message("File does not exist: %s" % file_path, cleanNext=False)
         return bytearray()  # 如果文件不存在，直接返回，不执行后续代码
 
     im1 = None
@@ -284,7 +284,7 @@ def convertImageFileToRGB(file_path):
         im1 = Image.open(file_path)
         return convertImageToRGB(im1)
     except Exception as e:
-        errstr = "图片\"%s\"打开失败：%s" % (file_path, e)
+        errstr = "Failed to open image \"%s\": %s" % (file_path, e)
         insert_text_message(errstr, cleanNext=False)
         return bytearray()
     finally:
@@ -326,26 +326,26 @@ def Get_Photo_Path(index):  # 获取文件路径
     global Label3, Label4, Label5, Label6
     if index == 1:
         photo_path = tk.filedialog.askopenfilename(
-            title="选择文件", filetypes=[("Bin file", "*.bin")])
+            title="Select File", filetypes=[("Bin file", "*.bin")])
         insert_text_message(photo_path, item=Label3)
     elif index == 2:
         photo_path = tk.filedialog.askopenfilename(
-            title="选择文件", filetypes=IMAGE_FILE_TYPES + [("Image file", "*.gif")])
+            title="Select File", filetypes=IMAGE_FILE_TYPES + [("Image file", "*.gif")])
         insert_text_message(photo_path, item=Label4)
     elif index == 3:
         photo_path = tk.filedialog.askopenfilename(
-            title="选择文件", filetypes=IMAGE_FILE_TYPES + [("Image file", "*.gif")])
+            title="Select File", filetypes=IMAGE_FILE_TYPES + [("Image file", "*.gif")])
         insert_text_message(photo_path, item=Label5)
     elif index == 4:
         photo_path = tk.filedialog.askopenfilename(
-            title="选择文件", filetypes=[("Gif file", "*.gif")] + IMAGE_FILE_TYPES)
+            title="Select File", filetypes=[("Gif file", "*.gif")] + IMAGE_FILE_TYPES)
         insert_text_message(photo_path, item=Label6)
 
 
 def Start_Write_Photo_Path(index):  # 写入文件
     global Device_State
     if Device_State == 0:
-        insert_text_message("设备未连接，烧录失败")
+        insert_text_message("Device not connected, flash failed")
         return
     if index == 1:
         target = Write_Photo_Path1
@@ -362,12 +362,12 @@ def Write_Photo_Path1():  # 写入文件
     global Label3, write_path_index, sleep_event
     photo_path = Label3.get("1.0", tk.END).rstrip()
     if not photo_path:
-        insert_text_message("闪存固件未选择")
+        insert_text_message("Flash firmware not selected")
         return
-    insert_text_message("准备烧写Flash固件…", cleanNext=False)
+    insert_text_message("Preparing to flash firmware…", cleanNext=False)
 
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
+        insert_text_message("Task %d is running, write failed" % write_path_index)
         return
     write_path_index = 1
 
@@ -376,14 +376,14 @@ def Write_Photo_Path2():  # 写入文件
     global config_obj, Label4, write_path_index, Img_data_use, sleep_event
     photo_path = Label4.get("1.0", tk.END).rstrip()
     if not photo_path:
-        insert_text_message("背景图像未选择")
+        insert_text_message("Background image not selected")
         return
 
-    insert_text_message("图像格式转换…", cleanNext=False)
+    insert_text_message("Converting image format…", cleanNext=False)
     Img_data_use = convertImageFileToRGB(photo_path)
 
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
+        insert_text_message("Task %d is running, write failed" % write_path_index)
         return
     write_path_index = 2
 
@@ -392,14 +392,14 @@ def Write_Photo_Path3():  # 写入文件
     global config_obj, Label5, write_path_index, Img_data_use, sleep_event
     photo_path = Label5.get("1.0", tk.END).rstrip()
     if not photo_path:
-        insert_text_message("相册图像未选择")
+        insert_text_message("Album image not selected")
         return
 
-    insert_text_message("图像格式转换…", cleanNext=False)
+    insert_text_message("Converting image format…", cleanNext=False)
     Img_data_use = convertImageFileToRGB(photo_path)
 
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
+        insert_text_message("Task %d is running, write failed" % write_path_index)
         return
     write_path_index = 3
 
@@ -408,16 +408,16 @@ def Write_Photo_Path4():  # 写入文件
     global config_obj, Label6, interval_var, write_path_index, Img_data_use, sleep_event
     photo_path = Label6.get("1.0", tk.END).rstrip()
     if not photo_path:
-        insert_text_message("动图文件未选择")
+        insert_text_message("Animation file not selected")
         return
 
     Img_data_use = bytearray()
-    insert_text_message("动图格式转换中…", cleanNext=False)
+    insert_text_message("Converting animation format…", cleanNext=False)
     Path_use1 = photo_path
     try:
         index = Path_use1.rindex(".")
     except ValueError as e:
-        insert_text_message("动图名称不符合要求！%s" % e)
+        insert_text_message("Animation filename invalid! %s" % e)
         return  # 如果文件名不符合要求，直接返回
     path_file_type = Path_use1[index:]
 
@@ -427,10 +427,10 @@ def Write_Photo_Path4():  # 写入文件
         try:
             gif = Image.open(Path_use1)
             if not "duration" in gif.info:
-                insert_text_message("非动图文件：%s" % Path_use1)
+                insert_text_message("Not an animation file: %s" % Path_use1)
                 return
             if gif.n_frames > 1000:
-                insert_text_message("动图过大，无能为力")
+                insert_text_message("Animation too large, cannot process")
                 return
 
             durations = []
@@ -447,10 +447,10 @@ def Write_Photo_Path4():  # 写入文件
             realduration = longs / 36.0
             if realduration >= 10:
                 duration_string = "%.4f" % (realduration / 1000.0)
-                massage = "建议动图间隔：%s" % duration_string
+                massage = "Recommended animation interval: %s" % duration_string
                 interval_var.set(duration_string)
             else:
-                massage = "动图太短，不建议使用此动图"
+                massage = "Animation too short, not recommended"
                 interval_var.set("0.1")
             insert_text_message(massage, cleanNext=False)
 
@@ -470,11 +470,11 @@ def Write_Photo_Path4():  # 写入文件
                 #     converted = converted.transpose(Image.Transpose.ROTATE_270)
                 converted = convertImageToRGB(converted)
                 if len(converted) == 0:
-                    insert_text_message("转换失败")
+                    insert_text_message("Conversion failed")
                     return  # 转换失败，取消写入
                 Img_data_use.extend(converted)
         except Exception as e:
-            insert_text_message("图片\"%s\"打开失败：%s" % (Path_use1, e))
+            insert_text_message("Failed to open image \"%s\": %s" % (Path_use1, e))
             print(traceback.format_exc())
             return
         finally:
@@ -493,7 +493,7 @@ def Write_Photo_Path4():  # 写入文件
                 file_path = "%s%d%s" % (Path_use, i, path_file_type)
                 converted = convertImageFileToRGB(file_path)
                 if len(converted) == 0:
-                    insert_text_message("转换失败")
+                    insert_text_message("Conversion failed")
                     return  # 转换失败，取消写入
                 Img_data_use.extend(converted)
         else:  # 不是规则命名，只按文件类型查找文件
@@ -502,22 +502,22 @@ def Write_Photo_Path4():  # 写入文件
             try:
                 files = glob.glob(file_path)  # 按类型列出所有文件
             except Exception as e:
-                insert_text_message("转换失败: %s" % e)
+                insert_text_message("Conversion failed: %s" % e)
                 return  # 转换失败，取消写入
             if len(files) < 36:
-                insert_text_message("转换失败，图片不够36张")
+                insert_text_message("Conversion failed, less than 36 images")
                 return  # 转换失败，取消写入
             for i in range(0, 36):  # 依次转换36张图片
                 converted = convertImageFileToRGB(files[i])
                 if len(converted) == 0:
-                    insert_text_message("转换失败")
+                    insert_text_message("Conversion failed")
                     return  # 转换失败，取消写入
                 Img_data_use.extend(converted)
 
-    insert_text_message("转换完成，耗时%.1f秒" % (time.time() - u_time), cleanNext=False)
+    insert_text_message("Conversion completed, took %.1f seconds" % (time.time() - u_time), cleanNext=False)
 
     if write_path_index != 0:  # 确保上次执行写入完毕
-        insert_text_message("有正在执行的任务%d，写入失败" % write_path_index)
+        insert_text_message("Task %d is running, write failed" % write_path_index)
         return
     write_path_index = 4
 
@@ -575,7 +575,7 @@ def Page_Down():  # 下一页
 def LCD_Change():  # 切换显示方向
     global config_obj, Device_State, sleep_event
     if Device_State == 0:
-        insert_text_message("设备未连接，切换失败")
+        insert_text_message("Device not connected, switch failed")
         return
     config_obj.lcd_change ^= 1
     state_change_set(LCD_STATE_MESSAGE[config_obj.lcd_change])
@@ -612,7 +612,7 @@ def SER_rw(data, read=True, size=0):
     SER_lock.acquire()
     try:
         if not ser.is_open:
-            print("设备未连接，取消串口读写")
+            print("Device not connected, canceling serial port read/write")
             return result
 
         SER_Write(data)  # 发出指令
@@ -626,7 +626,7 @@ def SER_rw(data, read=True, size=0):
             if len(result) >= size:
                 return result
     except Exception as e:  # 出现异常
-        print("串口读写异常，%s" % e)
+        print("Serial port read/write exception, %s" % e)
         ser.close()
     finally:
         SER_lock.release()
@@ -945,11 +945,11 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
     try:  # 尝试打开bin文件
         Fsize = os.path.getsize(filepath)
         if Fsize == 0:
-            insert_text_message("未读到数据，取消烧录。")
+            insert_text_message("No data read, canceling flash.")
             return 0
         binfile = open(filepath, "rb")  # 以只读方式打开
 
-        insert_text_message("找到\"%s\"文件，大小%dB，烧录中…" % (filepath, Fsize), cleanNext=False)
+        insert_text_message("Found \"%s\" file, size %dB, flashing…" % (filepath, Fsize), cleanNext=False)
         u_time = time.time()
         Page_Count = Fsize // 256
         Data_Remain = Fsize % 256
@@ -968,10 +968,10 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
                 Fdata.append(0xFF)  # 不足位置补充0xFF
             Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
         u_time = time.time() - u_time
-        insert_text_message("烧写完成，耗时%.1f秒" % u_time)
+        insert_text_message("Flash completed, took %.1f seconds" % u_time)
         return 1
     except Exception as e:  # 出现异常
-        insert_text_message("文件路径或格式出错\"%s\"，%s" % (filepath, e))
+        insert_text_message("File path or format error \"%s\", %s" % (filepath, e))
         return 0
     finally:
         if binfile is not None:
@@ -981,9 +981,9 @@ def Write_Flash_Photo_fast(Page_add, filepath):  # 往Flash里面写入Bin格式
 def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
     Fsize = len(img_use)
     if Fsize == 0:
-        insert_text_message("未读到数据，取消烧录。")
+        insert_text_message("No data read, canceling flash.")
         return 0
-    insert_text_message("大小%dB，烧录中…" % Fsize, cleanNext=False)
+    insert_text_message("Size %dB, flashing…" % Fsize, cleanNext=False)
     u_time = time.time()
     Page_Count = Fsize // 256
     Data_Remain = Fsize % 256
@@ -1001,7 +1001,7 @@ def Write_Flash_hex_fast(Page_add, img_use):  # 往Flash里面写入hex数据
         for i in range(Data_Remain, 256):
             Fdata.append(0xFF)  # 不足位置补充0xFF
         Write_Flash_Page_fast(Page_add + Page_Count, Fdata, 1)  # (page,数据，大小)
-    insert_text_message("烧写完成，耗时%.1f秒" % (time.time() - u_time))
+    insert_text_message("Flash completed, took %.1f seconds" % (time.time() - u_time))
     return 1
 
 
@@ -1870,14 +1870,14 @@ def screen_shot_task():  # 创建专门的函数来获取屏幕图像和处理�
                 camera_id = all_cameras.get(config_obj.camera_var)
                 if camera_id is None:
                     # 没有图像时显示黑色背景
-                    rgb888 = get_draw_text("请选择相机…")
+                    rgb888 = get_draw_text("Please select camera…")
                     image = Win32_Image(rgb=rgb888, size=(SHOW_WIDTH, SHOW_HEIGHT))
                     screen_shot_queue.put((image, {"width": SHOW_WIDTH, "height": SHOW_HEIGHT}), timeout=1)
                     time.sleep(0.5)
                     continue
 
                 # 打开相机
-                rgb888 = get_draw_text("打开中…")
+                rgb888 = get_draw_text("Opening…")
                 image = Win32_Image(rgb=rgb888, size=(SHOW_WIDTH, SHOW_HEIGHT))
                 screen_shot_queue.put((image, {"width": SHOW_WIDTH, "height": SHOW_HEIGHT}), timeout=1)
                 camera_name = config_obj.camera_var
@@ -2166,9 +2166,9 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
     draw = ImageDraw.Draw(im1)
 
     # 绘制文字
-    text = "上传 %9s/s" % sizeof_fmt(sent_per_second)
+    text = "Upload %9s/s" % sizeof_fmt(sent_per_second)
     draw.text((0, 0), text, fill=text_color, font=default_font)
-    text = "下载 %9s/s" % sizeof_fmt(recv_per_second)
+    text = "Download %9s/s" % sizeof_fmt(recv_per_second)
     draw.text((0, SHOW_HEIGHT // 2), text, fill=text_color, font=default_font)
 
     # 绘图
@@ -2326,8 +2326,8 @@ def get_draw_text(text, font_size=20, front_color=None, back_color=(0, 0, 0)):
     # 绘制图片
     im1 = Image.new("RGB", (SHOW_WIDTH, SHOW_HEIGHT), back_color)
     draw = ImageDraw.Draw(im1)
-    # 绘制文字
-    font = MiniMark.load_font("./simhei.ttf", font_size)
+    # Draw text
+    font = MiniMark.load_font("resource/Orbitron-Regular.ttf", font_size)
     font_l = font.getlength(text)
     draw.text(((SHOW_WIDTH - font_l) // 2, (SHOW_HEIGHT - font_size) // 2), text, fill=front_color, font=font)
 
@@ -2349,7 +2349,7 @@ def show_custom_two_rows(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
     global custom_plot_data, hardware_monitor_manager, netspeed_font, sleep_event
     current_monoto_time = time.monotonic()
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
-        draw_text("加载中…")
+        draw_text("Loading…")
         sleep_event.wait(0.5)
         return
 
@@ -2457,9 +2457,9 @@ def get_full_custom_im():
             value, value_formatted = hardware_monitor_manager.get_value_formatted(name)
             if value is None:
                 if windll.shell32.IsUserAnAdmin():
-                    full_custom_error_tmp += "获取项目 \"%s\" 失败，请检查设置。\n" % name
+                    full_custom_error_tmp += "Failed to get item \"%s\", please check settings.\n" % name
                 else:
-                    full_custom_error_tmp += "获取项目 \"%s\" 失败，请尝试以管理员身份运行本程序。\n" % name
+                    full_custom_error_tmp += "Failed to get item \"%s\", try running as administrator.\n" % name
         # 没有数据也要放入列表，因为脚本是用序号来读数据的
         record_dict[str(index)] = (value_formatted, value)
         index += 1
@@ -2493,7 +2493,7 @@ def show_full_custom():
     global last_refresh_time, State_change, wait_time, hardware_monitor_manager, sleep_event
     current_monoto_time = time.monotonic()
     if hardware_monitor_manager is None or hardware_monitor_manager == 1:
-        draw_text("加载中…")
+        draw_text("Loading…")
         sleep_event.wait(0.5)
         return
 
@@ -2547,7 +2547,7 @@ def save_config_thread():
         with open(config_file, "w", encoding="utf-8") as f:
             json.dump(config_obj.__dict__, f)
     except Exception as e:
-        print("写入配置失败：%s" % e)
+        print("Failed to write config: %s" % e)
 
 
 def load_config():
@@ -2559,7 +2559,7 @@ def load_config():
     except FileNotFoundError:
         save_config()
     except Exception as e:
-        print("读取配置失败，使用默认配置：%s" % e)
+        print("Failed to read config, using defaults: %s" % e)
     return config_obj
 
 
@@ -2583,7 +2583,7 @@ def get_hwnd_desc(hwnd):
     if isWindows:
         all_windows = get_all_windows()
     else:
-        all_windows = {"桌面": (0, 0)}
+        all_windows = {"Desktop": (0, 0)}
 
     for key, value in all_windows.items():
         if value[0] == hwnd:
@@ -2621,7 +2621,7 @@ def UI_Page():  # 进行图像界面显示
     # 创建主窗口
     window = tk.Tk()  # 实例化主窗口
     # window.tk.call('tk', 'scaling', pad_scale_xy)
-    window.title("MG USB屏幕助手V1.0")  # 设置标题
+    window.title("MG USB Screen Assistant V1.0")  # Set title
 
     # 修改默认图标
     if scale_factor < 200:
@@ -2658,7 +2658,7 @@ def UI_Page():  # 进行图像界面显示
     # state_frame.grid_propagate(0)  # 禁止被内部控件撑大
 
     # 设备连接状态标签
-    Label1 = tk.Label(state_frame, text="设备未连接", fg="white", bg="red", padx=0, pady=0,
+    Label1 = tk.Label(state_frame, text="Device Not Connected", fg="white", bg="red", padx=0, pady=0,
                       borderwidth=pad_scale_xy5 - 2)
     Label1.grid(row=0, column=1, sticky=tk.W, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
@@ -2672,42 +2672,42 @@ def UI_Page():  # 进行图像界面显示
 
     def help_instruction():
         help_msg = '\n'.join([
-            "该工具配套USB小屏幕使用，功能主要分两部分：烧写和显示。",
+            "This tool is used with USB small screens. Main functions: Flash and Display.",
             "",
-            "“烧写”包括：",
-            "闪存固件：包括背景图像、相册图像、动图文件、LOGO、字体图像等。",
-            "\t不包括主控固件，主控固件烧写方法需联系商家",
-            "背景图像：时钟背景图像，支持大部分图像格式",
-            "相册图像：单个相册图像，支持大部分图像格式",
-            "动图文件：支持两种烧写方式：36张图片或者gif文件",
-            "\t36张图片需要自己设置“动图间隔”，设置大于1秒可作为相册",
-            "\tgif文件需要是动图文件，烧写后会自动更新“动图间隔”",
+            "Flash includes:",
+            "Flash firmware: background images, album images, animation files, LOGO, font images, etc.",
+            "\tDoes not include MCU firmware, contact vendor for MCU firmware flashing",
+            "Background image: clock background image, supports most image formats",
+            "Album image: single album image, supports most image formats",
+            "Animation file: supports two flashing methods: 36 images or gif file",
+            "\t36 images require setting 'Animation Interval', set > 1 second for album mode",
+            "\tgif file must be animation, will auto-update 'Animation Interval' after flashing",
             "",
-            "“显示”包含如下页面，使用“上翻页”、“下翻页”切换。",
-            "动图：使用“动图间隔”调整播放速度，“动图间隔”设置较大时可作为相册",
-            "\t“动图间隔”最小支持0.02秒，最大无限制。默认是0.1秒",
-            "时间：显示实时时间，背景使用烧写的背景图像，用“文字颜色”调整颜色",
-            "单个相册图片：显示烧写的相册图像",
-            "屏幕镜像：使用“屏幕镜像窗口”选择窗口，使用“最大FPS”设置刷新率",
-            "\t对于最小化窗口和部分游戏窗口，镜像失败会只显示黑色",
-            "相机视频：使用“相机名称”选择摄像头，使用“最大FPS”设置刷新率",
-            "\t没有摄像头不显示该页面。最大FPS支持1-50，再大没有意义",
-            "电脑CPU/内存/磁盘/电池使用率监控：每秒刷新，用“文字颜色”调整颜色",
-            "网络流量监控：图表显示网络速度，单位Byte/s，用“文字颜色”调整颜色",
-            "自定义显示两项图表：使用“自定义内容”按钮来修改，详情见“说明”按钮",
-            "自定义显示多项数值：使用“自定义内容”按钮来修改，详情见“说明”按钮",
+            "Display includes pages, switch using 'Page Up' and 'Page Down':",
+            "Animation: use 'Animation Interval' to adjust playback speed",
+            "\t'Animation Interval' minimum 0.02s, no maximum limit. Default is 0.1s",
+            "Time: shows real-time, background uses flashed image, adjust with 'Text Color'",
+            "Single Photo: displays flashed album image",
+            "Screen Mirror: select window with 'Screen Mirror Window', set refresh with 'Max FPS'",
+            "\tMinimized windows and some game windows may only show black on failure",
+            "Camera Video: select camera with 'Camera Name', set refresh with 'Max FPS'",
+            "\tPage not shown if no camera. Max FPS 1-50, higher has no benefit",
+            "PC CPU/Memory/Disk/Battery Monitor: refreshes every second, adjust with 'Text Color'",
+            "Network Traffic Monitor: chart shows network speed in Byte/s, adjust with 'Text Color'",
+            "Custom Two Charts: modify using 'Custom Content' button, see 'Help' for details",
+            "Custom Multi-Values: modify using 'Custom Content' button, see 'Help' for details",
             "",
-            "屏幕镜像、相机视频处理方式：",
-            "填充：裁剪掉多余部分以使图像填充满屏幕，部分图像会被裁剪掉",
-            "适应：保持图像完整显示时适应屏幕，图像可能不会占满整个屏幕",
+            "Screen Mirror/Camera Video processing:",
+            "Fill: crop excess to fill screen, some parts may be cropped",
+            "Fit: keep image complete while fitting screen, may not fill entire screen",
             "",
-            "板载触摸按键：",
-            "单击：下翻页，双击：上翻页，长按：切换显示方向",
+            "Onboard touch button:",
+            "Single click: Page Down, Double click: Page Up, Long press: Switch display direction",
             "",
-            "启动时隐藏：",
-            "支持启动既隐藏，可在快捷方式中或启动命令后增加参数-h或-hide"
+            "Hide on startup:",
+            "Supports hiding on startup, add parameter -h or -hide in shortcut or command"
         ])
-        tk.messagebox.showinfo(title="帮助", message=help_msg, parent=root, icon='question')
+        tk.messagebox.showinfo(title="Help", message=help_msg, parent=root, icon='question')
 
     # 帮助按钮
     helpimage = MiniMark.load_image("resource/ios-8-Help-icon.ico")
@@ -2733,8 +2733,8 @@ def UI_Page():  # 进行图像界面显示
     def hide_to_tray(event=None):
         try:
             menu = (
-                pystray.MenuItem("显示", show_window, default=True),
-                pystray.MenuItem("退出", quit_window)
+                pystray.MenuItem("Show", show_window, default=True),
+                pystray.MenuItem("Exit", quit_window)
             )
             icon = pystray.Icon("MG", iconimage, "MSU2_mini", menu)
             # 使用新线程启用图标，防止阻塞进入事件循环，如显示桌面。不设置daemon会导致从托盘退出时该线程不结束
@@ -2744,37 +2744,37 @@ def UI_Page():  # 进行图像界面显示
         except Exception as e:
             insert_text_message("Failed to use pystray to hide to tray, %s" % e)
 
-    hide_btn = ttk.Button(root, text="隐藏", width=12, padding=pad_scale_xy, command=hide_to_tray)
+    hide_btn = ttk.Button(root, text="Hide", width=12, padding=pad_scale_xy, command=hide_to_tray)
     hide_btn.grid(row=0, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     # 选择和烧写按钮
 
     Label3 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy5, pady=pad_scale_xy5)
     Label3.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn31 = ttk.Button(root, text="选择闪存固件", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(1))
+    btn31 = ttk.Button(root, text="Select Flash Firmware", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(1))
     btn31.grid(row=1, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn32 = ttk.Button(root, text="烧写", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(1))
+    btn32 = ttk.Button(root, text="Flash", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(1))
     btn32.grid(row=1, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     Label5 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy5, pady=pad_scale_xy5)
     Label5.grid(row=2, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn51 = ttk.Button(root, text="选择相册图像", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(3))
+    btn51 = ttk.Button(root, text="Select Album Image", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(3))
     btn51.grid(row=2, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn52 = ttk.Button(root, text="烧写", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(3))
+    btn52 = ttk.Button(root, text="Flash", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(3))
     btn52.grid(row=2, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     Label4 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy5, pady=pad_scale_xy5)
     Label4.grid(row=3, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn41 = ttk.Button(root, text="选择背景图像", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(2))
+    btn41 = ttk.Button(root, text="Select Background", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(2))
     btn41.grid(row=3, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn42 = ttk.Button(root, text="烧写", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(2))
+    btn42 = ttk.Button(root, text="Flash", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(2))
     btn42.grid(row=3, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     Label6 = tk.Text(root, state=tk.DISABLED, wrap=tk.NONE, width=22, height=1, padx=pad_scale_xy5, pady=pad_scale_xy5)
     Label6.grid(row=4, column=0, rowspan=1, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn61 = ttk.Button(root, text="选择动图文件", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(4))
+    btn61 = ttk.Button(root, text="Select Animation", width=12, padding=pad_scale_xy, command=lambda: Get_Photo_Path(4))
     btn61.grid(row=4, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    btn62 = ttk.Button(root, text="烧写", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(4))
+    btn62 = ttk.Button(root, text="Flash", width=9, padding=pad_scale_xy, command=lambda: Start_Write_Photo_Path(4))
     btn62.grid(row=4, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     # 自定义显示内容
@@ -2800,10 +2800,10 @@ def UI_Page():  # 进行图像界面显示
     def show_custom():
         global config_obj, sub_window
         if hardware_monitor_manager == 1:
-            tk.messagebox.showerror(title="提示", message="Libre Hardware Monitor 加载失败！", parent=window)
+            tk.messagebox.showerror(title="Notice", message="Libre Hardware Monitor failed to load!", parent=window)
             return
         elif hardware_monitor_manager is None:
-            tk.messagebox.showwarning(title="提示", message="Libre Hardware Monitor 正在加载，请稍候……", parent=window)
+            tk.messagebox.showwarning(title="Notice", message="Libre Hardware Monitor is loading, please wait...", parent=window)
             return
 
         def sub_on_closing():
@@ -2821,7 +2821,7 @@ def UI_Page():  # 进行图像界面显示
 
         sub_window = tk.Toplevel(window)  # 创建一个子窗口
         sub_window.geometry("+%d+%d" % (window.winfo_x(), window.winfo_y()))  # 移到主窗口所在位置
-        sub_window.title("自定义显示内容")
+        sub_window.title("Custom Display Content")
         sub_window.resizable(0, 0)  # 锁定窗口大小不能改变
         sub_window.protocol("WM_DELETE_WINDOW", sub_on_closing)
         sub_window.bind("<Escape>", lambda event: sub_on_closing())  # 按Esc按钮关闭
@@ -2839,12 +2839,12 @@ def UI_Page():  # 进行图像界面显示
         # 添加“自定义多项”标签页
 
         tech_frame = tk.Frame(master=sub_window)
-        notebook.add(tech_frame, text="  显示多项数值  ")
+        notebook.add(tech_frame, text="  Multi-Values Display  ")
         tech_frame.focus_set()  # 设置默认焦点
 
-        desc_label = tk.Label(tech_frame, text="名称")
+        desc_label = tk.Label(tech_frame, text="Name")
         desc_label.grid(row=1, column=0, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-        desc_label = tk.Label(tech_frame, text="项目")
+        desc_label = tk.Label(tech_frame, text="Item")
         desc_label.grid(row=1, column=1, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
         def update_sensor_value_tech(event, tvars, i):
@@ -2854,7 +2854,7 @@ def UI_Page():  # 进行图像界面显示
                 config_obj.custom_selected_names_tech[i] = tvars[i].get()
                 save_config()
 
-        type_list = ["1. CPU", "2. GPU", "3. 内存"]
+        type_list = ["1. CPU", "2. GPU", "3. Memory"]
         row = 6  # 设置自定义项目数
         for row1 in range(row):
             if row1 >= len(config_obj.custom_selected_names_tech):
@@ -2878,7 +2878,7 @@ def UI_Page():  # 进行图像界面显示
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
         row += 2
-        desc_label = tk.Label(tech_frame, text="完全自定义模板代码：", anchor=tk.W, justify=tk.LEFT)
+        desc_label = tk.Label(tech_frame, text="Fully Custom Template Code:", anchor=tk.W, justify=tk.LEFT)
         desc_label.grid(row=row, column=0, columnspan=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
         # 创建自定义内容输入框
@@ -2911,7 +2911,7 @@ def UI_Page():  # 进行图像界面显示
         view_frame = ttk.Frame(text_frame, padding="0")
         view_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
-        desc_label = tk.Label(view_frame, width=1, text="效果预览：", anchor=tk.NW, justify=tk.LEFT, padx=0, pady=0)
+        desc_label = tk.Label(view_frame, width=1, text="Preview:", anchor=tk.NW, justify=tk.LEFT, padx=0, pady=0)
         desc_label.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=0, pady=0)
 
         canvas = tk.Canvas(view_frame, width=(SHOW_WIDTH * scale_factor // 100),
@@ -2938,11 +2938,11 @@ def UI_Page():  # 进行图像界面显示
             update_global_canvas()
             print(full_custom_error.rstrip('\n'))
             if full_custom_error == "OK":
-                tk.messagebox.showinfo(title="提示", message=full_custom_error, parent=sub_window)
+                tk.messagebox.showinfo(title="Notice", message=full_custom_error, parent=sub_window)
             else:
-                tk.messagebox.showerror(title="错误", message=full_custom_error, parent=sub_window)
+                tk.messagebox.showerror(title="Error", message=full_custom_error, parent=sub_window)
 
-        show_error_btn = ttk.Button(btn_frame, text="查看模板错误", width=15, padding=pad_scale_xy, command=show_error)
+        show_error_btn = ttk.Button(btn_frame, text="View Template Error", width=15, padding=pad_scale_xy, command=show_error)
         show_error_btn.grid(row=0, column=0, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
         def example(i):
@@ -2967,41 +2967,41 @@ def UI_Page():  # 进行图像界面显示
             text_area.insert(tk.END, config_obj.full_custom_template)
             update_global_canvas()
 
-        example_btn_1 = ttk.Button(btn_frame, text="科技", width=15, padding=pad_scale_xy, command=lambda: example(1))
+        example_btn_1 = ttk.Button(btn_frame, text="Tech", width=15, padding=pad_scale_xy, command=lambda: example(1))
         example_btn_1.grid(row=0, column=1, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-        example_btn_2 = ttk.Button(btn_frame, text="简单", width=15, padding=pad_scale_xy, command=lambda: example(2))
+        example_btn_2 = ttk.Button(btn_frame, text="Simple", width=15, padding=pad_scale_xy, command=lambda: example(2))
         example_btn_2.grid(row=0, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
         def show_instruction():
             instruction = '\n'.join([
-                "自定义显示内容。一共有两个模式，第一个固定显示两行，有图表；第二个是完全自定义模式，可以自己加文本和图片。",
-                "模板代码在框中输入，结果可以在预览中看到，模板代码从前往后顺序执行，每行执行一个操作。",
-                "p [文本] \t\t绘制文本，会自动移动坐标",
-                "a [锚点] \t\t更改文本锚点，参考Pillow文档，如la,ra,ls,rs",
-                "m [x] [y] \t\t移动到坐标(x,y)",
-                "t [x] [y] \t\t相对当前位置移动(x,y)",
-                "f [文件名] [字号] \t更换字体，文件名如 arial.ttf",
-                "c [hex码] \t\t更改文字颜色，如 c #ffff00",
-                "i [文件名] \t\t绘制图片",
-                "v [序号] [格式] \t绘制选择项目的值，格式符可省略，如 v 1 {:.2f}",
+                "Custom display content. Two modes: 1) Fixed two rows with charts; 2) Fully custom with text and images.",
+                "Template code is entered in the box, results shown in preview. Code executes line by line.",
+                "p [text] \t\tDraw text, auto-move coordinates",
+                "a [anchor] \t\tChange text anchor, see Pillow docs, e.g. la,ra,ls,rs",
+                "m [x] [y] \t\tMove to coordinate (x,y)",
+                "t [x] [y] \t\tMove relative to current position (x,y)",
+                "f [filename] [size] \tChange font, e.g. arial.ttf",
+                "c [hex code] \t\tChange text color, e.g. c #ffff00",
+                "i [filename] \t\tDraw image",
+                "v [index] [format] \tDraw selected item value, format optional, e.g. v 1 {:.2f}",
                 "",
-                "* 部分项目需要以管理员身份运行本程序，否则可能显示为<*>或--，甚至可能不会在项目下拉列表中显示。"
-                "当选择没有权限的项目时，点击“查看模板错误”会给出错误提示。"
+                "* Some items require administrator privileges, otherwise may show <*> or --, or not appear in dropdown. "
+                "Click 'View Template Error' for error messages when selecting items without permission."
             ])
-            tk.messagebox.showinfo(title="说明", message=instruction, parent=sub_window, icon='question')
+            tk.messagebox.showinfo(title="Help", message=instruction, parent=sub_window, icon='question')
 
-        show_instruction_btn = ttk.Button(btn_frame, text="说明", width=15, padding=pad_scale_xy,
+        show_instruction_btn = ttk.Button(btn_frame, text="Help", width=15, padding=pad_scale_xy,
                                           command=show_instruction)
         show_instruction_btn.grid(row=0, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
         # 添加“简单两项图表”标签页
 
         simple_frame = tk.Frame(master=sub_window)
-        notebook.add(simple_frame, text="  显示两项图表  ")
+        notebook.add(simple_frame, text="  Two Charts Display  ")
 
-        desc_label = tk.Label(simple_frame, text="名称")
+        desc_label = tk.Label(simple_frame, text="Name")
         desc_label.grid(row=1, column=0, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-        desc_label = tk.Label(simple_frame, text="项目")
+        desc_label = tk.Label(simple_frame, text="Item")
         desc_label.grid(row=1, column=1, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
         def update_sensor_value(event, vvars, i):
@@ -3042,18 +3042,18 @@ def UI_Page():  # 进行图像界面显示
             sensor_combobox.grid(row=row + 2, column=1, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
             sensor_combobox.configure(state="readonly")  # 设置选择框不可编辑
 
-    show_custom_btn = ttk.Button(root, text="自定义内容", width=12, padding=pad_scale_xy, command=show_custom)
+    show_custom_btn = ttk.Button(root, text="Custom Content", width=12, padding=pad_scale_xy, command=show_custom)
     show_custom_btn.grid(row=5, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     # 方向和翻页按钮
 
-    btn7 = ttk.Button(root, text="切换显示方向", width=12, padding=pad_scale_xy, command=LCD_Change)
+    btn7 = ttk.Button(root, text="Toggle Direction", width=12, padding=pad_scale_xy, command=LCD_Change)
     btn7.grid(row=6, column=2, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
-    btn1 = ttk.Button(root, text="上翻页", width=9, padding=pad_scale_xy, command=Page_UP)
+    btn1 = ttk.Button(root, text="Page Up", width=9, padding=pad_scale_xy, command=Page_UP)
     btn1.grid(row=5, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
-    btn2 = ttk.Button(root, text="下翻页", width=9, padding=pad_scale_xy, command=Page_Down)
+    btn2 = ttk.Button(root, text="Page Down", width=9, padding=pad_scale_xy, command=Page_Down)
     btn2.grid(row=6, column=3, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     # 创建颜色滑块
@@ -3084,7 +3084,7 @@ def UI_Page():  # 进行图像界面显示
         config_obj.text_color_b = int(text_color_blue_scale.get())
         update_label_color(config_obj.text_color_r, config_obj.text_color_g, config_obj.text_color_b)
 
-    scale_desc = tk.Label(root, text="文字颜色")
+    scale_desc = tk.Label(root, text="Text Color")
     scale_desc.grid(row=0, column=3, columnspan=1, sticky=tk.W, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     Label2 = tk.Label(root, width=2, borderwidth=pad_scale_xy)  # 颜色预览框
@@ -3136,10 +3136,10 @@ def UI_Page():  # 进行图像界面显示
             save_config()
 
     shrink_type = tk.IntVar(root, config_obj.shrink_type)
-    shrink_type_button1 = tk.Radiobutton(root, text=" 填充", anchor="center", value=1, variable=shrink_type,
+    shrink_type_button1 = tk.Radiobutton(root, text=" Fill", anchor="center", value=1, variable=shrink_type,
                                          command=lambda: change_shrink_type(shrink_type.get()))
     shrink_type_button1.grid(row=3, column=4, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
-    shrink_type_button2 = tk.Radiobutton(root, text=" 适应", anchor="center", value=2, variable=shrink_type,
+    shrink_type_button2 = tk.Radiobutton(root, text=" Fit", anchor="center", value=2, variable=shrink_type,
                                          command=lambda: change_shrink_type(shrink_type.get()))
     shrink_type_button2.grid(row=3, column=5, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
@@ -3188,7 +3188,7 @@ def UI_Page():  # 进行图像界面显示
     interval_var.trace_add("write", change_photo_interval)
     interval_var.set(config_obj.photo_interval_var + config_obj.second_times)
 
-    label_screen_number = ttk.Label(root, text="动图间隔")
+    label_screen_number = ttk.Label(root, text="Animation Interval")
     label_screen_number.grid(row=4, column=4, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     number_entry = ttk.Entry(root, textvariable=interval_var, width=4)
@@ -3213,7 +3213,7 @@ def UI_Page():  # 进行图像界面显示
     fps_var.trace_add("write", change_fps)
     fps_var.set(config_obj.fps_var)
 
-    label = ttk.Label(root, text="最大 FPS")
+    label = ttk.Label(root, text="Max FPS")
     label.grid(row=5, column=4, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     fps_entry = ttk.Entry(root, textvariable=fps_var, width=4)
@@ -3274,12 +3274,12 @@ def UI_Page():  # 进行图像界面显示
             else:
                 save_config()
 
-    label_camera_number = ttk.Label(root, text="相机名称")
+    label_camera_number = ttk.Label(root, text="Camera Name")
     label_camera_number.grid(row=6, column=4, sticky=tk.NSEW, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     all_cameras = get_all_cameras()
     if len(all_cameras) > 1:
-        PAGE_ID[CAMERA_VIDEO_ID] = "相机视频"
+        PAGE_ID[CAMERA_VIDEO_ID] = "Camera Video"
         # 用于保持页面的顺序
         new_PAGE_ID = sorted(PAGE_ID.items(), key=lambda a: a[0])
         PAGE_ID.clear()
@@ -3320,7 +3320,7 @@ def UI_Page():  # 进行图像界面显示
             else:
                 save_config()
 
-    label = ttk.Label(root, text="屏幕镜像窗口:")
+    label = ttk.Label(root, text="Screen Mirror Window:")
     label.grid(row=7, column=2, columnspan=1, sticky=tk.E, padx=pad_scale_xy5, pady=pad_scale_xy5)
 
     select_windows = get_hwnd_desc(config_obj.select_window_hwnd)
@@ -3387,9 +3387,9 @@ def set_device_state(state):
     if Device_State_Labelen == 0:
         try:
             if Device_State == 1:
-                Label1.config(text="设备已连接", fg="white", bg="green")
+                Label1.config(text="Device Connected", fg="white", bg="green")
             else:
-                Label1.config(text="设备未连接", fg="white", bg="red")
+                Label1.config(text="Device Not Connected", fg="white", bg="red")
         except Exception as e:
             Device_State_Labelen = 2
     elif Device_State_Labelen == 1:
@@ -3409,11 +3409,11 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             ser = serial.Serial(port.device, 115200, timeout=5.0, write_timeout=5.0, inter_byte_timeout=0.1)
             recv = SER_Read()
             if recv == 0:
-                print("未接收到设备响应，打开失败：%s" % port.device)
+                print("No device response, open failed: %s" % port.device)
                 ser.close()  # 将串口关闭，防止下次无法打开
                 continue  # 尝试下一个端口
         except Exception as e:  # 出现异常
-            print("%s 无法打开，请检查是否被其他程序占用: %s" % (port.device, e))
+            print("%s cannot open, check if used by other programs: %s" % (port.device, e))
             if ser is not None and ser.is_open:
                 ser.close()  # 将串口关闭，防止下次无法打开
             time.sleep(0.2)  # 防止频繁重试
@@ -3431,15 +3431,15 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
             # 确保为MSN设备
             if recv[-6:] == hex_use:
                 PAGE_ID_tmp = {
-                    GIF_PAGE_ID: "动图",
-                    PCTIME_PAGE_ID: "时间",
-                    PHOTO_PAGE_ID: "单个相册图片",
-                    SCREEN_PAGE_ID: "屏幕镜像",
-                    CAMERA_VIDEO_ID: "相机视频",
-                    STATE_PAGE_ID: "电脑CPU/内存/磁盘/电池使用率监控",
-                    NETSPEED_PAGE_ID: "网络流量监控",
-                    CUSTOM1_PAGE_ID: "自定义显示两项图表",
-                    CUSTOM2_PAGE_ID: "自定义显示多项数值"
+                    GIF_PAGE_ID: "Animation",
+                    PCTIME_PAGE_ID: "Time",
+                    PHOTO_PAGE_ID: "Single Photo",
+                    SCREEN_PAGE_ID: "Screen Mirror",
+                    CAMERA_VIDEO_ID: "Camera Video",
+                    STATE_PAGE_ID: "PC CPU/Memory/Disk/Battery Monitor",
+                    NETSPEED_PAGE_ID: "Network Traffic Monitor",
+                    CUSTOM1_PAGE_ID: "Custom Two Charts Display",
+                    CUSTOM2_PAGE_ID: "Custom Multi-Values Display"
                 }
                 if config_obj.state_machine < len(PAGE_ID_tmp):
                     page_index = config_obj.state_machine
@@ -3450,18 +3450,18 @@ def Get_MSN_Device(port_list):  # 尝试获取MSN设备
                 My_MSN_Device = MSN_Device(port.device, msn_version)
                 print(get_formatted_time_string(datetime.now()), end=' ')
                 if port.location is None:
-                    insert_text_message("连接成功：%s\n当前页面：%s\n显示方向：%s\n配置文件：%s" % (
+                    insert_text_message("Connection successful: %s\nCurrent page: %s\nDisplay direction: %s\nConfig file: %s" % (
                         port.device, PAGE_ID_tmp[page_index], LCD_STATE_MESSAGE[config_obj.lcd_change], config_file))
                 else:
-                    insert_text_message("连接成功：%s@%s\n当前页面：%s\n显示方向：%s\n配置文件：%s" % (
+                    insert_text_message("Connection successful: %s@%s\nCurrent page: %s\nDisplay direction: %s\nConfig file: %s" % (
                         port.device, port.location, PAGE_ID_tmp[page_index], LCD_STATE_MESSAGE[config_obj.lcd_change],
                         config_file))
                 break  # 退出当前for循环
             else:
-                print("设备无法连接，请检查连接是否正常：%s" % recv)
+                print("Device cannot connect, check connection: %s" % recv)
 
         if My_MSN_Device is None:
-            print("设备校验失败：%s" % port.device)
+            print("Device verification failed: %s" % port.device)
             ser.close()  # 将串口关闭，防止下次无法打开
         else:
             break  # 连接成功即退出循环
@@ -3535,8 +3535,8 @@ def load_task():
     try:
         HardwareMonitorManager = load_hardware_monitor()
         hardware_monitor_manager = HardwareMonitorManager()
-        PAGE_ID[CUSTOM1_PAGE_ID] = "自定义显示两项图表"
-        PAGE_ID[CUSTOM2_PAGE_ID] = "自定义显示多项数值"
+        PAGE_ID[CUSTOM1_PAGE_ID] = "Custom Two Charts Display"
+        PAGE_ID[CUSTOM2_PAGE_ID] = "Custom Multi-Values Display"
         print("Libre hardware monitor load successed")
     except Exception as e:
         hardware_monitor_manager = 1
@@ -3586,7 +3586,7 @@ def daemon_task():
             # if Device_State != 0:
             #     continue
             print(get_formatted_time_string(datetime.now()), end=' ')
-            insert_text_message("没有找到可用的设备，请确认设备是否正确连接")
+            insert_text_message("No available device found, please check device connection")
             if sleep_event.isSet():
                 sleep_event.clear()
             sleep_event.wait(0.2)  # 防止频繁重试
@@ -3630,7 +3630,7 @@ def manage_task():
 
                 if ADC_det - ADC_ch > 900:  # 阈值过大，校正检测阈值
                     ADC_det = ADC_ch - 250
-                    print("校正按下检测阈值为：%d" % ADC_det)
+                    print("Calibrated press detection threshold to: %d" % ADC_det)
                     continue
 
                 if key_on == 0:  # 第一次检测到按下
@@ -3662,7 +3662,7 @@ def manage_task():
                 elif now - last_check_time > check_limit:
                     if ADC_ch - ADC_det > 40 + 250:  # 阈值过小，校正检测阈值
                         ADC_det = (ADC_det + ADC_ch - 250) // 2
-                        print("校正按键检测阈值为：%d" % ADC_det)
+                        print("Calibrated key detection threshold to: %d" % ADC_det)
                     time.sleep(0.1)  # 没有按键时减缓读取频率
                 else:
                     if first_press_time != 0:
@@ -3772,7 +3772,7 @@ if __name__ == "__main__":
         config_file = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), config_file))
         config_obj = sys_config()
         mini_mark_parser = MiniMarkParser()
-        default_font = MiniMark.load_font("./simhei.ttf", netspeed_font_size)
+        default_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size)
         netspeed_font = MiniMark.load_font("resource/Orbitron-Bold.ttf", netspeed_font_size - 4)
 
         row_np_zero = np.zeros([1, SHOW_WIDTH, 3], dtype=np.uint8)
@@ -3795,7 +3795,7 @@ if __name__ == "__main__":
         exit_code = 1
         message = "Error: %s" % traceback.format_exc()
         print(message)
-        tk.messagebox.showerror(title="错误", message=message)
+        tk.messagebox.showerror(title="Error", message=message)
     finally:
         MG_screen_thread_running = False
         MG_daemon_running = False

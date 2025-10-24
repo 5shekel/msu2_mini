@@ -1,0 +1,29 @@
+# MSU2 USB Screen Assistant - Python Dependencies
+
+# Serial communication
+pyserial>=3.5
+
+# System monitoring
+psutil>=5.9.0
+
+# Screen capture
+mss>=9.0.1
+
+# Image processing
+Pillow>=10.0.0
+opencv-python>=4.8.0
+
+# Numerical operations
+numpy>=1.24.0
+
+# System tray icon
+pystray>=0.19.0
+
+# Hardware monitoring
+HardwareMonitor>=0.1.0
+
+# Windows-specific (automatically skipped on non-Windows)
+pywin32>=306; sys_platform == 'win32'
+
+# Camera support
+pycameralist>=1.0.0

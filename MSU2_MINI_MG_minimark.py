@@ -31,7 +31,8 @@ def load_font(font_name, font_size):
             font_cache[key] = ImageFont.truetype(get_resource(font_name), font_size)
         except (OSError, ValueError) as e:
             try:
-                font_cache[key] = ImageFont.truetype(get_resource("./simhei.ttf"), font_size)
+                # Try to use Arial as fallback (common on Windows)
+                font_cache[key] = ImageFont.truetype("resource/Orbitron-Regular.ttf", font_size)
             except (OSError, ValueError) as e:
                 print("Warning: font %s load failed, %s:%s" % (key, type(e), e))
                 font_cache[key] = ImageFont.load_default(font_size)
@@ -68,7 +69,7 @@ class MiniMarkParser:
 
     def reset_state(self):
         self.position = (0, 0)  # Current drawing position
-        self.font = load_font("./simhei.ttf", 20)  # Default font
+        self.font = load_font("resource/Orbitron-Regular.ttf", 20)  # Default font (Arial)
         self.color = (0, 0, 0)  # Default color (black)
         self.anchor = "la"
 
@@ -177,7 +178,7 @@ if __name__ == "__main__":
         "m 100 100",  # Move to (100, 100)
         "i test.png",  # Draw an image (ensure the path is correct)
         "m 100 100",  # Move to (100, 100)
-        "f ./arial.ttf 24",  # Set font to Arial size 24
+        "f ./resource/Orbitron-Regular.ttf 24",  # Set font to Arial size 24
         "c #FF5733",  # Set color to a hex value
         "p Hello World!",  # Draw text
         "t 0 40",  # Move down
