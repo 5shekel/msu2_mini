@@ -3,7 +3,7 @@ name = "msu2-mini"
 version = "1.6.0"
 description = "A Python-based control application for the MSU2 series programmable USB screen"
 readme = "README.md"
-requires-python = "~=3.10.0"
+requires-python = ">=3.8,<3.11"
 license = { text = "Unlicense-like (modifications by geezmolycos)" }
 authors = [
     { name = "Moli Studio" },
@@ -19,8 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
 ]
 

@@ -58,11 +58,12 @@ The modifications by geezmolycos (excluding original implementation) are availab
 ## Software Requirements
 
 ### Python Version
-- **Python 3.10** (required)
-- Note: This project requires Python 3.10 due to the `pycameralist` dependency. See [COMPATIBILITY.md](COMPATIBILITY.md) for details.
+- **Python 3.8, 3.9, or 3.10** (required, Python 3.10 recommended)
+- **Important:** This project is limited to Python 3.10 or earlier due to the `pycameralist` dependency, which only supports up to Python 3.10 (cp310 ABI tag).
+- Python 3.11+ is **not supported** and will fail during installation.
 
 ### Package Manager
-- **uv** - Fast Python package installer and resolver
+- **uv** - Fast Python package installer and resolver (recommended)
   - Install uv: https://github.com/astral-sh/uv
   - Or via pip: `pip install uv`
 
@@ -94,10 +95,7 @@ sudo apt-get install python3-tk
 
 3. **Install dependencies using uv**
    ```bash
-   # Install all dependencies
-   uv pip install -e .
-   
-   # Or sync dependencies (recommended)
+   # This automatically creates a Python 3.10 venv and installs all dependencies
    uv sync
    ```
 
@@ -107,30 +105,37 @@ sudo apt-get install python3-tk
 
 ### Windows
 
-Use one of the provided batch files:
+The simplest way is to use `uv run` (automatically uses the correct Python 3.10 environment):
 
-- **`MSU2_MINI_DemoV1.6_dchg.bat`** - Standard console mode
-- **`MSU2_MINI_DemoV1.6_dchgw.bat`** - Windowless mode (no console)
-
-Or run directly with uv:
 ```bash
 uv run MSU2_MINI_DemoV1.6_dchg.py
 ```
 
-Or with Python (ensure Python 3.10):
+Or use the provided batch files:
+- **`MSU2_MINI_DemoV1.6_dchg.bat`** - Standard console mode
+- **`MSU2_MINI_DemoV1.6_dchgw.bat`** - Windowless mode (no console)
+
+Or manually activate the venv and run:
 ```bash
+.venv\Scripts\activate
 python MSU2_MINI_DemoV1.6_dchg.py
 ```
 
 ### Linux
 
 ```bash
+uv run MSU2_MINI_DemoV1.6_dchg.py
+```
+
+Or with DISPLAY variable:
+```bash
 export DISPLAY=:0.0
 uv run MSU2_MINI_DemoV1.6_dchg.py
 ```
 
-Or with Python:
+Or manually activate the venv:
 ```bash
+source .venv/bin/activate
 python3 MSU2_MINI_DemoV1.6_dchg.py
 ```
 
@@ -273,6 +278,14 @@ color = r | g | b
 ```
 
 ## Troubleshooting
+
+### Python Version Issues
+- **Error:** `No solution found when resolving dependencies` or ABI tag mismatch
+  - **Solution:** You're using Python 3.11+ which is not supported. Use `uv sync` which automatically creates a Python 3.10 environment:
+    ```bash
+    uv sync
+    ```
+  - If you don't have Python 3.10 installed, uv will download it automatically
 
 ### Device Not Detected
 - Ensure USB connection is secure
