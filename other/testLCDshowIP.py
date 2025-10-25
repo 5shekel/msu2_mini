@@ -1,4 +1,4 @@
-import serial,time,psutil
+import serial,time,psutil,socket
 from PIL import Image, ImageDraw, ImageFont  # 引入PIL库进行图像处理
 from datetime import datetime, timedelta  # 用于获取当前时间
 import serial.tools.list_ports as list_ports
@@ -268,6 +268,17 @@ def sizeof_fmt(num, suffix="B", base=1024.0):
             return f"{num:3.1f}{unit}{suffix}"
         num /= base
     return f"{num:.1f}Yi{suffix}"
+
+def get_ip_address():
+    try:
+        # Get the actual IP address by connecting to an external server
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "No Network"
         
 def show_netspeed(text_color=(255, 128, 0)):
     # geezmo: 预渲染图片，显示网速
@@ -316,16 +327,16 @@ def show_netspeed(text_color=(255, 128, 0)):
     
     # 绘制文字
     
-    text = f"上传123{sizeof_fmt(sent_per_second):>8}"
+    text = f"Up  {sizeof_fmt(sent_per_second):>8}"
     draw.text((0, 0), text, fill=(255, 0, 0), font=font)
     
     text = time.strftime('%Y%m%d  %H:%M:%S',time.localtime())
     draw.text((0, 20), text, fill=(0,255, 0), font=font)
     
-    text = f"下载  {sizeof_fmt(recv_per_second):>8}"
+    text = f"Down {sizeof_fmt(recv_per_second):>8}"
     draw.text((0, 40), text, fill=(0,0,255), font=font)
     
-    text = "地址:192.168.177.155"
+    text = f"IP:{get_ip_address()}"
     draw.text((0, 60), text, fill=text_color, font=font)
 
     # 绘图

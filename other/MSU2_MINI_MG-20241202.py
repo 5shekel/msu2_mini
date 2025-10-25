@@ -1545,9 +1545,9 @@ def show_netspeed(text_color=(255, 128, 0)):
     
     # 绘制文字
     
-    text = f"上传  {sizeof_fmt(sent_per_second):>8}"
+    text = f"up  {sizeof_fmt(sent_per_second):>8}"
     draw.text((0, 0), text, fill=text_color, font=font)
-    text = f"下载  {sizeof_fmt(recv_per_second):>8}"
+    text = f"down{sizeof_fmt(recv_per_second):>8}"
     draw.text((0, 40), text, fill=text_color, font=font)
 
     # 绘图

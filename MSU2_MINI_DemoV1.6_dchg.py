@@ -2166,9 +2166,9 @@ def show_netspeed(text_color=(255, 128, 0), bar1_color=(235, 139, 139),
     draw = ImageDraw.Draw(im1)
 
     # 绘制文字
-    text = "Upload %9s/s" % sizeof_fmt(sent_per_second)
+    text = "up %9s/s" % sizeof_fmt(sent_per_second)
     draw.text((0, 0), text, fill=text_color, font=default_font)
-    text = "Download %9s/s" % sizeof_fmt(recv_per_second)
+    text = "down %9s/s" % sizeof_fmt(recv_per_second)
     draw.text((0, SHOW_HEIGHT // 2), text, fill=text_color, font=default_font)
 
     # 绘图
