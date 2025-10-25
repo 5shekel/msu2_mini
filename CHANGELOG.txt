@@ -5,6 +5,28 @@ The modifications by geezmolycos (excluding parts implemented by the original au
 
 Changelog
 
+## 2025-10-25
+Author: yair
+
+- Improved port scanning functionality with better device detection
+- Translated all comments and documentation to English across the codebase
+- Added Linux executable script for easier deployment on Linux systems
+- Limited Python version requirement to 3.10 for better compatibility
+- Added modern package management using `uv` (pyproject.toml and uv.lock)
+- Simplified installation process with `uv sync` command
+- Fixed font path issues in LCD display utilities
+- Refactored and translated ContinuousCapture.py module
+
+## 2025-10-24
+Author: yair
+
+- Comprehensive English translation of main application files
+- Created comprehensive README.md with installation and usage instructions
+- Added requirements.txt for traditional pip-based installation
+- Created MSU2_MINI.json configuration file
+- Updated .gitignore for better project hygiene
+- Translated CHANGELOG.txt to English
+
 ## 2024-12-02
 
 - Fixed issue where screen touch buttons couldn't turn pages
