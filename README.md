@@ -58,60 +58,50 @@ The modifications by geezmolycos (excluding original implementation) are availab
 ## Software Requirements
 
 ### Python Version
-- Python 3.x (with tcl/tk and IDLE support)
+- **Python 3.10** (required)
+- Note: This project requires Python 3.10 due to the `pycameralist` dependency. See [COMPATIBILITY.md](COMPATIBILITY.md) for details.
 
-### Required Dependencies
+### Package Manager
+- **uv** - Fast Python package installer and resolver
+  - Install uv: https://github.com/astral-sh/uv
+  - Or via pip: `pip install uv`
 
-Install all dependencies using pip:
-
-```bash
-pip install --upgrade pip
-pip install serial
-pip install pyserial
-pip install psutil
-pip install mss
-pip install pillow
-pip install numpy
-pip install pystray
-pip install HardwareMonitor
-pip install pywin32
-pip install opencv-python
-pip install pycameralist
-```
-
+### System Requirements
 For Linux users, also install:
 ```bash
-apt-get install python3-tk
-pip install pythontk
+sudo apt-get install python3-tk
 ```
 
 ## Installation
 
-1. **Clone or download this repository**
+1. **Install uv** (if not already installed)
+   ```bash
+   # On macOS and Linux
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   
+   # On Windows
+   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+   
+   # Or via pip
+   pip install uv
+   ```
+
+2. **Clone or download this repository**
    ```bash
    git clone <repository-url>
    cd msu2_mini
    ```
 
-2. **Install Python dependencies**
-   
-   Using requirements.txt (recommended):
+3. **Install dependencies using uv**
    ```bash
-   pip install -r requirements.txt
-   ```
+   # Install all dependencies
+   uv pip install -e .
    
-   Or manually install packages:
-   ```bash
-   pip install --upgrade pip
-   pip install pyserial psutil mss pillow numpy pystray HardwareMonitor pywin32 opencv-python pycameralist
-   ```
-   
-   For Linux, also install:
-   ```bash
-   apt-get install python3-tk
+   # Or sync dependencies (recommended)
+   uv sync
    ```
 
-3. **Connect your MSU2 USB screen** to your computer via USB
+4. **Connect your MSU2 USB screen** to your computer via USB
 
 ## Running the Application
 
@@ -122,7 +112,12 @@ Use one of the provided batch files:
 - **`MSU2_MINI_DemoV1.6_dchg.bat`** - Standard console mode
 - **`MSU2_MINI_DemoV1.6_dchgw.bat`** - Windowless mode (no console)
 
-Or run directly with Python:
+Or run directly with uv:
+```bash
+uv run MSU2_MINI_DemoV1.6_dchg.py
+```
+
+Or with Python (ensure Python 3.10):
 ```bash
 python MSU2_MINI_DemoV1.6_dchg.py
 ```
@@ -131,6 +126,11 @@ python MSU2_MINI_DemoV1.6_dchg.py
 
 ```bash
 export DISPLAY=:0.0
+uv run MSU2_MINI_DemoV1.6_dchg.py
+```
+
+Or with Python:
+```bash
 python3 MSU2_MINI_DemoV1.6_dchg.py
 ```
 
@@ -242,6 +242,9 @@ msu2_mini/
 ├── MSU2_MINI_DemoV1.6_dchg.py      # Main application
 ├── MSU2_MINI_MG_minimark.py        # MiniMark DSL parser
 ├── ContinuousCapture.py            # Screen capture module
+├── pyproject.toml                  # Project configuration for uv
+├── requirements.txt                # Legacy pip requirements (for reference)
+├── COMPATIBILITY.md                # Python version compatibility report
 ├── CHANGELOG.txt                   # Version history
 ├── 接口说明 by Evan.txt            # API documentation (Chinese)
 ├── python依赖库安装.txt            # Dependency list (Chinese)

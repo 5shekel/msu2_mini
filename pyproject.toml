@@ -1,0 +1,79 @@
+[project]
+name = "msu2-mini"
+version = "1.6.0"
+description = "A Python-based control application for the MSU2 series programmable USB screen"
+readme = "README.md"
+requires-python = "~=3.10.0"
+license = { text = "Unlicense-like (modifications by geezmolycos)" }
+authors = [
+    { name = "Moli Studio" },
+    { name = "geezmolycos" }
+]
+keywords = ["usb", "screen", "display", "monitoring", "hardware"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: System :: Hardware",
+    "Topic :: System :: Monitoring",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "pyserial>=3.5",
+    "psutil>=5.9.0",
+    "mss>=9.0.1",
+    "Pillow>=10.0.0",
+    "opencv-python>=4.8.0",
+    "numpy>=1.24.0",
+    "pystray>=0.19.0",
+    "HardwareMonitor>=0.1.0",
+    "pywin32>=306; sys_platform == 'win32'",
+    "pycameralist>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+msu2-mini = "MSU2_MINI_DemoV1.6_dchg:main"
+
+[project.urls]
+Homepage = "https://github.com/geezmolycos/msu2_mini"
+Repository = "https://github.com/geezmolycos/msu2_mini"
+Issues = "https://github.com/geezmolycos/msu2_mini/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 120
+target-version = ["py38", "py39", "py310", "py311", "py312"]
