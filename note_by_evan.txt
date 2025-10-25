@@ -1,0 +1,114 @@
+I wrote an interface document using grok. You can check out the main features:
+1. Device Connection and Management
+    • Function: Automatically detect and connect serial devices (MSN devices), read device information, and manage connection status.
+    • Implementation:
+    ◦ Use the serial library to enumerate all serial ports, send specific protocol data packets (MSNCN) to verify devices.
+    ◦ Use the Get_MSN_Device() function for device enumeration and handshake.
+    ◦ Use SER_Write()/SER_Read() for low-level serial communication.
+    ◦ Heartbeat mechanism to monitor connection status.
+2. Image Processing and Flashing
+    • Function: Convert JPG/PNG/BMP images to a device-specific format and flash them to Flash memory.
+    • Implementation:
+    ◦ Get_Photo_Path1-4: Select images via file dialogs.
+    ◦ Writet_Photo_Path1-4:
+    ▪ Use the PIL library for image scaling and cropping (fixed 160x80 resolution).
+    ▪ RGB565 color space conversion (2 bytes/pixel).
+    ▪ Write binary data to a specified Flash address using Write_Flash_hex_fast().
+    ◦ Supports single-frame images and 36-frame animation flashing.
+3. Screen Display Control
+    • Function: Control screen display content, including images/text/system information/real-time screenshots.
+    • Implementation:
+    ◦ Basic Control:
+    ▪ LCD_Set_XY(): Set display start coordinates.
+    ▪ LCD_Set_Size(): Set display area size.
+    ▪ LCD_Set_Color(): Set foreground/background color.
+    ◦ Display Modes:
+    ▪ GIF animation playback (show_gif()).
+    ▪ System monitoring dashboard (show_PC_state()).
+    ▪ Real-time screen mirroring (show_PC_Screen()).
+    ▪ Digital clock (show_PC_time()).
+    ◦ Use advanced API combinations like LCD_Photo()/LCD_Color_set() to achieve complex displays.
+4. System Information Monitoring
+    • Function: Real-time acquisition and display of CPU/RAM/disk/battery status.
+    • Implementation:
+    ◦ Use the psutil library to get system metrics.
+    ◦ Numbers are displayed using pre-flashed digital tube font images.
+    ◦ Data is updated every 500ms.
+5. User Interface Interaction
+    • Function: Provide a graphical control interface.
+    • Implementation:
+    ◦ Build GUI using tkinter.
+    ◦ Main components: Serial port status indicator, RGB color selection slider, file path selection and flashing buttons, page turning control buttons, log display text box.
+Core API Details
+Device Communication API
+Function
+Parameters
+Description
+SER_Write(data)
+data: byte data
+Sends raw data to the serial port
+SER_Read()
+-
+Reads data from the serial port buffer
+Read_M_u8(add)
+add: 16-bit address
+Reads 1-byte register value
+Write_M_u8(add, data)
+add: address, data: value
+Writes 1-byte register
+Flash Operation API
+Function
+Parameters
+Description
+Write_Flash_Page(page, data, num)
+page: page address, data: 256 bytes data, num: number of pages
+Writes full page data
+Erase_Flash_page(add, size)
+add: start address, size: number of pages
+Erases specified area
+Write_Flash_hex_fast(add, data)
+add: start address, data: byte data
+Quickly writes data of any length
+Screen Control API
+Function
+Parameters
+Description
+LCD_Photo(x,y,w,h,addr)
+x,y: coordinates, w,h: size, addr: Flash address
+Displays image stored in Flash
+LCD_Color_set(x,y,w,h,color)
+color: RGB565 color value
+Fills a solid color area
+LCD_ASCII_32X64(x,y,char,fc,bc)
+char: ASCII character, fc/bc: foreground/background color
+Displays 32x64 large character
+LCD_GB2312_16X16(x,y,text,fc,bc)
+text: Chinese character string
+Displays 16x16 Chinese characters
+Advanced Function API
+Function
+Description
+show_gif()
+Plays pre-stored 36-frame animation in a loop
+show_PC_state()
+Displays system monitoring dashboard
+show_PC_Screen()
+Real-time mirroring of computer screen (via pyautogui screenshot)
+show_PC_time()
+Displays digital clock
+Key Implementation Details
+    1 Color Encoding: Uses RGB565 format (2 bytes/pixel). Example conversion formula: r = (pixel[0] >> 3) << 11
+    2 g = (pixel[1] >> 2) << 5
+    3 b = pixel[2] >> 3
+    4 color = r | g | b
+    5
+    6 Data Transfer Optimization: Uses batch transfer protocol (64 4-byte instructions packed and sent), compresses transfer for areas with the same color.
+    7 Thread Management: Screen_Date_get independent thread handles screen capture and preprocessing, TIM1 timer thread handles status polling.
+Usage Suggestions
+    1 Hardware Preparation: Connect a serial screen supporting the MSN protocol, ensure baud rate is set to 19200bps.
+    2 Development Process: # Typical usage example
+    3 LCD_Set_Color(RED, BLACK) # Set red background with black text
+    4 LCD_Photo(0, 0, 160, 80, 1024) # Display image from Flash address 1024
+    5 Write_Flash_hex_fast(0, image_data) # Flash boot screen
+    6
+    7 Debugging Tips: Use Text1 text box to view operation logs, verify status by reading device registers via Read_MSN_Data().
