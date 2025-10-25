@@ -97,7 +97,7 @@ show_PC_Screen()
 show_PC_time()
 显示数字时钟
 关键实现细节
-    1    颜色编码: 使用RGB565格式 (2字节/像素)。转换公式示例: r = (pixel[0] >> 3) << 11
+    1    颜色编码: 使用RGB565格式 (2字节/像素)。转换公式示例:r = (pixel[0] >> 3) << 11
     2    g = (pixel[1] >> 2) << 5
     3    b = pixel[2] >> 3
     4    color = r | g | b
@@ -106,7 +106,7 @@ show_PC_time()
     7    线程管理: Screen_Date_get独立线程处理屏幕截图和预处理，TIM1定时器线程处理状态轮询。
 使用建议
     1    硬件准备: 连接支持MSN协议的串口屏幕，确保波特率设置为19200bps。
-    2    开发流程: # 典型使用示例
+    2    开发流程:# 典型使用示例
     3    LCD_Set_Color(RED, BLACK)  # 设置红底黑字
     4    LCD_Photo(0, 0, 160, 80, 1024)  # 显示Flash 1024地址的图片
     5    Write_Flash_hex_fast(0, image_data)  # 烧录开机画面
