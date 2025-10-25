@@ -31,28 +31,71 @@ def SER_Read():
         return 0
 com_name=""
 
-port_list = list(list_ports.comports())  # Query all serial ports
-if len(port_list) == 0:
-    print('No serial port detected, please ensure device is connected to computer')
-    # Label1.config(text="Device connected",bg="GREEN")
-    time.sleep(1)
+# Try to find COM port with retry logic
+max_retries = 3
+retry_count = 0
 
-else:  # Monitor serial ports to ensure MSN device
-    for i in range(0, len(port_list)):
-        try:  # Try to open serial port
-            ser = serial.Serial(port_list[i].name, 19200, timeout=2)  # Initialize serial connection
-        except:  # Exception occurred
-            print(port_list[i].name + ' cannot be opened, check if used by other programs')
-            # ser.close()  # Close serial port to prevent next open failure
-            time.sleep(0.1)
-            continue  # Execute next loop
-        time.sleep(0.25)  # Theoretically MSN device sends "MSN01" every 100ms, should receive at least once in 250ms
-        recv = SER_Read()
-        print(len(recv))
-        if len(recv)>10:
-            print("found device, PORT:",port_list[i].name)
-            com_name=port_list[i].name
-ser.close()
+while retry_count < max_retries and com_name == "":
+    port_list = list(list_ports.comports())  # Query all serial ports
+    
+    if len(port_list) == 0:
+        retry_count += 1
+        if retry_count < max_retries:
+            print(f'No serial port detected (attempt {retry_count}/{max_retries}), waiting 2 seconds...')
+            time.sleep(2)
+        else:
+            print('\n' + '='*60)
+            print('ERROR: No COM ports found on this system')
+            print('='*60)
+            print('Please check:')
+            print('  1. Device is properly connected to the computer')
+            print('  2. Device drivers are installed')
+            print('  3. Device is powered on')
+            print('='*60)
+            input('Press Enter to exit...')
+            exit(1)
+    else:  # Monitor serial ports to ensure MSN device
+        for i in range(0, len(port_list)):
+            try:  # Try to open serial port
+                ser = serial.Serial(port_list[i].name, 19200, timeout=2)  # Initialize serial connection
+            except:  # Exception occurred
+                print(port_list[i].name + ' cannot be opened, check if used by other programs')
+                # ser.close()  # Close serial port to prevent next open failure
+                time.sleep(0.1)
+                continue  # Execute next loop
+            time.sleep(0.25)  # Theoretically MSN device sends "MSN01" every 100ms, should receive at least once in 250ms
+            recv = SER_Read()
+            print(len(recv))
+            if len(recv)>10:
+                print("found device, PORT:",port_list[i].name)
+                com_name=port_list[i].name
+                ser.close()
+                break
+            else:
+                ser.close()
+        
+        # If device not found in this attempt, retry
+        if com_name == "":
+            retry_count += 1
+            if retry_count < max_retries:
+                print(f'MSN device not found (attempt {retry_count}/{max_retries}), waiting 2 seconds...')
+                time.sleep(2)
+
+# Final check if device was found
+if com_name == "":
+    print('\n' + '='*60)
+    print('ERROR: MSN device not detected')
+    print('='*60)
+    print('COM ports found but no MSN device responded.')
+    print('Please check:')
+    print('  1. Device is the correct MSN model')
+    print('  2. Device firmware is functioning properly')
+    print('  3. Try unplugging and reconnecting the device')
+    print('='*60)
+    input('Press Enter to exit...')
+    exit(1)
+
+print(f"\nSuccessfully connected to MSN device on port: {com_name}")
 
 State_change = 1  # State changed
 ser=serial.Serial(com_name,19200,timeout=0.5)
@@ -327,17 +370,18 @@ def show_netspeed(text_color=(255, 128, 0)):
     
     # Draw text
     
-    text = f"Upload  {sizeof_fmt(sent_per_second):>8}"
+    text = f"Up {sizeof_fmt(sent_per_second):>8}"
     draw.text((0, 0), text, fill=(255, 0, 0), font=font)
     
-    text = time.strftime('%Y%m%d  %H:%M:%S',time.localtime())
-    draw.text((0, 20), text, fill=(0,255, 0), font=font)
+    # text = time.strftime('%Y%m%d  %H:%M:%S',time.localtime())
+    # draw.text((0, 20), text, fill=(0,255, 0), font=font)
     
-    text = f"Download{sizeof_fmt(recv_per_second):>8}"
-    draw.text((0, 40), text, fill=(0,0,255), font=font)
+    text = f"Down {sizeof_fmt(recv_per_second):>8}"
+    draw.text((0, 20), text, fill=(0,0,255), font=font)
     
-    text = f"IP:{get_ip_address()}"
-    draw.text((0, 60), text, fill=text_color, font=font)
+    text = f"{get_ip_address()}"
+    font = ImageFont.truetype("resource/Orbitron-Regular.ttf", 18)
+    draw.text((0, 45), text, fill=text_color, font=font)
 
     # Drawing
     if 0:
