@@ -28,7 +28,7 @@ Author: yair
 - Translated CHANGELOG.txt to English
 
 ## 2024-12-02
-
+Auther: dchg43 <75658553@qq.com>
 - Fixed issue where screen touch buttons couldn't turn pages
 - Attempted to fix overly aggressive device connection policy that affected Bluetooth and related devices
 - Added Libre Hardware Monitor integration with two modes:

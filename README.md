@@ -1,8 +1,10 @@
 # MSU2 USB Screen Assistant - MG Version
+check [changelog.md](changelog.md) 
 
 A Python-based control application for the MSU2 series programmable USB screen, featuring real-time monitoring, screen mirroring, and customizable displays.
 
-![MSU2 Display](EDTZ12640.JPG)
+![MSU2 Display](intro.jpg)
+
 
 ## Overview
 
