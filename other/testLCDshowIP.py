@@ -309,10 +309,10 @@ def show_netspeed(text_color=(255, 128, 0)):
     draw = ImageDraw.Draw(im1)
     font_size = 16
     try:
-        font = ImageFont.truetype("simhei.ttf", font_size)
+        font = ImageFont.truetype("resource/Orbitron-Regular.ttf", font_size)
     except OSError:
         # Pillow 可能不能忽略文件大小写，以免读取失败
-        font = ImageFont.truetype("SimHei.ttf", font_size)
+        font = ImageFont.truetype("resource/Orbitron-Regular.ttf", font_size)
     
     # 绘制文字
     
