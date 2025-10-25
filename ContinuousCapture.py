@@ -1,3 +1,31 @@
+"""
+ContinuousCapture - Screen and Window Capture Utility for Windows
+
+This module provides functionality to capture screenshots continuously at specified intervals.
+It supports both full screen capture and specific window capture with DPI awareness.
+
+Features:
+- Full screen capture using BitBlt
+- Specific window capture using PrintWindow
+- High DPI support for modern displays
+- Multiple output formats (BMP, PNG, JPG)
+- Continuous capture with configurable intervals
+- Optional callback function for custom processing
+
+Usage:
+    # Capture full screen every 2 seconds for 20 seconds
+    capture = ContinuousCapture()
+    capture.continuous_capture(interval=2, duration=20, pformat="png")
+
+Requirements:
+    - Windows OS
+    - pywin32 package
+    - PIL/Pillow package
+
+Author: Moli Studio
+Modified by: geezmolycos
+"""
+
 import os
 import time
 
@@ -5,15 +33,17 @@ isWindows = True if os.name == "nt" else False
 
 if isWindows:
     from ctypes import windll
+    from PIL import Image
 
     import win32con
     import win32gui
     import win32ui
 
-    # 使用高dpi缩放适配高分屏。0：不使用缩放 1：所有屏幕 2：当前屏幕
-    try:  # >= win 8.1
+    # Enable high DPI scaling for high-resolution displays
+    # 0: No scaling, 1: All screens, 2: Current screen
+    try:  # >= Windows 8.1
         windll.shcore.SetProcessDpiAwareness(1)
-    except:  # win 8.0 or less
+    except:  # Windows 8.0 or older
         try:
             windll.user32.SetProcessDPIAware()
         except:
@@ -27,25 +57,32 @@ if isWindows:
 class ContinuousCapture:
     def __init__(self, hwnd=None):
         """
-        初始化连续截图器
+        Initialize continuous capture utility
 
+        Args:
+            hwnd: Window handle to capture. If None, captures the entire screen.
         """
-        self.print_mode = 0b11  # 用于设置截屏时是否包含标题栏和工具栏，包含0b10，不包含0b11
-        self.hwnd = hwnd
+        # Print mode: 0b10 includes title/toolbar, 0b11 excludes them
+        self.print_mode = 0b11
+        
+        # If no hwnd provided, use desktop window for full screen capture
+        if hwnd is None:
+            self.hwnd = win32gui.GetDesktopWindow()
+        else:
+            self.hwnd = hwnd
 
-        # 获取窗口尺寸
+        # Get window dimensions
         self.width, self.height = self.getRect()
         self.dpi_width, self.dpi_height = self.width, self.height
 
-        # 设备上下文和位图对象（将在setup_resources中初始化）
+        # Device context and bitmap objects (initialized in setup_resources)
         self.hwndDC = None
         self.mfcDC = None
         self.saveDC = None
         self.saveBitMap = None
 
-        if not self.hwnd:
-            # 初始化资源
-            self.setup_resources()
+        # Initialize resources
+        self.setup_resources()
 
     def set_hwnd(self, hwnd):
         if self.hwnd != hwnd:
@@ -55,37 +92,36 @@ class ContinuousCapture:
             self.setup_resources()
 
     def setup_resources(self):
-        """ 初始化截图所需的资源 """
+        """Initialize resources needed for screenshot capture"""
         self.dpi_width, self.dpi_height = self.getDpiRect()
-        # print(self.dpi_width, self.dpi_height)
 
-        # 获取窗口设备上下文
+        # Get window device context
         self.hwndDC = win32gui.GetWindowDC(self.hwnd)
         self.mfcDC = win32ui.CreateDCFromHandle(self.hwndDC)
         self.saveDC = self.mfcDC.CreateCompatibleDC()
 
-        # 创建位图对象
+        # Create bitmap object
         self.saveBitMap = win32ui.CreateBitmap()
         self.saveBitMap.CreateCompatibleBitmap(self.mfcDC, self.dpi_width, self.dpi_height)
 
-        # 将位图选入设备上下文
+        # Select bitmap into device context
         self.saveDC.SelectObject(self.saveBitMap)
 
     def getRect(self):
         if not self.hwnd:
             return 0, 0
         if self.print_mode == 0b10:
-            # 0b10：获取窗口位置和大小，包含标题栏和工具栏
+            # 0b10: Get window position and size, including title bar and toolbar
             get_rect = win32gui.GetWindowRect(self.hwnd)
         else:
-            # 0b11：获取窗口大小，不包含标题栏和工具栏
+            # 0b11: Get window size, excluding title bar and toolbar
             get_rect = win32gui.GetClientRect(self.hwnd)
         width = get_rect[2] - get_rect[0]
         height = get_rect[3] - get_rect[1]
         return width, height
 
     def getDpiRect(self):
-        """ 根据dpi获取窗口实际大小 """
+        """Get actual window size based on DPI scaling"""
         if self.hwnd == win32gui.GetDesktopWindow():
             try:
                 hdc = win32gui.GetDC(self.hwnd)
@@ -104,19 +140,19 @@ class ContinuousCapture:
     @staticmethod
     def find_window_by_title(window_title):
         """
-        根据窗口标题查找窗口句柄
+        Find window handle by window title
 
         Args:
-            window_title: 窗口标题（可以是部分标题）
+            window_title: Window title (can be partial match)
 
         Returns:
-            窗口句柄，如果找不到返回None
+            Window handle, or None if not found
         """
 
         def callback(hwnd, hwnds):
             if win32gui.IsWindowVisible(hwnd) and window_title in win32gui.GetWindowText(hwnd):
                 hwnds.append(hwnd)
-                return False  # 结束遍历，只需找到一个
+                return False  # Stop enumeration, only need to find one
             return True
 
         hwnds = []
@@ -125,25 +161,26 @@ class ContinuousCapture:
 
     def capture_window(self):
         """
-        截取单个窗口
+        Capture a single window
 
         Returns:
-            PIL Image对象
+            Tuple of (bitmap data, width, height)
         """
-        # 检查窗口尺寸是否变化
+        # Check if window size changed
         new_width, new_height = self.getRect()
 
-        # 如果窗口尺寸变化，重新初始化资源
+        # If window size changed, reinitialize resources
         if new_width != self.width or new_height != self.height:
             self.cleanup_resources()
             self.width = new_width
             self.height = new_height
             self.setup_resources()
 
-        # 后台窗口使用PrintWindow代替BitBlt解决部分窗口黑屏问题, 但是PrintWindow不能截取桌面
+        # Use PrintWindow instead of BitBlt to solve black screen issues for background windows
+        # Note: PrintWindow cannot capture desktop
         windll.user32.PrintWindow(self.hwnd, self.saveDC.GetSafeHdc(), self.print_mode)
 
-        # 获取位图信息
+        # Get bitmap information
         bmpinfo = self.saveBitMap.GetInfo()
         bmpstr = self.saveBitMap.GetBitmapBits(True)
 
@@ -151,36 +188,37 @@ class ContinuousCapture:
 
     def capture_screen(self):
         """
-        截取整个屏幕
+        Capture the entire screen
 
         Returns:
-            PIL Image对象
+            Tuple of (bitmap data, width, height)
         """
-        # 检查窗口尺寸是否变化
+        # Check if window size changed
         new_width, new_height = self.getRect()
 
-        # 如果窗口尺寸变化，重新初始化资源
+        # If window size changed, reinitialize resources
         if new_width != self.width or new_height != self.height:
             self.cleanup_resources()
             self.width = new_width
             self.height = new_height
             self.setup_resources()
 
-        # PrintWindow不能截取桌面，需要用BitBlt。BitBlt截取后台窗口时部分窗口会截取不到，只有黑色
+        # PrintWindow cannot capture desktop, must use BitBlt
+        # Note: BitBlt may show black for background windows
         try:
-            # 保存bitmap到内存设备描述表。win32con.NOTSRCCOPY 翻转颜色
+            # Save bitmap to memory device context
             self.saveDC.BitBlt((0, 0), (self.dpi_width, self.dpi_height), self.mfcDC, (0, 0), win32con.SRCCOPY)
         except:
             pass
 
-        # 获取位图信息
+        # Get bitmap information
         bmpinfo = self.saveBitMap.GetInfo()
         bmpstr = self.saveBitMap.GetBitmapBits(True)
 
         return bmpstr, bmpinfo['bmWidth'], bmpinfo['bmHeight']
 
     def cleanup_resources(self):
-        """清理资源"""
+        """Clean up resources"""
         try:
             if self.saveBitMap:
                 win32gui.DeleteObject(self.saveBitMap.GetHandle())
@@ -202,43 +240,61 @@ class ContinuousCapture:
 
     def capture_to_file(self, save_path):
         """
-        执行截图操作
+        Capture screenshot and save to file
 
         Args:
-            save_path: 截图保存路径
+            save_path: Path to save the screenshot
         """
         self.capture_screen()
-        # 保存位图到文件
+        # Save bitmap to file
         self.saveBitMap.SaveBitmapFile(self.saveDC, save_path)
+
+    def capture_to_pil(self):
+        """
+        Capture screenshot and return as PIL Image
+
+        Returns:
+            PIL Image object
+        """
+        bmpstr, width, height = self.capture_screen()
+        
+        # Convert bitmap to PIL Image
+        img = Image.frombuffer(
+            'RGB',
+            (width, height),
+            bmpstr, 'raw', 'BGRX', 0, 1
+        )
+        
+        return img
 
     def continuous_capture(self, interval=1, duration=10, output_dir="screenshots",
                            pformat="bmp", callback=None):
         """
-        连续截图函数
+        Continuous screenshot capture function
 
         Args:
-            interval: 截图间隔（秒）
-            duration: 总持续时间（秒）
-            output_dir: 输出目录
-            pformat: 图像格式，"bmp"或"png"或"jpg"
-            callback: 可选的回调函数，接收两个参数：图像路径和PIL图像对象
+            interval: Screenshot interval in seconds
+            duration: Total duration in seconds
+            output_dir: Output directory path
+            pformat: Image format ("bmp", "png", or "jpg")
+            callback: Optional callback function receiving (image_path, PIL_image)
         """
-        # 创建输出目录
+        # Create output directory if it doesn't exist
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        # 计算截图次数
+        # Calculate number of screenshots
         num_shots = int(duration / interval)
 
-        print(f"开始连续截图，共 {num_shots} 次，间隔 {interval} 秒")
+        print(f"Starting continuous capture: {num_shots} screenshots, {interval} second intervals")
 
         for i in range(num_shots):
-            # 生成文件名
+            # Generate filename
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             filename = f"screenshot_{timestamp}_{i + 1:04d}.{pformat}"
             save_path = os.path.join(output_dir, filename)
 
-            # 执行截图
+            # Execute screenshot
             if pformat == "bmp":
                 self.capture_to_file(save_path)
                 pil_img = None
@@ -246,57 +302,58 @@ class ContinuousCapture:
                 pil_img = self.capture_to_pil()
                 pil_img.save(save_path)
 
-            print(f"已保存截图: {save_path}")
+            print(f"Saved screenshot: {save_path}")
 
-            # 调用回调函数（如果提供）
+            # Call callback function if provided
             if callback:
                 callback(save_path, pil_img)
 
-            # 等待下一次截图
-            if i < num_shots - 1:  # 最后一次不需要等待
+            # Wait for next screenshot (skip waiting on last iteration)
+            if i < num_shots - 1:
                 time.sleep(interval)
 
-        print("截图完成")
+        print("Capture complete")
 
     def __del__(self):
-        """ 析构函数，确保资源被正确释放 """
+        """Destructor to ensure resources are properly released"""
         self.cleanup_resources()
 
 
-# 使用示例
+# Usage examples
 if __name__ == "__main__":
-    # 示例1：截取整个屏幕，每2秒一次，持续20秒，保存为PNG
+    # Example 1: Capture entire screen every 2 seconds for 20 seconds, save as PNG
     capture = ContinuousCapture()
     capture.continuous_capture(
         interval=2,
         duration=20,
         output_dir="screen_shots",
-        format="png"
+        pformat="png"
     )
 
-    # 示例2：截取特定窗口（例如记事本），每1秒一次，持续10秒
-    # capture = ContinuousCapture(
-    #     capture_type="window",
-    #     window_title="记事本"
-    # )
-    # capture.continuous_capture(
-    #     interval=1,
-    #     duration=10,
-    #     output_dir="notepad_shots"
-    # )
+    # Example 2: Capture specific window (e.g., Notepad) every 1 second for 10 seconds
+    # hwnd = ContinuousCapture.find_window_by_title("Notepad")
+    # if hwnd:
+    #     capture = ContinuousCapture(hwnd=hwnd)
+    #     capture.continuous_capture(
+    #         interval=1,
+    #         duration=10,
+    #         output_dir="notepad_shots"
+    #     )
+    # else:
+    #     print("Window not found")
 
-    # 示例3：使用回调函数处理截图
+    # Example 3: Using callback function to process screenshots
     # def process_image(path, img):
-    #     if img:  # 如果不是BMP格式，img会是PIL图像对象
-    #         # 在这里进行图像处理，例如调整大小、添加水印等
+    #     if img:  # If not BMP format, img will be a PIL Image object
+    #         # Process image here, e.g., resize, add watermark, etc.
     #         small_img = img.resize((img.width // 2, img.height // 2))
     #         small_img.save(path.replace('.png', '_small.png'))
     #
-    # capture = ContinuousCapture(capture_type="screen")
+    # capture = ContinuousCapture()
     # capture.continuous_capture(
     #     interval=1,
     #     duration=5,
     #     output_dir="processed_shots",
-    #     format="png",
+    #     pformat="png",
     #     callback=process_image
     # )
