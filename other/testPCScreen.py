@@ -55,7 +55,7 @@ else:  # 对串口进行监听，确保其为MSN设备
         recv = SER_Read()
         print(len(recv))
         if len(recv)>10:
-            print("找到MSN设备，端口：",port_list[i].name)
+            print("found device, PORT:",port_list[i].name)
             com_name=port_list[i].name
 ser.close()
 
